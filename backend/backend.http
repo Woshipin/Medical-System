@@ -1,0 +1,46 @@
+@backend_HostAddress = http://localhost:5062
+
+### 1. 获取所有医生 (GET)
+GET {{backend_HostAddress}}/api/doctor
+Accept: application/json
+
+###
+
+### 2. 创建一个新医生 (POST)
+# 注意：这里的字段要和你 Models/Doctor.cs 中的属性名一致（通常是首字母大写或小写均可）
+POST {{backend_HostAddress}}/api/doctor
+Content-Type: application/json
+
+{
+  "name": "张医生",
+  "specialty": "内科",
+  "description": "资深主治医师",
+  "email": "zhang@example.com",
+  "phone": "13800000000"
+}
+
+###
+
+### 3. 根据 ID 获取单个医生 (GET)
+# 假设刚才创建的医生 ID 是 1
+GET {{backend_HostAddress}}/api/doctor/1
+Accept: application/json
+
+###
+
+### 4. 更新医生信息 (PUT)
+PUT {{backend_HostAddress}}/api/doctor/1
+Content-Type: application/json
+
+{
+  "name": "张大夫 (已更新)",
+  "specialty": "外科",
+  "description": "心脏外科专家",
+  "email": "zhang_new@example.com",
+  "phone": "13911112222"
+}
+
+###
+
+### 5. 删除医生 (DELETE)
+DELETE {{backend_HostAddress}}/api/doctor/1
