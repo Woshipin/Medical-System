@@ -12,7 +12,7 @@ namespace MedicalSystem.Models
 
         [Required(ErrorMessage = "性别名称是必填项")]
         [StringLength(20)]
-        public string Name { get; set; } = null!; // 例如："男", "女", "其他"
+        public string Name { get; set; } = null!; // 例如："Male", "Female", "Other"
 
         public bool IsActive { get; set; } = true;
     }

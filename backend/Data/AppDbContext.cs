@@ -48,8 +48,8 @@ namespace MedicalSystem.Data
 
             // 初始化种子数据
             builder.Entity<Gender>().HasData(
-                new Gender { Id = 1, Name = "男", IsActive = true },
-                new Gender { Id = 2, Name = "女", IsActive = true }
+                new Gender { Id = 1, Name = "Male", IsActive = true },
+                new Gender { Id = 2, Name = "Female", IsActive = true }
             );
         }
     }
