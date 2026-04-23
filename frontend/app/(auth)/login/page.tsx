@@ -1,4 +1,3 @@
-// app/(auth)/login/page.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -6,16 +5,39 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   Leaf, Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, 
-  Loader2, AlertCircle, CheckCircle, X, CheckCircle2 
+  Loader2, AlertCircle, CheckCircle, X, CheckCircle2, Info 
 } from 'lucide-react';
-// 引入全局状态 Hook (路径根据实际情况调整)
 import { useAuth } from '@/app/contexts/AuthContext';
+
+// --- Independent Component: Alert for already logged in ---
+const AlreadyLoggedInAlert = () => {
+  const router = useRouter();
+  React.useEffect(() => {
+    const timer = setTimeout(() => router.replace('/home'), 2000);
+    return () => clearTimeout(timer);
+  }, [router]);
+
+  return (
+    <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500 flex items-center justify-center p-4 relative overflow-hidden font-sans">
+      <div className="relative z-50 bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4 border border-white/20 flex flex-col items-center text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-500">
+        <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5 shadow-inner border border-emerald-100">
+          <Info size={32} className="text-emerald-500" />
+        </div>
+        <h2 className="text-xl font-extrabold text-slate-800 tracking-tight mb-2">Already Logged In</h2>
+        <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
+          You currently have an active session. No need to log in again.
+        </p>
+        <div className="flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full w-full">
+          <Loader2 size={14} className="animate-spin" /> Returning to homepage...
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function LoginPage() {
   const router = useRouter();
-  
-  // 获取 login 方法
-  const { login } = useAuth(); 
+  const { login, isAuthenticated, isInitialized } = useAuth(); 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,47 +66,93 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const result = await response.json();
+      
+      const isSuccess = result?.success === true || result?.Success === true;
+      const responseData = result?.data || result?.Data;
 
-      if (response.ok && result.success) {
-        
-        // --- 登录成功，调用 Context 的 login 方法 ---
-        // 这样 Navbar 就会立刻感应到状态改变并重新渲染
-        login(result.data.user, result.data.token);
+      if (response.ok && isSuccess) {
+        if (responseData) {
+           // Helper function to find property ignoring case
+           const findProp = (obj: any, key: string) => {
+             if (!obj) return undefined;
+             const foundKey = Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase());
+             return foundKey ? obj[foundKey] : undefined;
+           };
 
-        setSuccessMsg("Login successful! Redirecting to dashboard...");
+           const authToken = findProp(responseData, 'token');
+           
+           // First try to see if backend sent a nested user object
+           let rawUserData = findProp(responseData, 'user');
+           
+           // FIX: If there is no nested 'user' object, construct it from the flat 'data' object
+           // based on the console log provided.
+           if (!rawUserData) {
+               rawUserData = {
+                   // Fallback ID to '0' if backend doesn't provide one
+                   id: findProp(responseData, 'id') || '0', 
+                   // Get fullName from the flat data
+                   fullName: findProp(responseData, 'fullname') || 'User',
+                   // The console log showed email was missing, so we use the email the user just typed!
+                   email: email 
+               };
+           }
 
-        setTimeout(() => {
-          router.push('/home');
-        }, 1500);
+           if (authToken) {
+               // Ensure ID is properly cast to string to match AuthContext expectations
+               const formattedUser = {
+                 ...rawUserData,
+                 id: String(rawUserData.id || rawUserData.Id || "0") 
+               };
+
+               // 1. Call Context to set token and user data
+               login(formattedUser, authToken);
+               
+               // 2. Display Success message
+               setSuccessMsg("Login successful! Redirecting to dashboard...");
+               
+               // 3. Trigger redirect
+               setTimeout(() => router.push('/home'), 2000);
+           } else {
+               setApiErrorMsg("Token missing from server response.");
+               setIsLoading(false);
+           }
+        } else {
+           setApiErrorMsg("Invalid response format: Missing data payload.");
+           setIsLoading(false);
+        }
       } else {
-        setApiErrorMsg(result.message || "Login failed, please check your credentials.");
+        const errorMsg = result?.message || result?.Message || "Login failed. Please check your credentials.";
+        setApiErrorMsg(errorMsg);
+        setIsLoading(false); 
       }
     } catch (err) {
-      setApiErrorMsg("Cannot connect to server. Please ensure backend is running.");
-    } finally {
-      if (!successMsg) {
-        setIsLoading(false);
-      }
+      console.error("Fetch Error:", err);
+      setApiErrorMsg("Unable to connect to the server. Please ensure the backend is running.");
+      setIsLoading(false);
     }
   };
 
-  // 下面的 UI 渲染部分保持你原来的代码完全一致
+  if (!isInitialized) {
+    return <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500"></div>;
+  }
+
+  if (isAuthenticated) {
+    return <AlreadyLoggedInAlert />;
+  }
+
   return (
     <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500 flex items-center justify-center p-4 relative overflow-hidden">
-      
       <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
         {apiErrorMsg && (
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
             <AlertCircle className="text-red-600 mt-0.5" size={20} />
             <div className="flex-1">
-              <h4 className="font-bold text-sm text-red-700">Authentication Failed</h4>
+              <h4 className="font-bold text-sm text-red-700">Login Failed</h4>
               <p className="text-sm text-slate-600 mt-1">{apiErrorMsg}</p>
             </div>
             <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
@@ -95,7 +163,7 @@ export default function LoginPage() {
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
             <CheckCircle className="text-emerald-600 mt-0.5" size={20} />
             <div className="flex-1">
-              <h4 className="font-bold text-sm text-emerald-700">Success</h4>
+              <h4 className="font-bold text-sm text-emerald-700">Login Successful</h4>
               <p className="text-sm text-slate-600 mt-1">{successMsg}</p>
             </div>
           </div>
@@ -114,9 +182,7 @@ export default function LoginPage() {
       </Link>
 
       <div className="relative z-10 bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px] max-h-[92vh] border border-white/50">
-        
         <div className="md:w-1/2 p-8 sm:p-10 lg:p-16 flex flex-col justify-center w-full bg-white overflow-y-auto custom-scrollbar">
-          
           <div className="mb-8">
              <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full w-fit">
                 <div className="p-1.5 bg-emerald-500 rounded-full text-white">
@@ -125,11 +191,10 @@ export default function LoginPage() {
                 <span className="text-sm font-bold text-emerald-800 tracking-tight">GreenLife Med</span>
              </div>
              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Welcome Back</h2>
-             <p className="text-slate-500 text-sm">Securely access your patient portal.</p>
+             <p className="text-slate-500 text-sm">Please log in to your patient portal account.</p>
           </div>
 
           <form className="space-y-5" onSubmit={handleLoginSubmit} noValidate>
-            
             <div className="group flex flex-col">
                <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-slate-500">Email Address</label>
                <div className="relative flex items-center">
@@ -138,7 +203,7 @@ export default function LoginPage() {
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="you@example.com" 
+                    placeholder="example@mail.com" 
                     className={`w-full pl-10 pr-4 py-3 text-sm rounded-xl outline-none transition-all border ${
                         hasSubmitted && !isValidEmail 
                         ? 'bg-red-50 border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-red-900 placeholder:text-red-300' 
@@ -168,30 +233,26 @@ export default function LoginPage() {
                         : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-400'
                     }`}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 text-slate-400 hover:text-emerald-600 p-1"
-                  >
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 text-slate-400 hover:text-emerald-600 p-1">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                </div>
-               {hasSubmitted && !isValidPassword && <span className="text-red-500 text-[11px] mt-1.5 ml-1 font-medium">Password is required.</span>}
+               {hasSubmitted && !isValidPassword && <span className="text-red-500 text-[11px] mt-1.5 ml-1 font-medium">Please enter your password.</span>}
             </div>
 
             <button 
                 type="submit" 
-                disabled={isLoading || successMsg !== null} 
+                disabled={isLoading} 
                 className="w-full mt-4 py-3.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/30 active:scale-[0.98]"
             >
-                {isLoading || successMsg ? (
+                {isLoading ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    {successMsg ? "Redirecting..." : "Signing In..."}
+                    {successMsg ? "Redirecting..." : "Logging in..."}
                   </>
                 ) : (
                   <>
-                    Sign In
+                    Log In Now
                     <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -199,7 +260,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 text-center text-sm">
-            <p className="text-slate-500">Don't have an account? <Link href="/register" className="text-emerald-600 font-bold hover:underline">Create Account</Link></p>
+            <p className="text-slate-500">Don't have an account? <Link href="/register" className="text-emerald-600 font-bold hover:underline">Create one now</Link></p>
           </div>
         </div>
 
@@ -216,9 +277,9 @@ export default function LoginPage() {
                      </span>
                      <span className="font-semibold text-emerald-100 text-xs tracking-wide uppercase">System Operational</span>
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">Patient-First Technology</h3>
+                  <h3 className="text-2xl font-bold mb-2">Patient-Centric Technology</h3>
                   <p className="text-emerald-50 text-opacity-90 leading-relaxed text-sm">
-                    Experience seamless healthcare management. Your data is encrypted with military-grade security protocols.
+                    Experience seamless medical management. Your data is protected by military-grade encryption protocols.
                   </p>
               </div>
            </div>

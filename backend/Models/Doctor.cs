@@ -4,25 +4,25 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MedicalSystem.Models
 {
     /// <summary>
-    /// 医生详细信息扩展表
+    /// 医生详细信息扩展表。与 User 表是一对一关系。
     /// </summary>
     public class Doctor
     {
         [Key]
         public int Id { get; set; }
 
-        // 1对1关联：外键指向 User 表的 Id (string类型)
+        // 【核心修改】：改为 int 类型，以匹配 User 表的新主键 ID
         [Required]
-        public string UserId { get; set; } = null!;
+        public int UserId { get; set; }
         
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
 
         [Required(ErrorMessage = "执业证号是必填项")]
-        [StringLength(50, ErrorMessage = "执业证号长度不能超过50个字符")]
+        [StringLength(50)]
         public string LicenseNumber { get; set; } = null!; 
 
-        [Required(ErrorMessage = "专科/科室是必填项")]
+        [Required(ErrorMessage = "专科是必填项")]
         [StringLength(100)]
         public string Specialty { get; set; } = null!; 
 
@@ -34,20 +34,20 @@ namespace MedicalSystem.Models
         [StringLength(100)]
         public string Department { get; set; } = null!; 
 
-        [Column(TypeName = "date")] // 强制数据库存储为日期格式(不含时间)
+        [Column(TypeName = "date")] 
         public DateOnly DateOfBirth { get; set; }
 
         [StringLength(200)]
         public string? OfficeLocation { get; set; }
 
         [StringLength(500)]
-        public string? Qualifications { get; set; }
+        public string? Qualifications { get; set; } // 资质证书
 
-        [Range(0, 70, ErrorMessage = "医龄必须在0到70之间")]
+        [Range(0, 70)]
         public int YearsOfExperience { get; set; }
 
         [StringLength(2000)]
-        public string? Biography { get; set; }
+        public string? Biography { get; set; } // 个人简介
         
         public DateTime? UpdatedAt { get; set; }
     }

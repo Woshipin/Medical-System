@@ -1,15 +1,14 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using MedicalSystem.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using MedicalSystem.Models; 
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
 
 namespace MedicalSystem.Controllers
 {
-    [Route("api/[controller]")] // 路由即为 api/auth
+    [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -22,110 +21,72 @@ namespace MedicalSystem.Controllers
             _configuration = configuration;
         }
 
+        // 病人注册：存入 Email 作为唯一账号名
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] FrontendRegisterDto model)
         {
-            var userExists = await _userManager.FindByEmailAsync(model.Email);
-            if (userExists != null)
-                return BadRequest(ApiResponse<string>.FailureResponse("该邮箱已被占用"));
-
             var user = new User
             {
-                UserName = model.Email,
+                UserName = model.Email, 
                 Email = model.Email,
                 FullName = model.FullName,
-                GenderId = model.GenderId, 
-                Role = UserRole.Patient, // 【强制】前台注册的一律为 Patient
-                IsActive = true,
-                CreatedAt = DateTime.Now
+                PhoneNumber = model.PhoneNumber,
+                GenderId = model.GenderId,
+                Role = UserRole.Patient,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
-
             if (result.Succeeded)
                 return Ok(ApiResponse<string>.SuccessResponse(null, "注册成功"));
 
-            var errorList = result.Errors.Select(e => e.Description).ToList();
-            return BadRequest(ApiResponse<List<string>>.FailureResponse("注册失败", errorList));
+            return BadRequest(ApiResponse<List<string>>.FailureResponse("注册失败", result.Errors.Select(e => e.Description).ToList()));
         }
 
+        // 修改后的 Login 方法
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] FrontendLoginDto model)
+        public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
-
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
                 return Unauthorized(ApiResponse<string>.FailureResponse("账号或密码错误"));
 
-            if (!user.IsActive)
-                return BadRequest(ApiResponse<string>.FailureResponse("账号已被禁用"));
-
-            // 【安全拦截】拦截管理员跑到前台去登录
             if (user.Role != UserRole.Patient)
-            {
-                return Unauthorized(ApiResponse<string>.FailureResponse("请前往后台管理系统登录"));
-            }
+                return Unauthorized(ApiResponse<string>.FailureResponse("请前往后台系统登录"));
 
             var token = GenerateJwtToken(user);
-
-            return Ok(ApiResponse<object>.SuccessResponse(new 
-            {
-                token,
+            
+            // --- 核心改进：确保返回的匿名对象属性名与前端一致 ---
+            return Ok(ApiResponse<object>.SuccessResponse(new { 
+                token = token, 
                 user = new { 
-                    user.Id, 
-                    user.FullName, 
-                    roleValue = (int)user.Role 
-                }
-            }, "登录成功"));
+                    id = user.Id,
+                    fullName = user.FullName,
+                    email = user.Email 
+                } 
+            }));
         }
 
         private string GenerateJwtToken(User user)
         {
-            var jwtSettings = _configuration.GetSection("Jwt");
-            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim("roleValue", ((int)user.Role).ToString())
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+            var claims = new[] {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
             };
-
-            var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
-            );
-
+            var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims, 
+                expires: DateTime.Now.AddDays(1), signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 
-    #region Frontend DTOs
-    // 专门为前台设计的注册 DTO (去除了 Role 和 DoctorProfile)
-    public class FrontendRegisterDto 
-    {
-        [Required, EmailAddress]
+    public class FrontendRegisterDto {
         public string Email { get; set; } = null!;
-
-        [Required, StringLength(100, MinimumLength = 6)]
         public string Password { get; set; } = null!;
-
-        [Required]
         public string FullName { get; set; } = null!;
-
-        [Required]
-        public int GenderId { get; set; } 
+        public string PhoneNumber { get; set; } = null!;
+        public int GenderId { get; set; }
     }
-
-    public class FrontendLoginDto 
-    { 
-        [Required] public string Email { get; set; } = null!;
-        [Required] public string Password { get; set; } = null!;
-    }
-    #endregion
+    public class LoginDto { public string Email { get; set; } = null!; public string Password { get; set; } = null!; }
 }

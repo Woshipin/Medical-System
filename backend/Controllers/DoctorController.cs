@@ -12,40 +12,44 @@ namespace MedicalSystem.Controllers
         private readonly AppDbContext _context;
         public DoctorsController(AppDbContext context) { _context = context; }
 
-        // [GET] 获取医生列表：需要关联 User 表来拿姓名和性别
+        // 获取医生列表 (联表查询：Doctor + User + Gender)
         [HttpGet]
         public async Task<IActionResult> GetDoctors()
         {
             var doctors = await _context.Doctors
-                .Include(d => d.User) // 关联账号信息
-                    .ThenInclude(u => u.Gender) // 关联性别名称
+                .Include(d => d.User)
+                    .ThenInclude(u => u.Gender)
                 .ToListAsync();
 
             return Ok(ApiResponse<IEnumerable<Doctor>>.SuccessResponse(doctors));
         }
 
-        // 只展示修改过的 Update 方法部分，确保逻辑闭环
+        // 更新医生及关联的用户账号信息
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] DoctorUpdateDto input)
         {
+            // 包含 User 导航属性进行同步更新
             var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id);
-            if (doctor == null || doctor.User == null) return NotFound(ApiResponse<string>.FailureResponse("未找到该医生"));
+            if (doctor == null || doctor.User == null) return NotFound(ApiResponse<string>.FailureResponse("未找到该医生记录"));
 
-            // 使用 doctor.User! 消除警告
-            doctor.User!.FullName = input.FullName;
+            // 1. 更新 User 表的数据
+            doctor.User.FullName = input.FullName;
             doctor.User.GenderId = input.GenderId;
-            doctor.User.Email = input.Email;
+            doctor.User.Email = input.Email ?? doctor.User.Email;
             doctor.User.PhoneNumber = input.Phone;
             doctor.User.IsActive = input.IsActive;
 
+            // 2. 更新 Doctor 表的数据
             doctor.LicenseNumber = input.LicenseNumber;
             doctor.Specialty = input.Specialty;
             doctor.Title = input.Title;
             doctor.Department = input.Department;
+            doctor.OfficeLocation = input.OfficeLocation;
+            doctor.YearsOfExperience = input.YearsOfExperience;
             doctor.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            return Ok(ApiResponse<string>.SuccessResponse(null!, "医生信息更新成功"));
+            return Ok(ApiResponse<string>.SuccessResponse(null, "医生信息及账号资料更新成功"));
         }
 
         [HttpDelete("{id}")]
@@ -56,11 +60,10 @@ namespace MedicalSystem.Controllers
 
             _context.Doctors.Remove(doctor);
             await _context.SaveChangesAsync();
-            return Ok(ApiResponse<object>.SuccessResponse(null, "医生记录已删除"));
+            return Ok(ApiResponse<object>.SuccessResponse(null, "医生记录已成功移除"));
         }
     }
 
-    // 专门用于接收更新请求的 DTO 类，解决字段分散在两个表的问题
     public class DoctorUpdateDto {
         public string FullName { get; set; } = null!;
         public int GenderId { get; set; }

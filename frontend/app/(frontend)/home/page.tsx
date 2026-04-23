@@ -31,7 +31,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white selection:bg-emerald-100">
       
       {/* --- HERO SECTION --- */}
-      <div className="relative pt-24 pb-16 lg:pt-36 lg:pb-32 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <div className="relative pt-12 pb-8 lg:pt-12 lg:pb-12 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-200/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-200/20 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
 

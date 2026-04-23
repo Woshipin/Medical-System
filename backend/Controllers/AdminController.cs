@@ -1,20 +1,19 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using MedicalSystem.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using MedicalSystem.Models; 
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
 
 namespace MedicalSystem.Controllers
 {
-    [Route("api/[controller]")] // 路由即为 api/admin
+    [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration _configuration; // 引入配置用于读取 JWT Secret
 
         public AdminController(UserManager<User> userManager, IConfiguration configuration)
         {
@@ -22,131 +21,91 @@ namespace MedicalSystem.Controllers
             _configuration = configuration;
         }
 
+        // 1. 后台人员创建（管理员/医生）
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] AdminRegisterDto model)
         {
-            // 1. 验证角色并转换 (将前端传来的 "superadmin", "admin", "doctor" 转换为枚举)
-            if (!Enum.TryParse<UserRole>(model.Role, true, out var userRole) || userRole == UserRole.Patient)
-            {
-                return BadRequest(ApiResponse<string>.FailureResponse("无效的系统角色"));
-            }
+            if (!Enum.TryParse<UserRole>(model.Role, true, out var userRole))
+                return BadRequest(ApiResponse<string>.FailureResponse("无效角色"));
 
-            // 2. 验证用户是否已存在
-            var userExists = await _userManager.FindByEmailAsync(model.Email);
-            if (userExists != null)
-                return BadRequest(ApiResponse<string>.FailureResponse("该邮箱已被注册"));
-
-            // 3. 构建用户实体
             var user = new User
             {
                 UserName = model.Email,
                 Email = model.Email,
                 FullName = model.FullName,
-                Role = userRole, 
-                IsActive = true,
+                PhoneNumber = model.PhoneNumber,
+                Role = userRole,
+                GenderId = 1, // 默认男
                 CreatedAt = DateTime.Now,
-                
-                // 【注意】因为 User 模型中 GenderId 是 [Required] 必填项，
-                // 但你的 Dashboard 前端并没有提供选择性别的字段。
-                // 解决方案：这里暂时赋一个默认值 (比如 1 代表未知/默认)。
-                // 建议：确保你的 Gender 数据库表里存在 Id = 1 的记录，否则外键会报错！
-                GenderId = 1 
+                UpdatedAt = DateTime.Now
             };
 
-            // 注：如果是注册 Doctor，这里仅仅创建 User 表账号。
-            // 因为真正的 Doctor 表需要执业证号等严格字段，应在他们首次登录 Dashboard 后通过 "完善资料" 页面单独填写。
-
-            // 4. 保存到数据库
             var result = await _userManager.CreateAsync(user, model.Password);
-
             if (result.Succeeded)
                 return Ok(ApiResponse<string>.SuccessResponse(null, "后台账号创建成功"));
 
-            // 5. 失败处理
-            var errorList = result.Errors.Select(e => e.Description).ToList();
-            return BadRequest(ApiResponse<List<string>>.FailureResponse("注册失败", errorList));
+            return BadRequest(ApiResponse<List<string>>.FailureResponse("创建失败", result.Errors.Select(e => e.Description).ToList()));
         }
 
+        // 2. 后台人员登录 (新增的 Login 接口)
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AdminLoginDto model)
         {
+            // 查找用户并验证密码
             var user = await _userManager.FindByEmailAsync(model.Email);
-
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
                 return Unauthorized(ApiResponse<string>.FailureResponse("账号或密码错误"));
 
-            if (!user.IsActive)
-                return BadRequest(ApiResponse<string>.FailureResponse("账号已被禁用"));
-
-            // 【核心安全拦截】阻止普通 Patient 登录 Dashboard ！！！
+            // 权限拦截：普通病人不能登录后台系统
             if (user.Role == UserRole.Patient)
-            {
-                return Unauthorized(ApiResponse<string>.FailureResponse("权限不足：普通用户无法访问后台控制台"));
-            }
+                return Unauthorized(ApiResponse<string>.FailureResponse("无权访问后台系统，请使用患者通道登录"));
 
+            // 账号验证通过，生成 JWT Token
             var token = GenerateJwtToken(user);
 
-            return Ok(ApiResponse<object>.SuccessResponse(new
-            {
-                token,
-                user = new 
-                { 
-                    user.Id, 
-                    user.FullName, 
-                    role = user.Role.ToString().ToLower(), // 传回小写给前端: "superadmin", "admin", "doctor"
-                    roleValue = (int)user.Role 
-                }
+            // 返回标准数据结构，精准适配前端
+            return Ok(ApiResponse<object>.SuccessResponse(new { 
+                token = token, 
+                user = new { 
+                    id = user.Id.ToString(),
+                    fullName = user.FullName,
+                    email = user.Email,
+                    role = user.Role.ToString().ToLower()
+                } 
             }, "登录成功"));
         }
 
+        // 辅助方法：生成 JWT Token
         private string GenerateJwtToken(User user)
         {
-            var jwtSettings = _configuration.GetSection("Jwt");
-            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim("roleValue", ((int)user.Role).ToString())
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+            var claims = new[] {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
             };
-
-            var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
+                _configuration["Jwt:Issuer"], 
+                _configuration["Jwt:Audience"], 
+                claims, 
+                expires: DateTime.Now.AddDays(1), 
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
-
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 
-    #region Admin DTOs
-    // 专门为 Dashboard 注册设计的 DTO
-    public class AdminRegisterDto
-    {
-        [Required, EmailAddress]
+    // DTO: 接收前端注册数据
+    public class AdminRegisterDto {
         public string Email { get; set; } = null!;
-
-        [Required, StringLength(100, MinimumLength = 8)]
         public string Password { get; set; } = null!;
-
-        [Required]
         public string FullName { get; set; } = null!;
-
-        [Required]
-        public string Role { get; set; } = null!; // 接收前端的 "superadmin", "admin", "doctor"
+        public string PhoneNumber { get; set; } = null!;
+        public string Role { get; set; } = null!; 
     }
 
-    // 专门为 Dashboard 登录设计的 DTO
-    public class AdminLoginDto
-    { 
-        [Required] public string Email { get; set; } = null!;
-        [Required] public string Password { get; set; } = null!;
+    // DTO: 接收前端登录数据 (新增)
+    public class AdminLoginDto { 
+        public string Email { get; set; } = null!; 
+        public string Password { get; set; } = null!; 
     }
-    #endregion
 }

@@ -20,7 +20,7 @@ export const Section: React.FC<SectionProps> = ({
   };
 
   return (
-    <section id={id} className={`relative py-12 md:py-20 lg:py-28 overflow-hidden ${bgVariants[variant]} ${className}`}>
+    <section id={id} className={`relative py-8 md:py-8 lg:py-8 overflow-hidden ${bgVariants[variant]} ${className}`}>
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {(title || subtitle) && (
           <div className="text-center max-w-3xl mx-auto mb-10 md:mb-16">

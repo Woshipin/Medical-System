@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from '@/app/contexts/AdminAuthContext'; 
 
-// --- 独立的绿色提示组件：防止重复登录 ---
 const AlreadyLoggedInAlert = () => {
   const router = useRouter();
   React.useEffect(() => {
@@ -34,6 +33,7 @@ const AlreadyLoggedInAlert = () => {
 
 export default function AdminLoginPage() {
   const { login, isAuthenticated, isInitialized } = useAdminAuth(); 
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,42 +63,90 @@ export default function AdminLoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        login(result.data.user, result.data.token);
-        setSuccessMsg("Welcome back! Accessing dashboard...");
-      } else {
-        setApiErrorMsg(result.message || "Invalid admin credentials.");
+      
+      let result;
+      const contentType = response.headers.get("content-type");
+      
+      // 如果 C# 还没重启，返回 404 HTML，直接抛出明显错误提示
+      if (response.status === 404) {
+         throw new Error("API endpoint not found (404). You MUST stop and restart your C# backend server after adding the new login code.");
       }
-    } catch (err) {
-      setApiErrorMsg("Cannot connect to server. Please check your connection.");
-    } finally {
-      if (!successMsg) setIsLoading(false);
-    }
+
+      if (contentType && contentType.toLowerCase().includes("application/json")) {
+        result = await response.json();
+      } else {
+        throw new Error(`Server returned non-JSON error (Status: ${response.status}).`);
+      }
+
+      const isSuccess = result?.success === true || result?.Success === true;
+      const responseData = result?.data || result?.Data;
+
+      if (response.ok && isSuccess) {
+         if (responseData) {
+           const findProp = (obj: any, key: string) => {
+             if (!obj) return undefined;
+             const foundKey = Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase());
+             return foundKey ? obj[foundKey] : undefined;
+           };
+
+           const authToken = findProp(responseData, 'token');
+           let rawUserData = findProp(responseData, 'user');
+           
+           if (!rawUserData) {
+               rawUserData = {
+                   id: findProp(responseData, 'id') || '0', 
+                   fullName: findProp(responseData, 'fullname') || 'Administrator',
+                   email: email, 
+                   role: findProp(responseData, 'role') || 'admin'
+               };
+           }
+
+           if (authToken) {
+               const formattedUser = {
+                 ...rawUserData,
+                 id: String(rawUserData.id || rawUserData.Id || "0") 
+               };
+
+               login(formattedUser, authToken);
+               setSuccessMsg("Welcome back! Accessing dashboard...");
+               setTimeout(() => router.push('/admin/dashboard'), 2000);
+           } else {
+               setApiErrorMsg("Token missing from server response.");
+               setIsLoading(false);
+           }
+         } else {
+            setApiErrorMsg("Invalid response format: Missing data payload.");
+            setIsLoading(false);
+         }
+      } else {
+        const errorMsg = result?.message || result?.Message || "Invalid admin credentials.";
+        setApiErrorMsg(errorMsg);
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      setApiErrorMsg(err.message || "Cannot connect to server. Please check your connection.");
+      setIsLoading(false);
+    } 
   };
 
-  // 1. 初始化中
   if (!isInitialized) return <div className="h-screen w-full bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700"></div>;
 
-  // 2. 如果系统发现你已经登录了，展示绿色组件拦截
   if (isAuthenticated) {
     return <AlreadyLoggedInAlert />;
   }
 
-  // 3. 正常显示登录表单 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700 font-sans overflow-hidden">
       
       <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
         {apiErrorMsg && (
           <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-6 fade-in duration-300">
-            <AlertCircle className="text-red-600 mt-0.5" size={18} />
+            <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={18} />
             <div className="flex-1">
               <h4 className="font-bold text-xs text-red-700">Login Failed</h4>
-              <p className="text-xs text-slate-600 mt-0.5">{apiErrorMsg}</p>
+              <p className="text-xs text-slate-600 mt-0.5 break-words">{apiErrorMsg}</p>
             </div>
-            <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={16} /></button>
+            <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1 shrink-0"><X size={16} /></button>
           </div>
         )}
       </div>
@@ -168,7 +216,9 @@ export default function AdminLoginPage() {
               className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2 text-sm disabled:opacity-80"
             >
               {isLoading || successMsg ? (
-                  <span className="flex items-center gap-2">Processing...</span>
+                  <span className="flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin" /> Processing...
+                  </span>
               ) : (
                   <>Sign In to Dashboard <ArrowRight size={16} /></>
               )}
@@ -185,6 +235,11 @@ export default function AdminLoginPage() {
           </div>
         </div>
       </div>
+      
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      `}</style>
     </div>
   );
 }

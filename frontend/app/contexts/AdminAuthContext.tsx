@@ -1,24 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
-// 定义 Admin 用户数据的接口
 export interface AdminUser {
   id: string;
   fullName: string;
+  email: string;
   role: string;
-  roleValue: number;
+  roleValue?: number;
 }
 
-// 角色映射字典
 export const ADMIN_ROLE_NAMES: { [key: number]: string } = {
   0: "Super Admin",
   1: "Admin",
   2: "Doctor"
 };
 
-// 定义 Context 的内容
 interface AdminAuthContextType {
   user: AdminUser | null;
   token: string | null;
@@ -35,34 +33,58 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
-  // 组件挂载时，从 localStorage 读取 admin 的专属数据
-  useEffect(() => {
-    const storedToken = localStorage.getItem('admin_token');
-    const storedUser = localStorage.getItem('admin_user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setIsInitialized(true);
-  }, []);
-
-  // 登录方法：保存数据到 state 和 localStorage
-  const login = (userData: AdminUser, authToken: string) => {
-    setUser(userData);
-    setToken(authToken);
-    localStorage.setItem('admin_user', JSON.stringify(userData));
-    localStorage.setItem('admin_token', authToken);
-  };
-
-  // 登出方法：清除 admin 数据并跳转回 admin 登录页
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('admin_user');
     localStorage.removeItem('admin_token');
     router.push('/admin/login');
+  }, [router]);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('admin_token');
+    const storedUser = localStorage.getItem('admin_user');
+
+    if (storedToken && storedUser && storedUser !== "undefined") {
+      try {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
+      } catch (e) {
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('admin_token');
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // ==========================================
+  // 核心修复：全局 Fetch 拦截器 (解决数据库清空后依然保留登录状态的问题)
+  // 如果后端返回 401 (Unauthorized)，说明查无此人或Token失效，强制登出
+  // ==========================================
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      // 如果收到 401 且当前不在登录页，立刻清除数据并踢回登录页
+      if (response.status === 401 && !pathname.includes('/login')) {
+        console.warn("Session invalid or user deleted from DB. Force logout.");
+        logout();
+      }
+      return response;
+    };
+    return () => {
+      window.fetch = originalFetch; // 组件卸载时恢复原状
+    };
+  }, [logout, pathname]);
+
+  const login = (userData: AdminUser, authToken: string) => {
+    if (!userData || !authToken) return;
+    setUser(userData);
+    setToken(authToken);
+    localStorage.setItem('admin_user', JSON.stringify(userData));
+    localStorage.setItem('admin_token', authToken);
   };
 
   return (
@@ -79,7 +101,6 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 自定义 Hook，方便在 Admin 组件中调用
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
   if (context === undefined) {

@@ -5,54 +5,51 @@ using MedicalSystem.Models;
 
 namespace MedicalSystem.Data
 {
-    // 继承 IdentityDbContext 并指定我们自定义的 User 类
-    public class AppDbContext : IdentityDbContext<User>
+    public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Doctor> Doctors { get; set; } = null!;
         public DbSet<Gender> Genders { get; set; } = null!;
 
+        // 自动更新时间戳逻辑
+        public override Task<int> SaveChangesAsync(CancellationToken ct = default)
+        {
+            var entries = ChangeTracker.Entries<User>()
+                .Where(e => e.State == EntityState.Modified);
+
+            foreach (var entry in entries)
+            {
+                entry.Entity.UpdatedAt = DateTime.Now;
+            }
+            return base.SaveChangesAsync(ct);
+        }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            // 必须首先调用基类方法，以加载 Identity 默认配置
             base.OnModelCreating(builder);
 
-            // ============================================================
-            // 1. 重命名 Identity 默认表名（让数据库看起来更专业、直观）
-            // ============================================================
-            builder.Entity<User>().ToTable("Users"); // 修改 aspnetusers -> Users
-            builder.Entity<IdentityRole>().ToTable("Roles"); // 修改 aspnetroles -> Roles
-            builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
-            builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
-            builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
-            builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
-            builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
+            // 配置 Users 表及其列名映射
+            builder.Entity<User>(entity =>
+            {
+                entity.ToTable("Users");
+                // 强制将内置 Email 字段在数据库中显示为 Email (首字母大写)
+                entity.Property(u => u.Email).HasColumnName("Email");
+                // 确保 PasswordHash 等字段依然存在但不影响你要求的 Header 显示
+            });
 
-            // ============================================================
-            // 2. 配置 User 与 Doctor 的 [1对1] 强关联
-            // ============================================================
-            builder.Entity<User>()
-                .HasOne(u => u.DoctorProfile)
-                .WithOne(d => d.User)
-                .HasForeignKey<Doctor>(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade); // 账号删除，档案随之删除
+            // 简化其他 Identity 表名
+            builder.Entity<IdentityRole<int>>().ToTable("Roles");
+            builder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
+            builder.Entity<IdentityUserClaim<int>>().ToTable("UserClaims");
+            builder.Entity<IdentityUserLogin<int>>().ToTable("UserLogins");
+            builder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
+            builder.Entity<IdentityUserToken<int>>().ToTable("UserTokens");
 
-            // ============================================================
-            // 3. 字段属性细化配置 (Validation)
-            // ============================================================
-            // 确保角色在数据库中以整数形式存储（性能最高）
-            builder.Entity<User>()
-                .Property(u => u.Role)
-                .IsRequired();
-
-            // ============================================================
-            // 4. 初始化种子数据 (Seeding)
-            // ============================================================
+            // 初始化种子数据
             builder.Entity<Gender>().HasData(
                 new Gender { Id = 1, Name = "男", IsActive = true },
-                new Gender { Id = 2, Name = "女", IsActive = true },
-                new Gender { Id = 3, Name = "其他", IsActive = true }
+                new Gender { Id = 2, Name = "女", IsActive = true }
             );
         }
     }

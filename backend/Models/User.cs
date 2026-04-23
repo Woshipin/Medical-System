@@ -5,30 +5,54 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MedicalSystem.Models
 {
     /// <summary>
-    /// 系统核心用户类，继承自 IdentityUser 处理登录认证
+    /// 用户角色定义
     /// </summary>
-    public class User : IdentityUser
+    public enum UserRole { SuperAdmin = 0, Admin = 1, Doctor = 2, Patient = 3 }
+
+    /// <summary>
+    /// 系统核心用户类。主键 ID 为自增数字。
+    /// </summary>
+    public class User : IdentityUser<int> 
     {
+        // 1. 映射为 Full_Name
         [Required(ErrorMessage = "真实姓名是必填项")]
-        [PersonalData] // 标记为个人敏感数据，符合合规标准
-        [StringLength(100, ErrorMessage = "姓名长度不能超过100个字符")]
+        [StringLength(100)]
+        [Column("Full_Name")] 
         public string FullName { get; set; } = null!;
 
-        [Required(ErrorMessage = "请选择性别")]
+        // 2. Email (Identity 默认字段，将在 DbContext 中映射)
+
+        // 3. 映射为 Phone_Number
+        [Column("Phone_Number")]
+        public override string? PhoneNumber { get; set; }
+
+        // 4. 映射为 Gender (存储性别ID)
+        [Required]
+        [Column("Gender")]
         public int GenderId { get; set; }
         
         [ForeignKey("GenderId")]
         public virtual Gender? Gender { get; set; }
 
+        // 5. 映射为 Role
         [Required]
-        public UserRole Role { get; set; } // 0=SuperAdmin, 1=Admin, 2=Doctor, 3=Patient
+        [Column("Role")]
+        public UserRole Role { get; set; } 
 
-        public bool IsActive { get; set; } = true; // 账号状态：true=正常, false=禁用
+        // 6. 映射为 Status (表示账号激活状态)
+        [Column("Status")]
+        public bool IsActive { get; set; } = true; 
 
+        // 7. 映射为 Created_at
         [Required]
+        [Column("Created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // 导航属性：关联到医生详情（如果该用户是医生）
+        // 8. 映射为 Updated_at
+        [Required]
+        [Column("Updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
         public virtual Doctor? DoctorProfile { get; set; }
     }
 }

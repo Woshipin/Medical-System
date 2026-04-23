@@ -21,18 +21,25 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJS", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // 允许前端地址
-              .AllowAnyHeader()                   // 允许任何请求头
-              .AllowAnyMethod();                  // 允许任何方法 (GET, POST等)
+        policy.WithOrigins("http://localhost:3000") 
+              .AllowAnyHeader()                   
+              .AllowAnyMethod();                  
     });
 });
 
 // 4. 注册 Identity 身份认证系统
-builder.Services.AddIdentity<User, IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+// 【关键修改】：显式指定 IdentityRole 使用 int 类型主键
+builder.Services.AddIdentity<User, IdentityRole<int>>(options => {
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
 
-// 5. 配置 JWT 认证（必须与 appsettings.json 中的设置一致）
+// 5. 配置 JWT 认证
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
@@ -45,13 +52,13 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true,                // 验证签发者
-        ValidateAudience = true,              // 验证接收者
-        ValidateLifetime = true,              // 验证过期时间
-        ValidateIssuerSigningKey = true,      // 验证密钥
-        ValidIssuer = jwtSettings["Issuer"],  // 对应的签发者
-        ValidAudience = jwtSettings["Audience"], // 对应的接收者
-        IssuerSigningKey = new SymmetricSecurityKey(key) // 设置密钥
+        ValidateIssuer = true,                
+        ValidateAudience = true,              
+        ValidateLifetime = true,              
+        ValidateIssuerSigningKey = true,      
+        ValidIssuer = jwtSettings["Issuer"],  
+        ValidAudience = jwtSettings["Audience"], 
+        IssuerSigningKey = new SymmetricSecurityKey(key) 
     };
 });
 
@@ -61,7 +68,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 6. 处理数据重置逻辑 (--reset-data)
+// 6. 处理数据重置逻辑
 if (args.Contains("--reset-data"))
 {
     using (var scope = app.Services.CreateScope())
@@ -87,19 +94,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// --- 注意：中间件的顺序非常重要 ---
-
-// 启用跨域策略 (必须在 Authentication 之前)
 app.UseCors("AllowNextJS");
-
 app.UseHttpsRedirection();
-
-// 启用身份验证 (识别 Token)
 app.UseAuthentication(); 
-
-// 启用权限管理
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
