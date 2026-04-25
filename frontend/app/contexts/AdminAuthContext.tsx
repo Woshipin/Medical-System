@@ -33,7 +33,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname(); // 监听当前路由路径
 
   const logout = useCallback(() => {
     setUser(null);
@@ -43,6 +43,9 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/admin/login');
   }, [router]);
 
+  // ==========================================
+  // 1. 初始化时加载本地存储
+  // ==========================================
   useEffect(() => {
     const storedToken = localStorage.getItem('admin_token');
     const storedUser = localStorage.getItem('admin_user');
@@ -52,30 +55,57 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
       } catch (e) {
-        localStorage.removeItem('admin_user');
-        localStorage.removeItem('admin_token');
+        logout();
       }
     }
     setIsInitialized(true);
-  }, []);
+  }, [logout]); 
 
   // ==========================================
-  // 核心修复：全局 Fetch 拦截器 (解决数据库清空后依然保留登录状态的问题)
-  // 如果后端返回 401 (Unauthorized)，说明查无此人或Token失效，强制登出
+  // 2. 【核心修复】：监听路由变化！每次点击菜单切换页面，都去后台查一次岗
+  // ==========================================
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      const storedToken = localStorage.getItem('admin_token');
+      // 如果没有 token，或者当前在登录/注册页，不需要查岗
+      if (!storedToken || pathname.includes('/login') || pathname.includes('/register')) return;
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api';
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/me`, { 
+          headers: { 'Authorization': `Bearer ${storedToken}` }
+        });
+        
+        // 如果后端发现数据库里没这个人了，会返回 401
+        if (res.status === 401) {
+          console.warn("账号已被删除，强制踢出系统");
+          logout();
+        }
+      } catch (e) {
+        // 网络错误忽略
+      }
+    };
+
+    // 只要 pathname (路由) 发生变化，就会执行这个函数
+    checkUserStatus();
+  }, [pathname, logout]); 
+
+  // ==========================================
+  // 3. 全局 Fetch 拦截器 (拦截你在页面里点的各种按钮请求)
   // ==========================================
   useEffect(() => {
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
       const response = await originalFetch(...args);
-      // 如果收到 401 且当前不在登录页，立刻清除数据并踢回登录页
       if (response.status === 401 && !pathname.includes('/login')) {
-        console.warn("Session invalid or user deleted from DB. Force logout.");
+        console.warn("API请求被拒绝，Token失效，强制登出");
         logout();
       }
       return response;
     };
     return () => {
-      window.fetch = originalFetch; // 组件卸载时恢复原状
+      window.fetch = originalFetch; 
     };
   }, [logout, pathname]);
 

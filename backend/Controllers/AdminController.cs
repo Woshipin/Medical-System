@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization; // 【新增】需要引入此命名空间使用 [Authorize]
 
 namespace MedicalSystem.Controllers
 {
@@ -13,7 +14,7 @@ namespace MedicalSystem.Controllers
     public class AdminController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly IConfiguration _configuration; // 引入配置用于读取 JWT Secret
+        private readonly IConfiguration _configuration;
 
         public AdminController(UserManager<User> userManager, IConfiguration configuration)
         {
@@ -47,23 +48,19 @@ namespace MedicalSystem.Controllers
             return BadRequest(ApiResponse<List<string>>.FailureResponse("创建失败", result.Errors.Select(e => e.Description).ToList()));
         }
 
-        // 2. 后台人员登录 (新增的 Login 接口)
+        // 2. 后台人员登录
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AdminLoginDto model)
         {
-            // 查找用户并验证密码
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
                 return Unauthorized(ApiResponse<string>.FailureResponse("账号或密码错误"));
 
-            // 权限拦截：普通病人不能登录后台系统
             if (user.Role == UserRole.Patient)
                 return Unauthorized(ApiResponse<string>.FailureResponse("无权访问后台系统，请使用患者通道登录"));
 
-            // 账号验证通过，生成 JWT Token
             var token = GenerateJwtToken(user);
 
-            // 返回标准数据结构，精准适配前端
             return Ok(ApiResponse<object>.SuccessResponse(new { 
                 token = token, 
                 user = new { 
@@ -73,6 +70,15 @@ namespace MedicalSystem.Controllers
                     role = user.Role.ToString().ToLower()
                 } 
             }, "登录成功"));
+        }
+
+        // 3. 【关键新增】：探测接口，判断当前 Token/账号 是否在数据库中有效
+        [HttpGet("me")]
+        [Authorize] // 必须带有 Token，并且经过 Program.cs 中查库验证后才能进入这里
+        public IActionResult GetCurrentUser()
+        {
+            // 如果能执行到这里，说明账号在数据库里还活着
+            return Ok(ApiResponse<string>.SuccessResponse(null, "账号状态正常"));
         }
 
         // 辅助方法：生成 JWT Token
@@ -94,7 +100,6 @@ namespace MedicalSystem.Controllers
         }
     }
 
-    // DTO: 接收前端注册数据
     public class AdminRegisterDto {
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
@@ -103,7 +108,6 @@ namespace MedicalSystem.Controllers
         public string Role { get; set; } = null!; 
     }
 
-    // DTO: 接收前端登录数据 (新增)
     public class AdminLoginDto { 
         public string Email { get; set; } = null!; 
         public string Password { get; set; } = null!; 

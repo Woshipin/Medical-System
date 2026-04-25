@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt; 
+using System.Security.Claims; // 【关键修复】：加上这行，解决 ClaimTypes 找不到的报错
 
 var builder = WebApplication.CreateBuilder(args); 
 
@@ -28,7 +30,6 @@ builder.Services.AddCors(options =>
 });
 
 // 4. 注册 Identity 身份认证系统
-// 【关键修改】：显式指定 IdentityRole 使用 int 类型主键
 builder.Services.AddIdentity<User, IdentityRole<int>>(options => {
     options.Password.RequireDigit = false;
     options.Password.RequiredLength = 6;
@@ -59,6 +60,34 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],  
         ValidAudience = jwtSettings["Audience"], 
         IssuerSigningKey = new SymmetricSecurityKey(key) 
+    };
+
+    // 强制查库拦截器
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<User>>();
+            
+            // 提取 UserID
+            var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+                      ?? context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                context.Fail("Token 格式错误，找不到用户标识。");
+                return;
+            }
+
+            // 去数据库查人
+            var user = await userManager.FindByIdAsync(userId);
+
+            // 如果数据库里查不到，或者人被禁用了，直接毙掉 Token
+            if (user == null || !user.IsActive)
+            {
+                context.Fail("该账号已从数据库中删除或被禁用。");
+            }
+        }
     };
 });
 

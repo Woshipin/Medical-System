@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization; // 【新增】引入 Authorize 命名空间
 
 namespace MedicalSystem.Controllers
 {
@@ -44,7 +45,7 @@ namespace MedicalSystem.Controllers
             return BadRequest(ApiResponse<List<string>>.FailureResponse("注册失败", result.Errors.Select(e => e.Description).ToList()));
         }
 
-        // 修改后的 Login 方法
+        // Login 方法
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
@@ -57,15 +58,23 @@ namespace MedicalSystem.Controllers
 
             var token = GenerateJwtToken(user);
             
-            // --- 核心改进：确保返回的匿名对象属性名与前端一致 ---
             return Ok(ApiResponse<object>.SuccessResponse(new { 
                 token = token, 
                 user = new { 
                     id = user.Id,
                     fullName = user.FullName,
-                    email = user.Email 
+                    email = user.Email,
+                    roleValue = (int)user.Role // 顺便把 roleValue 传给前端，防止 Header 显示出错
                 } 
             }));
+        }
+
+        // 【新增】：前端探测接口，用于判断账号是否还在数据库里存活
+        [HttpGet("me")]
+        [Authorize] // 因为 Program.cs 已经写了查库拦截器，所以走到这说明人一定还在
+        public IActionResult GetCurrentUser()
+        {
+            return Ok(ApiResponse<string>.SuccessResponse(null, "账号状态正常"));
         }
 
         private string GenerateJwtToken(User user)

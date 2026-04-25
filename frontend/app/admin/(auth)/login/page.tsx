@@ -162,7 +162,7 @@ export default function AdminLoginPage() {
 
         <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-2xl border border-white/20 max-h-[85vh] overflow-y-auto custom-scrollbar">
           <div className="mb-6 text-center">
-            <h2 className="text-xl font-extrabold text-slate-800">Welcome Back</h2>
+            <h2 className="text-xl font-extrabold text-slate-800">Login Dashboard</h2>
             <p className="text-slate-500 text-xs mt-1 font-medium">Please enter your credentials</p>
           </div>
 
@@ -183,6 +183,9 @@ export default function AdminLoginPage() {
                   placeholder="admin@medicarepro.com"
                 />
               </div>
+              {hasSubmitted && !isValidEmail && (
+                <p className="text-red-500 text-xs mt-1.5 ml-1">Valid email is required.</p>
+              )}
             </div>
 
             <div className="flex flex-col group">
@@ -208,6 +211,9 @@ export default function AdminLoginPage() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {hasSubmitted && !isValidPassword && (
+                <p className="text-red-500 text-xs mt-1.5 ml-1">Password is required.</p>
+              )}
             </div>
 
             <button
