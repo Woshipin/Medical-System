@@ -34,11 +34,27 @@ const AccessDeniedAlert = () => {
 };
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // 默认设为 false，通过 useEffect 在客户端判断屏幕大小
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isAuthenticated, isInitialized } = useAdminAuth();
   const pathname = usePathname();
   
   const isPublicPath = pathname === "/admin/login" || pathname === "/admin/register";
+
+  // 监听屏幕尺寸，自适应侧边栏默认状态
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(true); // iPad 和 桌面端默认展开
+      } else {
+        setIsSidebarOpen(false); // 手机端默认收起
+      }
+    };
+    
+    handleResize(); // 初始化执行一次
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 1. 初始化中
   if (!isInitialized) {
@@ -54,18 +70,26 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // 3. 没登录，拦截（展示独立组件，组件负责2秒后跳转）
+  // 3. 没登录，拦截
   if (!isAuthenticated) {
     return <AccessDeniedAlert />;
   }
 
   // 4. 正常渲染后台主体
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    // 增加 w-full 确保占满全屏
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans relative">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      
+      {/* 核心修复：min-w-0 和 w-full 防止内部超宽元素撑爆 flex 容器 */}
+      <div className="flex-1 flex flex-col min-w-0 w-full h-screen overflow-hidden">
         <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
+        {/* 核心修复：overflow-x-hidden 防止移动端横向出现多余滚动条，内部表格自行控制横向滚动 */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-7xl">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
