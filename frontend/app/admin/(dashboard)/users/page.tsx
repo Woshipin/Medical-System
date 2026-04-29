@@ -18,6 +18,7 @@ import {
   ChevronDown,
   Lock,
 } from "lucide-react";
+import Pagination from "@/components/admin/Pagination";
 
 // ==========================================
 // Environment Variables
@@ -95,6 +96,10 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -151,6 +156,11 @@ export default function UsersPage() {
     fetchData();
   }, []);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, statusFilter, genderFilter]);
+
   const getRoleInfo = (roleInt: number) => {
     switch (roleInt) {
       case 0: return { name: "Super Admin", color: "danger" };
@@ -172,6 +182,13 @@ export default function UsersPage() {
       return matchSearch && matchRole && matchStatus && matchGender;
     });
   }, [users, searchTerm, roleFilter, statusFilter, genderFilter]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
 
   // ---------------
   // Modal Handlers
@@ -211,7 +228,7 @@ export default function UsersPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" })); // Clear error on typing
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
   };
 
   const handlePhoneBodyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,7 +237,6 @@ export default function UsersPage() {
   };
 
   const handleSave = async () => {
-    // 1. Frontend validation
     const newErrors: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$/;
@@ -377,7 +393,7 @@ export default function UsersPage() {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading user database...</div>
         ) : (
@@ -395,10 +411,10 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredUsers.length === 0 ? (
+                {paginatedUsers.length === 0 ? (
                   <tr><td colSpan={7} className="p-8 text-center text-slate-600 font-medium text-sm">No users found.</td></tr>
                 ) : (
-                  filteredUsers.map((user) => (
+                  paginatedUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 font-semibold text-slate-900 text-sm">{user.fullName}</td>
                       <td className="px-5 py-3 text-sm text-slate-700">{user.email}</td>
@@ -419,6 +435,17 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+        )}
+        
+        {/* Pagination Controls */}
+        {!isLoading && filteredUsers.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredUsers.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
 

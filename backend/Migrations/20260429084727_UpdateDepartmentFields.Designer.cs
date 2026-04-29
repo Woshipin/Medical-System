@@ -4,6 +4,7 @@ using MedicalSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429084727_UpdateDepartmentFields")]
+    partial class UpdateDepartmentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,92 +47,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Departments");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            IsActive = true,
-                            Location = "Block A, Level 1",
-                            Name = "Emergency Department (ER)"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            IsActive = true,
-                            Location = "Block B, Level 3",
-                            Name = "Cardiology"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            IsActive = true,
-                            Location = "Block B, Level 4",
-                            Name = "Neurology"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            IsActive = true,
-                            Location = "Block C, Level 2",
-                            Name = "Pediatrics"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            IsActive = true,
-                            Location = "Block D, Level 1",
-                            Name = "Oncology"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            IsActive = true,
-                            Location = "Block A, Level 2",
-                            Name = "Orthopedics"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            IsActive = true,
-                            Location = "Block A, Level 3",
-                            Name = "General Surgery"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            IsActive = true,
-                            Location = "Block A, Level 4",
-                            Name = "Intensive Care Unit (ICU)"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            IsActive = true,
-                            Location = "Block C, Basement 1",
-                            Name = "Radiology & Imaging"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            IsActive = true,
-                            Location = "Block A, Level 1",
-                            Name = "Pharmacy"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            IsActive = true,
-                            Location = "Block C, Level 3",
-                            Name = "Obstetrics and Gynecology"
-                        },
-                        new
-                        {
-                            Id = 12,
-                            IsActive = false,
-                            Location = "Block B, Level 1",
-                            Name = "Dental Clinic"
-                        });
                 });
 
             modelBuilder.Entity("MedicalSystem.Models.Doctor", b =>

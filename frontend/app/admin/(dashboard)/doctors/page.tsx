@@ -4,6 +4,7 @@ import {
   Search, Filter, Plus, Edit, Trash2, X, AlertTriangle, Eye, User,
   Mail, Phone, Shield, CheckCircle2, ChevronDown, Stethoscope, Briefcase, Calendar, MapPin, Award, Lock, EyeOff
 } from "lucide-react";
+import Pagination from "@/components/admin/Pagination";
 
 // ==========================================
 // 环境变量与接口定义
@@ -68,12 +69,17 @@ export default function DoctorsPage() {
   // 数据状态
   const [doctors, setDoctors] = useState<SystemDoctor[]>([]);
   const [genderOptions, setGenderOptions] = useState<DropdownOption[]>([]);
+  const [activeDepartments, setActiveDepartments] = useState<DropdownOption[]>([]); // 存储活跃的部门供表单使用
   const [isLoading, setIsLoading] = useState(true);
 
   // 筛选状态
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Pagination 状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Modal 状态
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,7 +102,7 @@ export default function DoctorsPage() {
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ show: true, type, message });
-    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000); // 错误提示延长至4秒方便阅读
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000); 
   };
 
   const getAuthHeaders = () => {
@@ -107,9 +113,10 @@ export default function DoctorsPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [doctorsRes, gendersRes] = await Promise.all([
+      const [doctorsRes, gendersRes, deptsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/doctors`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE_URL}/genders`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/Department`, { headers: getAuthHeaders() }), // 拉取部门数据
       ]);
 
       if (doctorsRes.ok) {
@@ -120,6 +127,14 @@ export default function DoctorsPage() {
         const json = await gendersRes.json();
         setGenderOptions((json.data || []).map((g: any) => ({ value: g.id, label: g.name })));
       }
+      if (deptsRes.ok) {
+        const deptsJson = await deptsRes.json();
+        // 过滤出 Active 的 Department 并映射给表单使用 (value 使用 name，因为原有 doctor 数据存储的是字符串 name)
+        const activeDepts = deptsJson
+          .filter((d: any) => d.isActive === true)
+          .map((d: any) => ({ value: d.name, label: d.name }));
+        setActiveDepartments(activeDepts);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       showToast("error", "Failed to load doctor database.");
@@ -129,6 +144,11 @@ export default function DoctorsPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  // 重置分页状态
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, departmentFilter, statusFilter]);
 
   const departmentOptions = useMemo(() => {
     const deps = new Set(doctors.map(d => d.department));
@@ -146,6 +166,13 @@ export default function DoctorsPage() {
       return matchSearch && matchDept && matchStatus;
     });
   }, [doctors, searchTerm, departmentFilter, statusFilter]);
+
+  // Pagination 计算逻辑
+  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
+  const paginatedDoctors = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDoctors.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDoctors, currentPage, itemsPerPage]);
 
   // ---------------
   // Modal 处理
@@ -245,7 +272,7 @@ export default function DoctorsPage() {
     const newErrors: Record<string, string> = {};
     
     if (!formData.licenseNumber.trim()) newErrors.licenseNumber = "License number is required.";
-    if (!formData.department.trim()) newErrors.department = "Department is required.";
+    if (!formData.department?.trim()) newErrors.department = "Department is required.";
     if (!formData.specialty.trim()) newErrors.specialty = "Specialty is required.";
     if (!formData.title.trim()) newErrors.title = "Professional title is required.";
     if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
@@ -404,7 +431,7 @@ export default function DoctorsPage() {
       </div>
 
       {/* Table Data */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading doctor database...</div>
         ) : (
@@ -424,10 +451,10 @@ export default function DoctorsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredDoctors.length === 0 ? (
+                {paginatedDoctors.length === 0 ? (
                   <tr><td colSpan={9} className="p-8 text-center text-slate-600 font-medium text-sm">No doctors found.</td></tr>
                 ) : (
-                  filteredDoctors.map((doc) => (
+                  paginatedDoctors.map((doc) => (
                     <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3 text-sm font-semibold text-slate-900">{doc.user.fullName}</td>
                       <td className="px-5 py-3 text-sm text-slate-700">{doc.user.email}</td>
@@ -454,6 +481,17 @@ export default function DoctorsPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!isLoading && filteredDoctors.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredDoctors.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
 
@@ -628,15 +666,27 @@ export default function DoctorsPage() {
                       />
                       {errors.licenseNumber && <p className="text-red-500 text-[11px] mt-1.5">{errors.licenseNumber}</p>}
                     </div>
+
+                    {/* Department Dropdown (Modified) */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Department</label>
-                      <input 
-                        type="text" name="department" value={formData.department} onChange={handleInputChange} 
-                        className={`w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${errors.department ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"}`} 
-                        placeholder="e.g. Cardiology" 
-                      />
+                      <div className="relative">
+                        <select 
+                          name="department" 
+                          value={formData.department} 
+                          onChange={handleInputChange} 
+                          className={`appearance-none w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border cursor-pointer ${errors.department ? "bg-red-50 border-red-300 text-red-500 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500"}`}
+                        >
+                          <option value="" disabled>Select Department</option>
+                          {activeDepartments.map(dep => (
+                            <option key={dep.value as string} value={dep.value as string}>{dep.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${errors.department ? 'text-red-400' : 'text-slate-400'}`} />
+                      </div>
                       {errors.department && <p className="text-red-500 text-[11px] mt-1.5">{errors.department}</p>}
                     </div>
+
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Specialty</label>
                       <input 
