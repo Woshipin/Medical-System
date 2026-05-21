@@ -23,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+    { id: 'activity_log', label: 'Activity Log', icon: ShieldCheck, href: '/admin/activity-log' },
     { id: 'users', label: 'System Users', icon: ShieldCheck, href: '/admin/users' },
     { id: 'doctors', label: 'Doctors', icon: Stethoscope, href: '/admin/doctors' },
     { id: 'services', label: 'Services', icon: Activity, href: '/admin/services' },

@@ -1,5 +1,5 @@
-"use client";
-import React, { useState, useEffect, useMemo } from "react";
+"use client"; // 声明该组件为 Next.js 客户端组件
+import React, { useState, useEffect, useMemo } from "react"; // 引入 React 核心 hooks
 import {
   Search,
   Filter,
@@ -17,49 +17,49 @@ import {
   CheckCircle2,
   ChevronDown,
   Lock,
-} from "lucide-react";
-import Pagination from "@/components/admin/Pagination";
+} from "lucide-react"; // 引入 Lucide 图标库中的系统图标
+import Pagination from "@/components/admin/Pagination"; // 引入封装的分页组件
 
 // ==========================================
 // Environment Variables
 // ==========================================
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL; // 读取配置文件的 API 接口基准路径
 
-interface SystemUser {
-  id: number | string;
-  fullName: string;
-  email: string;
-  phoneNumber: string | null;
-  genderId: number;
-  gender?: { id: number; name: string };
-  role: number;
-  isActive: boolean;
-  createdAt: string;
+interface SystemUser { // 定义系统用户实体的数据结构接口
+  id: number | string; // 用户主键 ID
+  fullName: string; // 用户姓名
+  email: string; // 电子邮箱
+  phoneNumber: string | null; // 电话号码，可为空
+  genderId: number; // 性别 ID
+  gender?: { id: number; name: string }; // 关联的外键性别对象
+  role: number; // 角色整型值
+  isActive: boolean; // 是否处于激活状态
+  createdAt: string; // 创建时间
 }
 
-interface DropdownOption {
-  value: number | string | boolean;
-  label: string;
+interface DropdownOption { // 定义通用下拉框可选项的接口
+  value: number | string | boolean; // 可选项的实际值
+  label: string; // 下拉框中渲染的文字标签
 }
 
 // -----------------
 // UI Helper Component (Badge)
 // -----------------
-const Badge = ({
-  children,
-  variant,
+const Badge = ({ // 声明小徽章通用组件
+  children, // 内部嵌套的子节点
+  variant, // 徽章的配色主题变体
 }: {
   children: React.ReactNode;
   variant: "success" | "danger" | "info" | "warning" | "secondary";
 }) => {
-  const colors = {
-    success: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    danger: "bg-red-100 text-red-800 border-red-200",
-    info: "bg-blue-100 text-blue-800 border-blue-200",
-    warning: "bg-amber-100 text-amber-800 border-amber-200",
-    secondary: "bg-slate-100 text-slate-800 border-slate-200",
+  const colors = { // 各配色主题对应的 Tailwind 样式类
+    success: "bg-emerald-100 text-emerald-800 border-emerald-200", // 绿色主题
+    danger: "bg-red-100 text-red-800 border-red-200", // 红色主题
+    info: "bg-blue-100 text-blue-800 border-blue-200", // 蓝色主题
+    warning: "bg-amber-100 text-amber-800 border-amber-200", // 黄色主题
+    secondary: "bg-slate-100 text-slate-800 border-slate-200", // 灰色主题
   };
-  return (
+  return ( // 渲染徽章样式标签
     <span className={`px-2 py-0.5 rounded-md text-xs font-bold border ${colors[variant]}`}>
       {children}
     </span>
@@ -69,9 +69,9 @@ const Badge = ({
 // -----------------
 // Toast Notification Component
 // -----------------
-const Toast = ({ show, message, type, onClose }: { show: boolean, message: string, type: 'success' | 'error', onClose: () => void }) => {
-  if (!show) return null;
-  return (
+const Toast = ({ show, message, type, onClose }: { show: boolean, message: string, type: 'success' | 'error', onClose: () => void }) => { // 声明全局弱提示弹窗组件
+  if (!show) return null; // 如果不处于显示状态则不渲染任何 DOM
+  return ( // 渲染提示框
     <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none p-4">
       <div className={`pointer-events-auto w-[90%] md:w-[50%] flex items-center justify-between gap-3 px-6 py-4 rounded-xl shadow-2xl border animate-in zoom-in-95 fade-in duration-300 ${type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
         <div className="flex items-center gap-3">
@@ -84,256 +84,262 @@ const Toast = ({ show, message, type, onClose }: { show: boolean, message: strin
   );
 };
 
-export default function UsersPage() {
+export default function UsersPage() { // 导出用户管理主页面组件
   // Data states
-  const [users, setUsers] = useState<SystemUser[]>([]);
-  const [genderOptions, setGenderOptions] = useState<DropdownOption[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<SystemUser[]>([]); // 初始化系统用户列表数据
+  const [genderOptions, setGenderOptions] = useState<DropdownOption[]>([]); // 初始化性别下拉选项数据
+  const [isLoading, setIsLoading] = useState(true); // 声明加载等待状态，默认为启用
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [genderFilter, setGenderFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState(""); // 搜索栏文本输入状态
+  const [roleFilter, setRoleFilter] = useState("all"); // 角色过滤下拉状态
+  const [statusFilter, setStatusFilter] = useState("all"); // 激活状态过滤状态
+  const [genderFilter, setGenderFilter] = useState("all"); // 性别过滤下拉状态
 
   // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1); // 初始化当前分页码为 1
+  const itemsPerPage = 10; // 单页呈现的数据行限制
 
   // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [isModalOpen, setIsModalOpen] = useState(false); // 控制新增/修改表单弹窗展开状态
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // 控制详情查看弹窗展开状态
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create"); // 标记表单弹窗处于新增(create)还是编辑(edit)状态
 
   // Form and validation states
-  const [formData, setFormData] = useState<any>({});
-  const [phoneCode, setPhoneCode] = useState("+65");
-  const [phoneBody, setPhoneBody] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState<any>({}); // 存放表单输入实体数据
+  const [phoneCode, setPhoneCode] = useState("+65"); // 存储电话号码国家区号代码，默认新加坡 +65
+  const [phoneBody, setPhoneBody] = useState(""); // 存储电话号码纯正文数字
+  const [errors, setErrors] = useState<Record<string, string>>({}); // 存放表单校验失败的错误字典
+  const [showPassword, setShowPassword] = useState(false); // 控制密码框是否明文可见的布尔值
 
   // Delete and notification states
-  const [viewData, setViewData] = useState<SystemUser | null>(null);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<number | string | null>(null);
-  const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
+  const [viewData, setViewData] = useState<SystemUser | null>(null); // 保存查看详情模态框当前加载的单条实体数据
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false); // 删除确认红色弹窗状态
+  const [userToDelete, setUserToDelete] = useState<number | string | null>(null); // 存储当前等待被删除的用户的 ID
+  const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" }); // 全局 Toast 提示状态
 
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ show: true, type, message });
-    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000);
+  const showToast = (type: 'success' | 'error', message: string) => { // 声明触发弱提示方法
+    setToast({ show: true, type, message }); // 开启弹窗并填充内容
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000); // 4秒后自动销毁提示
   };
 
-  const getAuthHeaders = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
-    return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+  const getAuthHeaders = () => { // 获取当前携带 Token 的统一 HTTP 报头方法
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : ""; // 安全获取 LocalStorage 中的 Token
+    return { "Content-Type": "application/json", Authorization: `Bearer ${token}` }; // 组装 Headers
   };
 
-  const fetchData = async () => {
+  const fetchData = async () => { // 异步获取后台所有基础数据的方法
     try {
-      setIsLoading(true);
-      const [usersRes, gendersRes] = await Promise.all([
+      setIsLoading(true); // 打开加载等待中蒙层
+      const [usersRes, gendersRes] = await Promise.all([ // 合并同时向后端拉取用户列表和性别字典数据
         fetch(`${API_BASE_URL}/user`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE_URL}/genders`, { headers: getAuthHeaders() }),
       ]);
 
-      if (usersRes.ok) {
-        const json = await usersRes.json();
-        setUsers(json.data || []);
+      if (usersRes.ok) { // 用户列表获取成功
+        const json = await usersRes.json(); // 解析数据
+        setUsers(json.data || []); // 注入用户状态
       }
-      if (gendersRes.ok) {
-        const json = await gendersRes.json();
-        setGenderOptions((json.data || []).map((g: any) => ({ value: g.id, label: g.name })));
+      if (gendersRes.ok) { // 性别字典拉取成功
+        const json = await gendersRes.json(); // 解析数据
+        setGenderOptions((json.data || []).map((g: any) => ({ value: g.id, label: g.name }))); // 映射转为下拉框所需 DTO 格式并注入状态
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      showToast("error", "Failed to load user database.");
+    } catch (error) { // 捕获请求异常
+      console.error("Error fetching data:", error); // 控制台记录
+      showToast("error", "Failed to load user database."); // 触发错误提示
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // 关闭加载蒙层
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { // 首次加载执行初始化拉取
+    fetchData(); // 呼叫拉取
+  }, []); // 依赖项为空
 
   // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, roleFilter, statusFilter, genderFilter]);
+  useEffect(() => { // 监听任意过滤器项发生变动
+    setCurrentPage(1); // 只要过滤器改变，强制重置分页回第 1 页
+  }, [searchTerm, roleFilter, statusFilter, genderFilter]); // 监听过滤器依赖
 
-  const getRoleInfo = (roleInt: number) => {
+  const getRoleInfo = (roleInt: number) => { // 解析数字角色对应的前端徽章样式名称和配色的辅助函数
     switch (roleInt) {
-      case 0: return { name: "Super Admin", color: "danger" };
-      case 1: return { name: "Admin", color: "info" };
-      case 3: return { name: "Patient", color: "success" };
-      default: return { name: "Unknown", color: "secondary" };
+      case 0: return { name: "Super Admin", color: "danger" }; // 红色超级管理员
+      case 1: return { name: "Admin", color: "info" }; // 蓝色普通管理员
+      case 3: return { name: "Patient", color: "success" }; // 绿色患者
+      default: return { name: "Unknown", color: "secondary" }; // 灰色未知
     }
   };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchSearch =
+  const filteredUsers = useMemo(() => { // 纯前端客户端检索的核心高性能过滤计算属性
+    return users.filter((user) => { // 对内存中的全部数据行执行遍历过滤
+      const matchSearch = // 搜索框匹配：姓名、邮箱或电话
         user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.phoneNumber?.includes(searchTerm);
-      const matchRole = roleFilter === "all" || user.role.toString() === roleFilter;
-      const matchStatus = statusFilter === "all" || user.isActive.toString() === statusFilter;
-      const matchGender = genderFilter === "all" || user.genderId.toString() === genderFilter;
-      return matchSearch && matchRole && matchStatus && matchGender;
+      const matchRole = roleFilter === "all" || user.role.toString() === roleFilter; // 角色下拉过滤
+      const matchStatus = statusFilter === "all" || user.isActive.toString() === statusFilter; // 状态下拉过滤
+      const matchGender = genderFilter === "all" || user.genderId.toString() === genderFilter; // 性别下拉过滤
+      return matchSearch && matchRole && matchStatus && matchGender; // 返回复合交集结果
     });
-  }, [users, searchTerm, roleFilter, statusFilter, genderFilter]);
+  }, [users, searchTerm, roleFilter, statusFilter, genderFilter]); // 监听依赖项计算
 
   // Pagination Logic
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredUsers, currentPage, itemsPerPage]);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage); // 依据过滤后的数据集大小计算总页数
+  const paginatedUsers = useMemo(() => { // 截取单页展现数据集的计算属性
+    const startIndex = (currentPage - 1) * itemsPerPage; // 计算偏移起始量
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage); // 截取指定行数
+  }, [filteredUsers, currentPage, itemsPerPage]); // 监听依赖项
 
   // ---------------
   // Modal Handlers
   // ---------------
-  const openCreateModal = () => {
-    setModalMode("create");
-    setErrors({});
-    setShowPassword(false);
-    setFormData({
+  const openCreateModal = () => { // 开启新增弹窗的方法
+    setModalMode("create"); // 设置模式为 create（创建）
+    setErrors({}); // 清空错误残留
+    setShowPassword(false); // 密码框强制复原为隐藏
+    setFormData({ // 初始化填充表单属性
       fullName: "", email: "", password: "", genderId: genderOptions.length > 0 ? genderOptions[0].value : "", 
       role: 3, isActive: true,
     });
-    setPhoneCode("+65");
-    setPhoneBody("");
-    setIsModalOpen(true);
+    setPhoneCode("+65"); // 默认新加坡区号
+    setPhoneBody(""); // 电话为空
+    setIsModalOpen(true); // 展开弹窗
   };
 
-  const openEditModal = (user: SystemUser) => {
-    setModalMode("edit");
-    setErrors({});
-    setShowPassword(false);
-    setFormData({
+  const openEditModal = (user: SystemUser) => { // 开启编辑修改弹窗的方法
+    setModalMode("edit"); // 设置模式为 edit（修改）
+    setErrors({}); // 清空校验字典
+    setShowPassword(false); // 隐藏密码
+    setFormData({ // 深度填充选中数据行的已有数据
       id: user.id, fullName: user.fullName, email: user.email, password: "", 
       genderId: user.genderId, role: user.role, isActive: user.isActive,
     });
 
-    if (user.phoneNumber?.startsWith("+60")) {
-      setPhoneCode("+60");
-      setPhoneBody(user.phoneNumber.replace("+60", ""));
-    } else {
-      setPhoneCode("+65");
-      setPhoneBody((user.phoneNumber || "").replace("+65", ""));
+    if (user.phoneNumber?.startsWith("+60")) { // 拆分区号和电话正文：如果是马来西亚
+      setPhoneCode("+60"); // 设置区号为 +60
+      setPhoneBody(user.phoneNumber.replace("+60", "")); // 替换剥离出电话号码正文
+    } else { // 否则默认按照新加坡
+      setPhoneCode("+65"); // 设置区号 +65
+      setPhoneBody((user.phoneNumber || "").replace("+65", "")); // 剥离正文
     }
-    setIsModalOpen(true);
+    setIsModalOpen(true); // 展开弹窗
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { // 统一处理表单控件值改变的通用事件方法
+    const { name, value } = e.target; // 解构获取元素名称和值
+    setFormData((prev: any) => ({ ...prev, [name]: value })); // 深度同步更新数据状态
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" })); // 如果该字段原先存留校验错误，抹除错误提示
   };
 
-  const handlePhoneBodyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhoneBody(e.target.value.replace(/\D/g, ""));
-    if (errors.phone) setErrors(prev => ({ ...prev, phone: "" }));
+  const handlePhoneBodyChange = (e: React.ChangeEvent<HTMLInputElement>) => { // 专门限制电话文本框只能写入数字的输入监控事件
+    setPhoneBody(e.target.value.replace(/\D/g, "")); // 正则强制截断并移除非数字字符
+    if (errors.phone) setErrors(prev => ({ ...prev, phone: "" })); // 抹除电话验证错误
   };
 
-  const handleSave = async () => {
-    const newErrors: Record<string, string> = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$/;
+  const handleSave = async () => { // 表单提交保存（创建和修改）的核心业务处理异步方法
+    const newErrors: Record<string, string> = {}; // 声明局部临时错误词典
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // 邮箱格式正则
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$/; // 密码强度正则（最少6位，包含字母和数字）
 
-    if (!formData.fullName.trim()) newErrors.fullName = "Please enter full name.";
-    if (!formData.email.trim() || !emailRegex.test(formData.email)) newErrors.email = "Please enter a valid email address.";
+    if (!formData.fullName.trim()) newErrors.fullName = "Please enter full name."; // 校验姓名非空
+    if (!formData.email.trim() || !emailRegex.test(formData.email)) newErrors.email = "Please enter a valid email address."; // 校验邮箱非空及格式
     
-    if (modalMode === "create" && !formData.password) {
+    if (modalMode === "create" && !formData.password) { // 校验新增时密码非空
       newErrors.password = "Password is required for new users.";
-    } else if (formData.password && !passwordRegex.test(formData.password)) {
+    } else if (formData.password && !passwordRegex.test(formData.password)) { // 校验输入的密码合法强度
       newErrors.password = "Min 6 characters, including letters & numbers.";
     }
 
-    if (phoneCode === "+65" && phoneBody && phoneBody.length !== 8) {
+    if (phoneCode === "+65" && phoneBody && phoneBody.length !== 8) { // 新加坡号码限制必须等于 8 位数字
       newErrors.phone = "Singapore numbers must be exactly 8 digits.";
-    } else if (phoneCode === "+60" && phoneBody && (phoneBody.length < 9 || phoneBody.length > 10)) {
+    } else if (phoneCode === "+60" && phoneBody && (phoneBody.length < 9 || phoneBody.length > 10)) { // 马来西亚限制 9 到 10 位数字
       newErrors.phone = "Malaysia numbers must be 9 or 10 digits.";
-    } else if (!phoneBody) {
+    } else if (!phoneBody) { // 电话号码正文为空校验
       newErrors.phone = "Please enter phone number.";
     }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+    if (Object.keys(newErrors).length > 0) { // 如果临时字典中含有报错信息，说明未通过前端基本校验
+      setErrors(newErrors); // 触发页面报错显示并红框高亮
+      return; // 阻断数据提交
     }
 
     try {
-      const payload: any = {
-        ...formData,
-        phoneNumber: `${phoneCode}${phoneBody}`,
-        genderId: Number(formData.genderId),
-        role: Number(formData.role),
-        isActive: formData.isActive === "true" || formData.isActive === true,
+      const payload: any = { // 组装发送给后台的数据体载荷 DTO
+        ...formData, // 复制表单实体
+        phoneNumber: `${phoneCode}${phoneBody}`, // 拼装国家代码的电话号码正文
+        genderId: Number(formData.genderId), // 确保性别 ID 为正数
+        role: Number(formData.role), // 确保角色为数字枚举型
+        isActive: formData.isActive === "true" || formData.isActive === true, // 确保激活状态转换为标准布尔型
       };
 
-      if (modalMode === "edit" && !formData.password) {
-        delete payload.password;
+      if (modalMode === "edit" && !formData.password) { // 编辑修改模式下，如果没有输入密码，剥离该字段，不覆盖数据库密码
+        delete payload.password; // 物理删除
       }
 
+      // 动态确定 API URL 和 HTTP method：创建模式走 POST，编辑模式走 PUT并带 ID
       const url = modalMode === "create" ? `${API_BASE_URL}/user` : `${API_BASE_URL}/user/${formData.id}`;
       const method = modalMode === "create" ? "POST" : "PUT";
 
-      const res = await fetch(url, { method, headers: getAuthHeaders(), body: JSON.stringify(payload) });
+      const res = await fetch(url, { method, headers: getAuthHeaders(), body: JSON.stringify(payload) }); // 发起 fetch 调用
 
-      if (res.ok) {
-        setIsModalOpen(false);
-        showToast("success", modalMode === "create" ? "User created successfully!" : "User updated successfully!");
-        fetchData();
-      } else {
-        const errorData = await res.json();
-        const fieldErrors = errorData.errors || errorData.validationErrors;
+      if (res.ok) { // 业务执行成功
+        setIsModalOpen(false); // 关闭表单弹窗
+        showToast("success", modalMode === "create" ? "User created successfully!" : "User updated successfully!"); // 触发成功 Toast 
+        fetchData(); // 重新拉取后台最新列表并更新表格展示
+      } else { // 业务被后台拦截校验失败（如：邮箱占用）
+        const errorData = await res.json(); // 解析后端返回错误信息 JSON 包
+        const fieldErrors = errorData.errors || errorData.validationErrors; // 获取后端返回的分类字段具体不合规说明描述
         
-        if (fieldErrors && typeof fieldErrors === 'object' && Object.keys(fieldErrors).length > 0) {
-          const backendMappedErrors: Record<string, string> = {};
-          Object.keys(fieldErrors).forEach((key) => {
-            backendMappedErrors[key] = Array.isArray(fieldErrors[key]) ? fieldErrors[key][0] : fieldErrors[key];
+        if (fieldErrors && typeof fieldErrors === 'object' && Object.keys(fieldErrors).length > 0) { // 如果存在后端字段报错结构
+          const backendMappedErrors: Record<string, string> = {}; // 新建临时后端错误映射词典
+          Object.keys(fieldErrors).forEach((key) => { // 遍历不合规分类
+            backendMappedErrors[key] = Array.isArray(fieldErrors[key]) ? fieldErrors[key][0] : fieldErrors[key]; // 映射转换并赋入
           });
-          setErrors(backendMappedErrors);
-          showToast("error", errorData.message || "Please fix the highlighted errors.");
+          setErrors(backendMappedErrors); // 动态页面控件边框爆红并进行警告文字指向
+          showToast("error", errorData.message || "Please fix the highlighted errors."); // 展示弱提示
         } else {
-          showToast("error", errorData.message || "Failed to save user data.");
+          showToast("error", errorData.message || "Failed to save user data."); // 展示弱提示
         }
       }
-    } catch (err) {
-      console.error(err);
-      showToast("error", "A network error occurred. Please try again.");
+    } catch (err) { // 捕获网络错误
+      console.error(err); // 记录日志
+      showToast("error", "A network error occurred. Please try again."); // 触发网络警告提示
     }
   };
 
-  const confirmDelete = async () => {
-    if (!userToDelete) return;
+  const confirmDelete = async () => { // 确认异步彻底删除用户的方法
+    if (!userToDelete) return; // 防空
     try {
-      const res = await fetch(`${API_BASE_URL}/user/${userToDelete}`, { method: "DELETE", headers: getAuthHeaders() });
-      if (res.ok) {
-        showToast("success", "User deleted successfully.");
-        fetchData();
-      } else {
+      const res = await fetch(`${API_BASE_URL}/user/${userToDelete}`, { method: "DELETE", headers: getAuthHeaders() }); // 发送 HTTP DELETE 接口调用
+      if (res.ok) { // 删除成功
+        showToast("success", "User deleted successfully."); // 展示成功提示
+        fetchData(); // 刷新表格数据
+      } else { // 异常
         let errorMessage = "Failed to delete user.";
         try {
-          const errorData = await res.json();
-          errorMessage = errorData.message || errorMessage;
+          const errorData = await res.json(); // 提取报错
+          errorMessage = errorData.message || errorMessage; // 写入
         } catch (parseError) {
           console.error("Non-JSON error returned");
         }
-        showToast("error", errorMessage);
+        showToast("error", errorMessage); // 展示异常提示
       }
     } catch (err) {
       console.error(err);
       showToast("error", "A network error occurred while deleting.");
     } finally {
-      setIsDeleteAlertOpen(false);
-      setUserToDelete(null);
+      setIsDeleteAlertOpen(false); // 关闭确认弹窗
+      setUserToDelete(null); // 清空临时缓存
     }
   };
 
   return (
-    <div className="space-y-5 max-w-[1400px] mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
+    // ==========================================
+    // 【布局核心修改部分】:
+    // 将原有的 max-w-[1400px] 与 lg:px-8 改为桌面端(xl及以上)自适应伸展全宽：xl:max-w-full xl:px-4 2xl:px-6
+    // 这样，在平板、iPad、手机端布局依旧能保持原来的 max-w-1400 宽不发生变形，而桌面端将会无限拓宽，消除左右两边的巨大白底留空。
+    // ==========================================
+    <div className="space-y-5 max-w-[1400px] xl:max-w-full xl:px-4 2xl:px-1 mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
 
       {/* Header */}
@@ -506,7 +512,7 @@ export default function UsersPage() {
                       <ChevronDown className={`absolute right-1 w-3 h-3 pointer-events-none ${errors.phone ? 'text-red-400' : 'text-slate-400'}`} />
                     </div>
                     <div className={`w-px my-2 ${errors.phone ? 'bg-red-200' : 'bg-slate-200'}`}></div>
-                    <input type="text" value={phoneBody} onChange={handlePhoneBodyChange} maxLength={phoneCode === "+65" ? 8 : 10} className={`flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm outline-none ${errors.phone ? 'text-red-500 placeholder-red-300' : 'text-slate-900 placeholder-slate-400'}`} placeholder={phoneCode === "+65" ? "8 digits" : "9-10 digits"} />
+                    <input type="text" value={phoneBody} onChange={handlePhoneBodyChange} maxLength={phoneCode === "+65" ? 8 : 10} className={`flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm outline-none ${errors.phone ? 'text-red-500 placeholder-red-300' : 'text-slate-900 placeholder:text-slate-400'}`} placeholder={phoneCode === "+65" ? "8 digits" : "9-10 digits"} />
                   </div>
                   {errors.phone && <p className="text-red-500 text-[11px] mt-1.5">{errors.phone}</p>}
                 </div>

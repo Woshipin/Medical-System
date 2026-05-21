@@ -1,4 +1,3 @@
-// app/(auth)/register/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -19,8 +18,29 @@ import {
   AlertCircle,
   X,
   ChevronDown,
-  CheckCircle, // 新增了 CheckCircle 图标用于成功提示
+  CheckCircle,
 } from "lucide-react";
+
+// --- 辅助函数：解析注册过程中可能产生的各种复杂后端错误格式并汇总文本 ---
+const parseBackendError = (result: any): string => {
+  if (!result) return "Registration failed.";
+
+  // 1. 获取后端包含的多条错误记录（支持 errors 数组或对象的聚合）
+  const errors = result.errors || result.Errors || result.data || result.Data;
+  if (errors) {
+    if (Array.isArray(errors)) {
+      return errors.join(" | ");
+    }
+    if (typeof errors === 'object') {
+      return Object.values(errors)
+        .flatMap((err: any) => Array.isArray(err) ? err : [err])
+        .join(" | ");
+    }
+  }
+
+  // 2. 如果只有顶层单条 message
+  return result.message || result.Message || "Registration failed.";
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -132,16 +152,14 @@ export default function RegisterPage() {
       }
 
       if (response.ok && result.success) {
-        // --- 注册成功提示文字 ---
         setSuccessMsg("Registration successful! You can now log in. Redirecting...");
         setTimeout(() => {
           router.push("/login");
-        }, 1800); // 稍微延迟跳转，让用户看清楚成功消息
+        }, 1800); 
       } else {
-        const message = Array.isArray(result.data)
-          ? result.data.join(" | ")
-          : result.message || "Registration failed.";
-        setApiErrorMsg(message);
+        // 【关键改动】：使用统一错误解析器提取后端反馈的具体异常
+        const parsedError = parseBackendError(result);
+        setApiErrorMsg(parsedError);
       }
     } catch (err: any) {
       setApiErrorMsg(
@@ -156,10 +174,8 @@ export default function RegisterPage() {
   return (
     <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500 flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* --- 顶部 API 提示区 --- */}
       <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
         
-        {/* 失败提示 Alert */}
         {apiErrorMsg && (
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
             <AlertCircle className="text-red-600 mt-0.5" size={20} />
@@ -167,6 +183,7 @@ export default function RegisterPage() {
               <h4 className="font-bold text-sm text-red-700">
                 Registration Failed
               </h4>
+              {/* 【关键改动】：动态绑定经过解析提取后的后端具体业务错误 */}
               <p className="text-sm text-slate-600 mt-1">{apiErrorMsg}</p>
             </div>
             <button
@@ -178,7 +195,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* 成功提示 Alert (新增加的) */}
         {successMsg && (
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
             <CheckCircle className="text-emerald-600 mt-0.5" size={20} />
@@ -193,7 +209,6 @@ export default function RegisterPage() {
 
       </div>
 
-      {/* 背景装饰 */}
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-emerald-500/30 rounded-full mix-blend-overlay filter blur-3xl opacity-40 animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-teal-400/20 rounded-full mix-blend-overlay filter blur-3xl opacity-40 animate-pulse delay-700"></div>
 
@@ -206,7 +221,6 @@ export default function RegisterPage() {
       </Link>
 
       <div className="relative z-10 bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px] max-h-[92vh] border border-white/50">
-        {/* 左侧 */}
         <div className="hidden md:flex md:w-5/12 relative flex-col text-white bg-slate-900 overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-60"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-teal-900/90 via-emerald-900/80 to-slate-900/95"></div>
@@ -246,7 +260,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* 右侧表单 */}
         <div className="md:w-7/12 p-8 sm:p-10 lg:p-12 flex flex-col justify-center w-full bg-white overflow-y-auto custom-scrollbar">
           <div className="mb-6">
             <div className="flex items-end justify-between gap-4 mb-3">
@@ -275,7 +288,6 @@ export default function RegisterPage() {
             noValidate
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Full Name */}
               <div className="group flex flex-col">
                 <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-slate-500">
                   Full Name
@@ -310,7 +322,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Phone Number Group */}
               <div className="group flex flex-col">
                 <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-slate-500">
                   Phone Number
@@ -322,7 +333,6 @@ export default function RegisterPage() {
                       : "bg-slate-50 border-slate-200 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
                   }`}
                 >
-                  {/* 自定义国家选择下拉框 */}
                   <div className="relative" ref={countryRef}>
                     <Phone
                       className={`absolute left-3.5 top-3.5 z-10 pointer-events-none ${hasSubmitted && !isValidPhone ? "text-red-400" : "text-slate-400"}`}
@@ -349,7 +359,6 @@ export default function RegisterPage() {
                       />
                     </button>
 
-                    {/* 下拉菜单浮层 */}
                     {isCountryOpen && (
                       <div className="absolute top-full left-0 mt-2 w-36 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {[
@@ -361,7 +370,6 @@ export default function RegisterPage() {
                             onClick={() => {
                               setCountryCode(item.code);
                               setIsCountryOpen(false);
-                              // 切换国家时，如果当前号码超出新国家的限制，自动截断
                               const limit = item.code === "+65" ? 8 : 10;
                               if (formData.phone.length > limit) {
                                 handleChange(
@@ -386,16 +394,15 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  {/* 电话号码输入：添加了 maxLength 和 实时截断逻辑 */}
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, ""); // 只允许数字
-                      const limit = countryCode === "+65" ? 8 : 10; // 动态限制长度
-                      handleChange("phone", val.substring(0, limit)); // 强制截断多余数字
+                      const val = e.target.value.replace(/\D/g, ""); 
+                      const limit = countryCode === "+65" ? 8 : 10; 
+                      handleChange("phone", val.substring(0, limit)); 
                     }}
-                    maxLength={countryCode === "+65" ? 8 : 10} // 原生属性限制输入
+                    maxLength={countryCode === "+65" ? 8 : 10} 
                     placeholder={
                       countryCode === "+65" ? "8123 4567" : "12 345 6789"
                     }
@@ -422,7 +429,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Email */}
             <div className="group flex flex-col">
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-slate-500">
                 Email Address
@@ -457,7 +463,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Password */}
             <div className="group flex flex-col">
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-slate-500">
                 Password
@@ -494,7 +499,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* 按钮：永远保持启用状态 (除了正在发API请求时) */}
             <button
               type="submit"
               disabled={isLoading || successMsg !== null}
