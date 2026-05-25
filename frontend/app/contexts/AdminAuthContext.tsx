@@ -19,114 +19,134 @@ export const ADMIN_ROLE_NAMES: { [key: number]: string } = { // 声明管理员�
 
 interface AdminAuthContextType { // 声明上下文状态暴露的属性与方法接口
   user: AdminUser | null; // 当前登录的管理员用户对象，未登录则为 null
-  token: string | null; // 当前管理员的 JWT 令牌
+  token: string | null; // 兼容性保留字段（现在由 Cookie 托管，此值通常为 null 或静态占位）
   login: (userData: AdminUser, token: string) => void; // 登录成功回调方法
   logout: () => void; // 退出登录方法
   isAuthenticated: boolean; // 是否已通过身份验证的标志
-  isInitialized: boolean; // 上下文是否完成本地存储初始化读取的标志
+  isInitialized: boolean; // 上下文是否完成 Cookie 初始化状态读取的标志
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined); // 创建 React 上下文实例
 
 export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { // 导出管理员上下文提供者组件
   const [user, setUser] = useState<AdminUser | null>(null); // 初始化管理员用户状态
-  const [token, setToken] = useState<string | null>(null); // 初始化管理员 Token 状态
   const [isInitialized, setIsInitialized] = useState(false); // 初始化加载状态默认为 false
   const router = useRouter(); // 注册路由导航
   const pathname = usePathname(); // 监听当前浏览器所在的路由路径
 
-  const logout = useCallback(() => { // 声明登出方法，并使用 useCallback 保证引用地址稳定
+  // 保存原生 fetch 引用，以便在拦截器外以及注销时安全使用
+  const originalFetch = typeof window !== 'undefined' ? window.fetch : null!;
+
+  // ==========================================
+  // 【重构】：退出登录方法（异步清理 Cookie 与状态）
+  // ==========================================
+  const logout = useCallback(async () => { // 声明登出方法，并使用 useCallback 保证引用地址稳定
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 获取 API 基础地址
+    try {
+      // 1. 呼叫后端注销接口，清除 HttpOnly 安全 Cookie
+      await originalFetch(`${API_BASE_URL}/admin/logout`, {
+        method: 'POST',
+        credentials: 'include' // 允许携带凭证
+      });
+    } catch (e) {
+      // 忽略注销网络异常，防止网络波动阻塞本地状态清除
+    }
+
     setUser(null); // 清空当前内存中的用户对象
-    setToken(null); // 清空内存中的令牌
-    localStorage.removeItem('admin_user'); // 移除本地物理存储中的管理员用户信息
-    localStorage.removeItem('admin_token'); // 移除本地物理存储中的管理员 Token
+    localStorage.removeItem('admin_user'); // 清理本地残留的用户非敏感缓存
     router.push('/admin/login'); // 强制将页面引导至管理端登录页
   }, [router]); // 依赖于路由实例
 
   // ==========================================
-  // 1. 初始化时加载本地存储
+  // 【重构】：1. 初始化时自动向后端 check-auth 探查 Cookie 是否有效（支持登录页自动跳转）
   // ==========================================
   useEffect(() => {
-    const storedToken = localStorage.getItem('admin_token'); // 从本地存储加载管理员 Token
-    const storedUser = localStorage.getItem('admin_user'); // 从本地存储加载管理员用户信息
+    const initializeAuth = async () => {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 获取 API 基础地址
 
-    if (storedToken && storedUser && storedUser !== "undefined") { // 如果数据均存在且有效
       try {
-        setUser(JSON.parse(storedUser)); // 将用户 JSON 文本解析为对象并写入状态
-        setToken(storedToken); // 将 Token 写入状态
+        // 【核心修改】：去掉了对 /login 的路径拦截。当处于登录页面时，也进行免密状态探查
+        const res = await originalFetch(`${API_BASE_URL}/admin/check-auth`, {
+          method: 'GET',
+          credentials: 'include' // 强行显式加上 credentials，防止加载顺序竞争
+        });
+        
+        if (res.ok) { // 如果响应状态码为 200
+          const result = await res.json(); // 解析 JSON
+          if (result.success && result.data?.user) { // 如果后端业务表明登录态依然有效
+            setUser(result.data.user); // 自动将用户信息还原到全局状态，实现免密自动登录
+            localStorage.setItem('admin_user', JSON.stringify(result.data.user)); // 同步缓存用户信息
+          } else {
+            setUser(null); // 状态失效清空用户
+          }
+        } else {
+          setUser(null); // 状态码非 200 清空用户
+        }
       } catch (e) {
-        logout(); // 解析发生异常则自动强制执行安全登出
+        setUser(null); // 网络异常时保持未登录状态
+      } finally {
+        setIsInitialized(true); // 最终标记初始化读取完成，允许界面渲染，彻底防止登录态闪烁
       }
-    }
-    setIsInitialized(true); // 标记初始化加载已完成
+    };
+
+    initializeAuth(); // 启动验证
+  }, [pathname]); // 依赖于路径变化，在进入新页面时自动校验
+
+  // ==========================================
+  // 【核心修改】：2. 全局安全 Fetch 拦截器 (自动注入 credentials: 'include')
+  // ==========================================
+  useEffect(() => {
+    if (typeof window === 'undefined') return; // 防范 Next.js 服务端渲染环境崩溃
+
+    const rawFetch = window.fetch; // 缓存当前真实的全局 fetch 方法
+    window.fetch = async (input, init) => { // 重写 window.fetch，为全局所有网络呼叫添加安全代理
+      const requestUrl = typeof input === 'string' ? input : (input as Request).url; // 提取当前请求的目标物理 API 地址
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 提取基准 API URL
+
+      let modifiedInit = init || {}; // 初始化配置容器
+
+      // 判断如果当前请求是发往我们 C# 后端的，则强制注入 Cookie 传输凭证
+      if (requestUrl.startsWith(API_BASE_URL)) {
+        modifiedInit = {
+          ...modifiedInit,
+          credentials: 'include' // 强制让浏览器所有请求自动携带 Cookie 发往后端，无需手动编写
+        };
+      }
+
+      const response = await rawFetch(input, modifiedInit); // 执行真正的底层网络呼叫
+
+      // 当发生 401（未授权），且不是登录、注册或验证接口本身时，说明 Token 过期，自动踢出系统
+      if (response.status === 401 && 
+          !requestUrl.includes('/login') && 
+          !requestUrl.includes('/register') && 
+          !requestUrl.includes('/check-auth')) {
+        console.warn("API请求被拒绝，身份 Cookie 失效，强制登出"); // 记录安全警告
+        logout(); // 强制执行注销
+      }
+      return response; // 返回响应数据体
+    };
+
+    return () => {
+      window.fetch = rawFetch; // 卸载或重构时，安全恢复原生引用，防止指针无限嵌套导致栈溢出
+    };
   }, [logout]); 
 
   // ==========================================
-  // 2. 监听路由变化，自动向后台查岗
+  // 3. 登录成功回调方法
   // ==========================================
-  useEffect(() => {
-    const checkUserStatus = async () => {
-      const storedToken = localStorage.getItem('admin_token'); // 获取本地 Token
-      // 如果没有 token，或者当前就在登录/注册页，则不需要发起状态检查
-      if (!storedToken || pathname.includes('/login') || pathname.includes('/register')) return;
-
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 获取 API 基础地址
-      
-      try {
-        const res = await fetch(`${API_BASE_URL}/admin/me`, {  // 呼叫后台探测接口
-          headers: { 'Authorization': `Bearer ${storedToken}` } // 附带当前管理员 Token
-        });
-        
-        if (res.status === 401) { // 如果后端返回 401，说明该账号已在数据库中被停用或删除
-          console.warn("账号已被删除，强制踢出系统"); // 打印控制台警告
-          logout(); // 强制执行登出重定向
-        }
-      } catch (e) {
-        // 网络错误忽略
-      }
-    };
-
-    checkUserStatus(); // 执行状态探测
-  }, [pathname, logout]); 
-
-  // ==========================================
-  // 3. 【核心修复】：全局安全 Fetch 拦截器
-  // ==========================================
-  useEffect(() => {
-    const originalFetch = window.fetch; // 缓存系统原生的 fetch 方法引用
-    window.fetch = async (...args) => { // 开始安全重写全局 fetch 方法
-      const response = await originalFetch(...args); // 调用原生方法获取接口响应
-      
-      // 【关键改动】：提取当前请求的真实 API 接口地址，而非浏览器地址栏路径
-      const requestUrl = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
-
-      // 【关键改动】：只有当发生 401，且被请求的 API 接口本身不是登录或注册接口时，才触发强制登出
-      if (response.status === 401 && !requestUrl.includes('/login') && !requestUrl.includes('/register')) {
-        console.warn("API请求被拒绝，Token失效，强制登出"); // 打印失效警告
-        logout(); // 强制清除状态并登出
-      }
-      return response; // 正常返回请求响应体
-    };
-    return () => {
-      window.fetch = originalFetch; // 在组件销毁或重构时，安全地恢复原生的全局 fetch 引用，防指针错乱
-    };
-  }, [logout]); // 移除不稳定的 pathname 依赖，使拦截器在严格模式下更加稳定
-
-  const login = (userData: AdminUser, authToken: string) => { // 声明登录成功保存状态的方法
-    if (!userData || !authToken) return; // 安全防御
-    setUser(userData); // 写入用户状态
-    setToken(authToken); // 写入 Token 状态
-    localStorage.setItem('admin_user', JSON.stringify(userData)); // 将用户信息转为 JSON 保存至物理存储
-    localStorage.setItem('admin_token', authToken); // 将 Token 保存至物理存储
+  const login = (userData: AdminUser, authToken: string) => { 
+    if (!userData) return; // 安全防御
+    setUser(userData); // 将用户信息对象写入全局 React 状态中管理
+    localStorage.setItem('admin_user', JSON.stringify(userData)); // 保存非敏感数据，免去下次获取时的延迟
   };
 
   return (
     <AdminAuthContext.Provider value={{ 
       user, 
-      token, 
+      token: null, // JWT Token 现隐式保存在 Cookie 中，此处向后兼容返回 null
       login, 
       logout, 
-      isAuthenticated: !!user,
+      isAuthenticated: !!user, // 只要内存中的 user 对象存在，即代表已处于登录态
       isInitialized
     }}>
       {children}

@@ -7,18 +7,18 @@ namespace MedicalSystem.Models // 声明实体模型所在的命名空间
     /// </summary>
     public class ActivityLog // 定义 ActivityLog 实体类
     {
-        public int Id { get; set; } // 日志自增主键 ID，EF Core 会自动将其设为自增主键，无需额外特性
+        public int id { get; set; } // 日志自增主键 ID
 
-        public int? UserId { get; set; } // 操作用户 ID（允许为空）
+        public int? user_id { get; set; } // 操作用户 ID（允许为空）
 
-        public string FullName { get; set; } = null!; // 操作人姓名，不带任何 Validation 校验
+        public string full_name { get; set; } = null!; // 操作人姓名
 
-        public string Role { get; set; } = null!; // 操作人系统角色，不带任何 Validation 校验
+        public string role { get; set; } = null!; // 操作人系统角色
 
-        public string Action { get; set; } = null!; // 简短操作动作（如 Created, Updated, Deleted），不带任何 Validation 校验
+        public string action { get; set; } = null!; // 简短操作动作（如 Created, Updated, Deleted）
 
-        public string Description { get; set; } = null!; // 详细操作描述，不带任何 Validation 校验
+        public string description { get; set; } = null!; // 详细操作描述
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now; // 日志记录生成时间，不带任何 Validation 校验
+        public DateTime created_at { get; set; } = DateTime.Now; // 日志记录生成时间
     }
 }

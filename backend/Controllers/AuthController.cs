@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens; 
 using Microsoft.AspNetCore.Authorization; 
 using MedicalSystem.Services; 
+using Microsoft.AspNetCore.Http; 
 
 namespace MedicalSystem.Controllers 
 {
@@ -36,19 +37,19 @@ namespace MedicalSystem.Controllers
             {
                 UserName = model.Email, 
                 Email = model.Email, 
-                FullName = model.FullName, 
+                full_name = model.FullName, 
                 PhoneNumber = model.PhoneNumber, 
-                GenderId = model.GenderId, 
-                Role = UserRole.Patient, 
-                CreatedAt = DateTime.Now, 
-                UpdatedAt = DateTime.Now 
+                gender_id = model.GenderId, 
+                role = UserRole.Patient, 
+                status = true,
+                created_at = DateTime.Now, 
+                updated_at = DateTime.Now 
             };
 
             var result = await _userManager.CreateAsync(user, model.Password); 
             if (result.Succeeded) 
             {
-                await _activityLog.LogExplicitAsync(user.Id, user.FullName, "Patient", "Register", $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender ID -> {user.GenderId}\n• Role -> Patient\n• Status -> Active");
-
+                await _activityLog.LogExplicitAsync(user.Id, user.full_name, "Patient", "Register", $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender ID -> {user.gender_id}\n• Role -> Patient\n• Status -> Active");
                 return Ok(ApiResponse<string>.SuccessResponse(null, "注册成功")); 
             }
 
@@ -62,30 +63,74 @@ namespace MedicalSystem.Controllers
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) 
             {
                 await _activityLog.LogExplicitAsync(null, "Anonymous", "Visitor", "LoginFail", $"Failed login attempt - Details: [AttemptedEmail: '{model.Email}']");
-
                 return Unauthorized(ApiResponse<string>.FailureResponse("账号或密码错误")); 
             }
 
-            if (user.Role != UserRole.Patient) 
+            if (user.role != UserRole.Patient) 
             {
-                await _activityLog.LogExplicitAsync(user.Id, user.FullName, user.Role.ToString(), "LoginFail", $"Blocked attempt to access patient portal with non-patient role - Details: [Email: '{user.Email}', ActualRole: '{user.Role}']");
-
+                await _activityLog.LogExplicitAsync(user.Id, user.full_name, user.role.ToString(), "LoginFail", $"Blocked attempt to access patient portal with non-patient role - Details: [Email: '{user.Email}', ActualRole: '{user.role}']");
                 return Unauthorized(ApiResponse<string>.FailureResponse("请前往后台系统登录")); 
             }
 
             var token = GenerateJwtToken(user); 
+
+            var cookieOptions = new CookieOptions 
+            { 
+                HttpOnly = true, 
+                Secure = false, // 【关键修改】
+                SameSite = SameSiteMode.Lax, // 【关键修改】
+                Expires = DateTime.Now.AddDays(1) 
+            }; 
+            Response.Cookies.Append("AuthToken", token, cookieOptions);
             
-            await _activityLog.LogExplicitAsync(user.Id, user.FullName, "Patient", "Login", "Successfully logged into the patient portal.");
+            await _activityLog.LogExplicitAsync(user.Id, user.full_name, "Patient", "Login", "Successfully logged into the patient portal.");
 
             return Ok(ApiResponse<object>.SuccessResponse(new { 
                 token = token, 
                 user = new { 
                     id = user.Id,
-                    fullName = user.FullName,
+                    fullName = user.full_name,
                     email = user.Email,
-                    roleValue = (int)user.Role 
+                    roleValue = (int)(user.role ?? UserRole.Patient) 
                 } 
-            })); 
+            }, "登录成功")); 
+        }
+
+        // ==========================================
+        // 【新增】：检查 Cookie 登录状态接口
+        // ==========================================
+        [HttpGet("check-auth")]
+        [Authorize] // 只有携带了有效 Cookie/Token 才能访问
+        public async Task<IActionResult> CheckAuth()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userId!);
+            
+            if (user == null || user.status != true) return Unauthorized(ApiResponse<string>.FailureResponse("账号无效或已被禁用"));
+
+            return Ok(ApiResponse<object>.SuccessResponse(new {
+                user = new {
+                    id = user.Id,
+                    fullName = user.full_name,
+                    email = user.Email,
+                    roleValue = (int)(user.role ?? UserRole.Patient)
+                }
+            }, "认证有效"));
+        }
+
+        // ==========================================
+        // 【新增】：注销退出，清除 Cookie 接口
+        // ==========================================
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Delete("AuthToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+            return Ok(ApiResponse<string>.SuccessResponse(null, "成功退出登录"));
         }
 
         [HttpGet("me")] 
@@ -100,7 +145,7 @@ namespace MedicalSystem.Controllers
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)); 
             var claims = new[] { 
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), 
-                new Claim(ClaimTypes.Role, user.Role.ToString()) 
+                new Claim(ClaimTypes.Role, user.role.ToString() ?? "Patient") 
             };
             var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims, 
                 expires: DateTime.Now.AddDays(1), signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)); 
@@ -108,9 +153,6 @@ namespace MedicalSystem.Controllers
         }
     }
 
-    // ==========================================
-    // 【修复新增】：在此补全缺失的 DTO 类定义
-    // ==========================================
     public class FrontendRegisterDto { 
         public string FullName { get; set; } = null!; 
         public string Email { get; set; } = null!; 

@@ -28,9 +28,9 @@ namespace MedicalSystem.Controllers
         public async Task<IActionResult> GetAll() 
         {
             var users = await _userManager.Users 
-                .Include(u => u.Gender) 
-                .Where(u => u.Role != UserRole.Doctor) 
-                .OrderByDescending(u => u.CreatedAt) 
+                .Include(u => u.gender) 
+                .Where(u => u.role != UserRole.Doctor) 
+                .OrderByDescending(u => u.created_at) 
                 .ToListAsync(); 
 
             return Ok(ApiResponse<IEnumerable<User>>.SuccessResponse(users)); 
@@ -48,20 +48,20 @@ namespace MedicalSystem.Controllers
             {
                 UserName = model.Email, 
                 Email = model.Email, 
-                FullName = model.FullName, 
+                full_name = model.FullName, 
                 PhoneNumber = model.PhoneNumber, 
-                GenderId = model.GenderId, 
-                Role = model.Role, 
-                IsActive = model.IsActive, 
-                CreatedAt = DateTime.Now, 
-                UpdatedAt = DateTime.Now 
+                gender_id = model.GenderId, 
+                role = model.Role, 
+                status = model.Status, 
+                created_at = DateTime.Now, 
+                updated_at = DateTime.Now 
             };
 
             var result = await _userManager.CreateAsync(newUser, model.Password); 
 
             if (result.Succeeded) 
             {
-                await _activityLog.LogAsync("Created", $"Created new User account:\n• User ID -> {newUser.Id}\n• Full Name -> {newUser.FullName}\n• Email -> {newUser.Email}\n• Phone -> {newUser.PhoneNumber ?? "None"}\n• Gender ID -> {newUser.GenderId}\n• Role -> {newUser.Role}\n• Status -> {(newUser.IsActive ? "Active" : "Inactive")}");
+                await _activityLog.LogAsync("Created", $"Created new User account:\n• User ID -> {newUser.Id}\n• Full Name -> {newUser.full_name}\n• Email -> {newUser.Email}\n• Phone -> {newUser.PhoneNumber ?? "None"}\n• Gender ID -> {newUser.gender_id}\n• Role -> {newUser.role}\n• Status -> {(newUser.status == true ? "Active" : "Inactive")}");
 
                 return Ok(ApiResponse<User>.SuccessResponse(newUser, "用户创建成功")); 
             }
@@ -77,21 +77,21 @@ namespace MedicalSystem.Controllers
             if (user == null) return NotFound(ApiResponse<string>.FailureResponse("未找到用户")); 
 
             var changes = new List<string>(); 
-            if (user.FullName != model.FullName) changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}"); 
+            if (user.full_name != model.FullName) changes.Add($"• Full Name -> {user.full_name} ➔ {model.FullName}"); 
             if (user.Email != model.Email) changes.Add($"• Email -> {user.Email} ➔ {model.Email}"); 
             if (user.PhoneNumber != model.PhoneNumber) changes.Add($"• Phone -> {user.PhoneNumber ?? "None"} ➔ {model.PhoneNumber ?? "None"}"); 
-            if (user.GenderId != model.GenderId) changes.Add($"• Gender ID -> {user.GenderId} ➔ {model.GenderId}"); 
-            if (user.Role != model.Role) changes.Add($"• Role -> {user.Role} ➔ {model.Role}"); 
-            if (user.IsActive != model.IsActive) changes.Add($"• Status -> {(user.IsActive ? "Active" : "Inactive")} ➔ {(model.IsActive ? "Active" : "Inactive")}"); 
+            if (user.gender_id != model.GenderId) changes.Add($"• Gender ID -> {user.gender_id} ➔ {model.GenderId}"); 
+            if (user.role != model.Role) changes.Add($"• Role -> {user.role} ➔ {model.Role}"); 
+            if (user.status != model.Status) changes.Add($"• Status -> {(user.status == true ? "Active" : "Inactive")} ➔ {(model.Status ? "Active" : "Inactive")}"); 
 
-            user.FullName = model.FullName; 
+            user.full_name = model.FullName; 
             user.Email = model.Email; 
             user.UserName = model.Email; 
             user.PhoneNumber = model.PhoneNumber; 
-            user.GenderId = model.GenderId; 
-            user.Role = model.Role; 
-            user.IsActive = model.IsActive; 
-            user.UpdatedAt = DateTime.Now; 
+            user.gender_id = model.GenderId; 
+            user.role = model.Role; 
+            user.status = model.Status; 
+            user.updated_at = DateTime.Now; 
 
             var result = await _userManager.UpdateAsync(user); 
             if (result.Succeeded) 
@@ -117,7 +117,7 @@ namespace MedicalSystem.Controllers
             var result = await _userManager.DeleteAsync(user); 
             if (result.Succeeded) 
             {
-                await _activityLog.LogAsync("Deleted", $"Deleted User account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Role -> {user.Role}\n• Status -> {(user.IsActive ? "Active" : "Inactive")}");
+                await _activityLog.LogAsync("Deleted", $"Deleted User account:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Role -> {user.role}\n• Status -> {(user.status == true ? "Active" : "Inactive")}");
 
                 return Ok(ApiResponse<string>.SuccessResponse(null, "删除成功")); 
             }
@@ -126,9 +126,6 @@ namespace MedicalSystem.Controllers
         }
     }
 
-    // ==========================================
-    // 【修复新增】：在此补全缺失的 DTO 类定义
-    // ==========================================
     public class UserCreateDto 
     {
         public string FullName { get; set; } = null!; 
@@ -137,7 +134,7 @@ namespace MedicalSystem.Controllers
         public string? PhoneNumber { get; set; } 
         public int GenderId { get; set; } 
         public UserRole Role { get; set; } 
-        public bool IsActive { get; set; } = true; 
+        public bool Status { get; set; } = true; // 【修改】：IsActive 变更为 Status
     }
 
     public class UserUpdateDto 
@@ -147,6 +144,6 @@ namespace MedicalSystem.Controllers
         public string? PhoneNumber { get; set; } 
         public int GenderId { get; set; } 
         public UserRole Role { get; set; } 
-        public bool IsActive { get; set; } 
+        public bool Status { get; set; } // 【修改】：IsActive 变更为 Status
     }
 }

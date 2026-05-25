@@ -23,7 +23,7 @@ namespace MedicalSystem.Controllers // 声明控制器类所在的命名空间
         public async Task<IActionResult> GetLogs() // 异步获取操作日志的方法
         {
             var logs = await _context.ActivityLogs // 查询操作日志数据集
-                .OrderByDescending(l => l.CreatedAt) // 依照日志创建时间进行降序排序（最新发生的操作排在最上面）
+                .OrderByDescending(l => l.created_at) // 【修改】：匹配 model 变为 created_at 降序排序
                 .ToListAsync(); // 异步转换为 List 集合
 
             return Ok(ApiResponse<IEnumerable<ActivityLog>>.SuccessResponse(logs)); // 包装为成功格式响应给前端

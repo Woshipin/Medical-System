@@ -1,5 +1,5 @@
-using System; // 【修复新增】提供 DateTime 核心支持
-using System.Threading.Tasks; // 【修复新增】提供 Task 支持
+using System; 
+using System.Threading.Tasks; 
 using Microsoft.AspNetCore.Mvc; 
 using Microsoft.EntityFrameworkCore; 
 using MedicalSystem.Data; 
@@ -31,13 +31,13 @@ namespace MedicalSystem.Controllers
         [HttpPost] 
         public async Task<IActionResult> Create(Gender gender) 
         {
-            if (await _context.Genders.AnyAsync(g => g.Name == gender.Name)) 
+            if (await _context.Genders.AnyAsync(g => g.name == gender.name)) 
                 return BadRequest(ApiResponse<Gender>.FailureResponse("该性别名称已存在")); 
 
             _context.Genders.Add(gender); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Created", $"Created new Gender option:\n• Gender ID -> {gender.Id}\n• Gender Name -> {gender.Name}\n• Status -> {(gender.IsActive ? "Active" : "Inactive")}");
+            await _activityLog.LogAsync("Created", $"Created new Gender option:\n• Gender ID -> {gender.id}\n• Gender Name -> {gender.name}\n• Status -> {(gender.status ? "Active" : "Inactive")}");
 
             return Ok(ApiResponse<Gender>.SuccessResponse(gender, "性别创建成功")); 
         }
@@ -48,13 +48,13 @@ namespace MedicalSystem.Controllers
             var gender = await _context.Genders.FindAsync(id); 
             if (gender == null) return NotFound(ApiResponse<object>.FailureResponse("记录不存在")); 
 
-            bool isInUse = await _context.Users.AnyAsync(u => u.GenderId == id); 
+            bool isInUse = await _context.Users.AnyAsync(u => u.gender_id == id); 
             if (isInUse) return BadRequest(ApiResponse<object>.FailureResponse("操作取消：有用户正关联此性别，无法删除")); 
 
             _context.Genders.Remove(gender); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Deleted", $"Deleted Gender option:\n• Gender ID -> {gender.Id}\n• Gender Name -> {gender.Name}\n• Status -> {(gender.IsActive ? "Active" : "Inactive")}");
+            await _activityLog.LogAsync("Deleted", $"Deleted Gender option:\n• Gender ID -> {gender.id}\n• Gender Name -> {gender.name}\n• Status -> {(gender.status ? "Active" : "Inactive")}");
 
             return Ok(ApiResponse<object>.SuccessResponse(null, "性别记录已成功删除")); 
         }

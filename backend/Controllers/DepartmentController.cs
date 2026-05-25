@@ -1,7 +1,7 @@
-using System; // 【修复新增】引入系统基础命名空间，提供 DateTime 和异常支持
-using System.Collections.Generic; // 【修复新增】引入通用集合命名空间，提供 List 支持
-using System.Linq; // 【修复新增】引入 LINQ 命名空间
-using System.Threading.Tasks; // 【修复新增】引入异步编程支持
+using System; 
+using System.Collections.Generic; 
+using System.Linq; 
+using System.Threading.Tasks; 
 using MedicalSystem.Data;     
 using MedicalSystem.Models;   
 using Microsoft.AspNetCore.Mvc; 
@@ -35,23 +35,23 @@ namespace MedicalSystem.Controllers
             _context.Departments.Add(department); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Created", $"Created new Department:\n• Department ID -> {department.Id}\n• Department Name -> {department.Name}\n• Location -> {department.Location}\n• Status -> {(department.IsActive ? "Active" : "Inactive")}");
+            await _activityLog.LogAsync("Created", $"Created new Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status ? "Active" : "Inactive")}");
 
-            return CreatedAtAction(nameof(GetDepartments), new { id = department.Id }, department); 
+            return CreatedAtAction(nameof(GetDepartments), new { id = department.id }, department); 
         }
 
         [HttpPut("{id}")] 
         public async Task<IActionResult> PutDepartment(int id, Department department) 
         {
-            if (id != department.Id) return BadRequest(); 
+            if (id != department.id) return BadRequest(); 
 
-            var existing = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id); 
+            var existing = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.id == id); 
             if (existing == null) return NotFound(); 
 
             var changes = new List<string>(); 
-            if (existing.Name != department.Name) changes.Add($"• Department Name -> {existing.Name} ➔ {department.Name}"); 
-            if (existing.Location != department.Location) changes.Add($"• Location -> {existing.Location} ➔ {department.Location}"); 
-            if (existing.IsActive != department.IsActive) changes.Add($"• Status -> {(existing.IsActive ? "Active" : "Inactive")} ➔ {(department.IsActive ? "Active" : "Inactive")}"); 
+            if (existing.name != department.name) changes.Add($"• Department Name -> {existing.name} ➔ {department.name}"); 
+            if (existing.location != department.location) changes.Add($"• Location -> {existing.location} ➔ {department.location}"); 
+            if (existing.status != department.status) changes.Add($"• Status -> {(existing.status ? "Active" : "Inactive")} ➔ {(department.status ? "Active" : "Inactive")}"); 
 
             _context.Entry(department).State = EntityState.Modified; 
 
@@ -67,7 +67,7 @@ namespace MedicalSystem.Controllers
             } 
             catch (DbUpdateConcurrencyException) 
             {
-                if (!_context.Departments.Any(e => e.Id == id)) return NotFound(); 
+                if (!_context.Departments.Any(e => e.id == id)) return NotFound(); 
                 else throw; 
             }
             return NoContent(); 
@@ -82,7 +82,7 @@ namespace MedicalSystem.Controllers
             _context.Departments.Remove(department); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Deleted", $"Deleted Department:\n• Department ID -> {department.Id}\n• Department Name -> {department.Name}\n• Location -> {department.Location}\n• Status -> {(department.IsActive ? "Active" : "Inactive")}");
+            await _activityLog.LogAsync("Deleted", $"Deleted Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status ? "Active" : "Inactive")}");
 
             return NoContent(); 
         }

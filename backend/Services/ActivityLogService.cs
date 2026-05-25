@@ -41,20 +41,21 @@ namespace MedicalSystem.Services // 声明服务实现所在的命名空间
                     var dbUser = await _context.Users.FindAsync(parsedId); // 查库获取最新的姓名与角色
                     if (dbUser != null)
                     {
-                        fullName = dbUser.FullName; // 提取姓名
-                        role = dbUser.Role.ToString(); // 提取角色
+                        fullName = dbUser.full_name; // 【修复】：改用小写 full_name
+                        role = dbUser.role?.ToString() ?? "Visitor"; // 【修复】：改用小写 role，并处理 null 情况
                     }
                 }
             }
 
-            var log = new ActivityLog // 创建精简后的实体模型（已彻底删除 IP 字段相关逻辑）
+            var log = new ActivityLog // 创建精简后的实体模型
             {
-                UserId = userId,
-                FullName = fullName,
-                Role = role,
-                Action = action, // 写入简短动作
-                Description = description, // 写入逐行详细描述
-                CreatedAt = DateTime.Now
+                // 【修复】：将所有属性名改为模型定义的小写蛇形
+                user_id = userId,
+                full_name = fullName,
+                role = role,
+                action = action, 
+                description = description, 
+                created_at = DateTime.Now
             };
 
             _context.ActivityLogs.Add(log); // 追踪
@@ -62,16 +63,18 @@ namespace MedicalSystem.Services // 声明服务实现所在的命名空间
         }
 
         // 手动传入指定参数记录日志
-        public async Task LogExplicitAsync(int? userId, string fullName, string role, string action, string description)
+        // 【修复】：接收可空的 string? role
+        public async Task LogExplicitAsync(int? userId, string fullName, string? role, string action, string description)
         {
-            var log = new ActivityLog // 创建精简后的实体模型（已彻底删除 IP 字段相关逻辑）
+            var log = new ActivityLog 
             {
-                UserId = userId,
-                FullName = fullName,
-                Role = role,
-                Action = action, // 写入简短动作
-                Description = description, // 写入逐行详细描述
-                CreatedAt = DateTime.Now
+                // 【修复】：将所有属性名改为模型定义的小写蛇形
+                user_id = userId,
+                full_name = fullName,
+                role = role ?? "Visitor", // 如果角色传进来是 null，默认存 Visitor
+                action = action, 
+                description = description, 
+                created_at = DateTime.Now
             };
 
             _context.ActivityLogs.Add(log); // 追踪

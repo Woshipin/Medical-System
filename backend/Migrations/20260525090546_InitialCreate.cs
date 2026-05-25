@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCommercialSetup : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,18 +18,59 @@ namespace backend.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Genders",
+                name: "ActivityLogs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
+                    user_id = table.Column<int>(type: "int", nullable: true),
+                    full_name = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                    role = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    action = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    description = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Genders", x => x.Id);
+                    table.PrimaryKey("PK_ActivityLogs", x => x.id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Departments",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    location = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    status = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Departments", x => x.id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Genders",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    name = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    status = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Genders", x => x.id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -56,47 +97,47 @@ namespace backend.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    FullName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                    full_name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    GenderId = table.Column<int>(type: "int", nullable: false),
-                    Role = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    phone_number = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    gender_id = table.Column<int>(type: "int", nullable: true),
+                    password = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    status = table.Column<bool>(type: "tinyint(1)", nullable: true),
+                    role = table.Column<int>(type: "int", nullable: true),
+                    created_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     UserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NormalizedUserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     NormalizedEmail = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     EmailConfirmed = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     SecurityStamp = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ConcurrencyStamp = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PhoneNumber = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PhoneNumberConfirmed = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     TwoFactorEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     LockoutEnd = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     LockoutEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                    AccessFailedCount = table.Column<int>(type: "int", nullable: false),
+                    genderid = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.id);
                     table.ForeignKey(
-                        name: "FK_Users_Genders_GenderId",
-                        column: x => x.GenderId,
+                        name: "FK_Users_Genders_genderid",
+                        column: x => x.genderid,
                         principalTable: "Genders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -128,35 +169,43 @@ namespace backend.Migrations
                 name: "Doctors",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    LicenseNumber = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                    user_id = table.Column<int>(type: "int", nullable: false),
+                    license_number = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Specialty = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                    specialty_id = table.Column<int>(type: "int", nullable: false),
+                    title_id = table.Column<int>(type: "int", nullable: false),
+                    department_id = table.Column<int>(type: "int", nullable: false),
+                    date_of_birth = table.Column<DateOnly>(type: "date", nullable: false),
+                    office_location_id = table.Column<int>(type: "int", nullable: true),
+                    qualifications = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Title = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                    years_of_experience = table.Column<int>(type: "int", nullable: false),
+                    biography = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Department = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                    updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    resume_pdf = table.Column<byte[]>(type: "longblob", nullable: true),
+                    address = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
-                    OfficeLocation = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true)
+                    postal_code = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Qualifications = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
+                    office_phone = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    YearsOfExperience = table.Column<int>(type: "int", nullable: false),
-                    Biography = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    date_join = table.Column<DateOnly>(type: "date", nullable: false),
+                    date_left = table.Column<DateOnly>(type: "date", nullable: true),
+                    status = table.Column<int>(type: "int", nullable: false),
+                    remark = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Doctors", x => x.Id);
+                    table.PrimaryKey("PK_Doctors", x => x.id);
                     table.ForeignKey(
-                        name: "FK_Doctors_Users_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Doctors_Users_user_id",
+                        column: x => x.user_id,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -180,7 +229,7 @@ namespace backend.Migrations
                         name: "FK_UserClaims_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -204,7 +253,7 @@ namespace backend.Migrations
                         name: "FK_UserLogins_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -229,7 +278,7 @@ namespace backend.Migrations
                         name: "FK_UserRoles_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -253,25 +302,55 @@ namespace backend.Migrations
                         name: "FK_UserTokens_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.InsertData(
-                table: "Genders",
-                columns: new[] { "Id", "IsActive", "Name" },
+                table: "Departments",
+                columns: new[] { "id", "location", "name", "status" },
                 values: new object[,]
                 {
-                    { 1, true, "男" },
-                    { 2, true, "女" }
+                    { 1, "Block A, Level 1", "Emergency Department (ER)", true },
+                    { 2, "Block B, Level 3", "Cardiology", true },
+                    { 3, "Block B, Level 4", "Neurology", true },
+                    { 4, "Block C, Level 2", "Pediatrics", true },
+                    { 5, "Block D, Level 1", "Oncology", true },
+                    { 6, "Block A, Level 2", "Orthopedics", true },
+                    { 7, "Block A, Level 3", "General Surgery", true },
+                    { 8, "Block A, Level 4", "Intensive Care Unit (ICU)", true },
+                    { 9, "Block C, Basement 1", "Radiology & Imaging", true },
+                    { 10, "Block A, Level 1", "Pharmacy", true },
+                    { 11, "Block C, Level 3", "Obstetrics and Gynecology", true },
+                    { 12, "Block B, Level 1", "Dental Clinic", false }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Genders",
+                columns: new[] { "id", "name", "status" },
+                values: new object[,]
+                {
+                    { 1, "Male", true },
+                    { 2, "Female", true }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "id", "AccessFailedCount", "ConcurrencyStamp", "email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "password", "phone_number", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName", "created_at", "full_name", "gender_id", "genderid", "role", "status", "updated_at" },
+                values: new object[,]
+                {
+                    { 1, 0, "a72b83c1-0c5a-4e67-8fa6-fb2a6cf124de", "pin@gmail.com", false, false, null, "PIN@GMAIL.COM", "PIN@GMAIL.COM", "AQAAAAIAAYagAAAAEPC6RQV3Dczh6iVvJbdvLMa687d8pXOmeOI24vnHFVs0O1YetDWeYHaFBk2mwuz2QA==", "88888888", false, "f4c9c7d1-e6df-46b0-9b62-fa583db13d5a", false, "pin@gmail.com", new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "pin", 1, null, 3, true, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 2, 0, "b84f93c1-cd2c-47ea-bcbf-11fc2cf00de8", "superadmin@gmail.com", false, false, null, "SUPERADMIN@GMAIL.COM", "SUPERADMIN@GMAIL.COM", "AQAAAAIAAYagAAAAEOIjbEa20yRwpUvkVvb7VCcQhM012/1F77RAJfYmBCbwEbVUjxY3BFc0P+pd/Apffw==", "88888888", false, "c95e1e0a-bf6b-4df2-823a-fcf723fbfa4b", false, "superadmin@gmail.com", new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "superadmin", 1, null, 0, true, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 3, 0, "d85fbc2a-1c3c-41ca-a2bf-23fc3df11de9", "admin@gmail.com", false, false, null, "ADMIN@GMAIL.COM", "ADMIN@GMAIL.COM", "AQAAAAIAAYagAAAAEEwoRvDWldVdPhgSJI9KCnoQwoE15/P0kE6BVhVb7+lVAhhxzhGfRi9D7/DZU4ygHw==", "88888888", false, "e74c83fa-da13-4cb2-83b6-9df2cfd1e3ca", false, "admin@gmail.com", new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "admin", 1, null, 1, true, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 4, 0, "f42fbc1a-5c2c-48ca-9dbf-34fc4df22de7", "doctor@gmail.com", false, false, null, "DOCTOR@GMAIL.COM", "DOCTOR@GMAIL.COM", "AQAAAAIAAYagAAAAEPj3RHv+hVERV6rxzm6YRxT8cBnohe3qPTKR5MW4vxdpp5urqy3uiTn/kCZ6I7hmqw==", "88888888", false, "a18d9bc1-df8a-4412-bd7c-2ef3cfb1c19b", false, "doctor@gmail.com", new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "doctor", 1, null, 2, true, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 5, 0, "e95abc2d-0f9c-4df6-8fb2-14ac7df38de4", "patient@gmail.com", false, false, null, "PATIENT@GMAIL.COM", "PATIENT@GMAIL.COM", "AQAAAAIAAYagAAAAEKegiBQPGN/CpqAkTtPQjtgK8QNuBXc6xy6PyfCg7ayQxgq2JWMHfc38RKTSXpdbRw==", "88888888", false, "94fcbc12-d61a-4c91-9cb6-1ef2cfc3a5de", false, "patient@gmail.com", new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "patient", 1, null, 3, true, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc) }
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Doctors_UserId",
+                name: "IX_Doctors_user_id",
                 table: "Doctors",
-                column: "UserId",
-                unique: true);
+                column: "user_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoleClaims_RoleId",
@@ -305,9 +384,9 @@ namespace backend.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_GenderId",
+                name: "IX_Users_genderid",
                 table: "Users",
-                column: "GenderId");
+                column: "genderid");
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
@@ -319,6 +398,12 @@ namespace backend.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ActivityLogs");
+
+            migrationBuilder.DropTable(
+                name: "Departments");
+
             migrationBuilder.DropTable(
                 name: "Doctors");
 
