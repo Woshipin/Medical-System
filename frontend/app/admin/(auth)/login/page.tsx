@@ -1,32 +1,28 @@
 "use client"; // 启用 Next.js 客户端组件模式
 
-import React, { useState } from 'react'; // 引入 React 核心库及状态钩子
-import { Mail, Lock, Activity, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle, X, CheckCircle2, Info, Loader2 } from 'lucide-react'; 
+import React, { useState, useEffect } from 'react'; // 引入 React 核心库及钩子
+import { Mail, Lock, Activity, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle, X, CheckCircle2, Info, Loader2, Check } from 'lucide-react'; 
 import Link from 'next/link'; 
 import { useRouter } from 'next/navigation'; 
 import { useAdminAuth } from '@/app/contexts/AdminAuthContext'; 
 
+// --- 解析后端各类错误的辅助函数 ---
 const parseBackendError = (result: any, defaultMsg: string = "Invalid admin credentials."): string => {
   if (!result) return defaultMsg; 
-
   const errors = result.errors || result.Errors || result.data || result.Data; 
   if (errors) { 
-    if (Array.isArray(errors)) { 
-      return errors.join(" | "); 
-    } 
+    if (Array.isArray(errors)) return errors.join(" | "); 
     if (typeof errors === 'object') { 
-      return Object.values(errors) 
-        .flatMap((err: any) => Array.isArray(err) ? err : [err]) 
-        .join(" | "); 
+      return Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]).join(" | "); 
     } 
   } 
-
   return result.message || result.Message || defaultMsg; 
 }; 
 
+// --- 重复登录拦截拦截组件 ---
 const AlreadyLoggedInAlert = () => {
   const router = useRouter(); 
-  React.useEffect(() => { 
+  useEffect(() => { 
     const timer = setTimeout(() => router.replace('/admin/dashboard'), 2000); 
     return () => clearTimeout(timer); 
   }, [router]); 
@@ -56,6 +52,8 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState(''); 
   const [showPassword, setShowPassword] = useState(false); 
+  const [rememberMe, setRememberMe] = useState(false); // 新增状态：记住密码
+
   const [isLoading, setIsLoading] = useState(false); 
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null); 
   const [successMsg, setSuccessMsg] = useState<string | null>(null); 
@@ -63,6 +61,20 @@ export default function AdminLoginPage() {
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); 
   const isValidPassword = password.trim().length > 0; 
+
+  // ==========================================
+  // 读取 Remember Me 记忆数据
+  // ==========================================
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("adminRememberedEmail");
+    const savedPassword = localStorage.getItem("adminRememberedPassword");
+    
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true); // 如果存有密码，自动勾选复选框
+    }
+  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent) => { 
     e.preventDefault(); 
@@ -80,17 +92,14 @@ export default function AdminLoginPage() {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ email, password }),
-        // 【核心修复】：必须加上这一行！允许跨域写入和携带 Cookie
-        credentials: 'include', 
+        credentials: 'include', // 关键配置：允许后端安全植入 HttpOnly Cookie
       }); 
       
       let result; 
       const contentType = response.headers.get("content-type"); 
-      
       if (response.status === 404) { 
-         throw new Error("API endpoint not found (404). You MUST stop and restart your C# backend server after adding the new login code."); 
+         throw new Error("API endpoint not found (404). Backend server might be offline."); 
       } 
-
       if (contentType && contentType.toLowerCase().includes("application/json")) { 
         result = await response.json(); 
       } else { 
@@ -98,45 +107,30 @@ export default function AdminLoginPage() {
       } 
 
       const isSuccess = result?.success === true || result?.Success === true; 
-      const responseData = result?.data || result?.Data; 
 
-      if (response.ok && isSuccess) { 
-         if (responseData) { 
-           const findProp = (obj: any, key: string) => { 
-             if (!obj) return undefined; 
-             const foundKey = Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase()); 
-             return foundKey ? obj[foundKey] : undefined; 
-           }; 
+      if (response.ok && isSuccess && result?.data?.user) { 
+         // 简化逻辑：直接提取并写入安全的用户资料
+         const rawUserData = result.data.user;
+         const formattedUser = { 
+            ...rawUserData, 
+            id: String(rawUserData.id || rawUserData.Id || "0") 
+         }; 
 
-           const authToken = findProp(responseData, 'token'); 
-           let rawUserData = findProp(responseData, 'user'); 
-           
-           if (!rawUserData) { 
-               rawUserData = { 
-                   id: findProp(responseData, 'id') || '0', 
-                   fullName: findProp(responseData, 'fullname') || 'Administrator', 
-                   email: email, 
-                   role: findProp(responseData, 'role') || 'admin' 
-               }; 
-           } 
+         // ==========================================
+         // 处理 Remember Me 缓存（登录成功后执行）
+         // ==========================================
+         if (rememberMe) {
+           localStorage.setItem("adminRememberedEmail", email);
+           localStorage.setItem("adminRememberedPassword", password);
+         } else {
+           localStorage.removeItem("adminRememberedEmail");
+           localStorage.removeItem("adminRememberedPassword");
+         }
 
-           if (authToken) { 
-               const formattedUser = { 
-                 ...rawUserData, 
-                 id: String(rawUserData.id || rawUserData.Id || "0") 
-               }; 
+         login(formattedUser); // 同步到上下文状态，身份 Token 验证全交由 Cookie 自动托管
+         setSuccessMsg("Welcome back! Accessing dashboard..."); 
+         setTimeout(() => router.push('/admin/dashboard'), 2000); 
 
-               login(formattedUser, authToken); 
-               setSuccessMsg("Welcome back! Accessing dashboard..."); 
-               setTimeout(() => router.push('/admin/dashboard'), 2000); 
-           } else { 
-               setApiErrorMsg("Token missing from server response."); 
-               setIsLoading(false); 
-           } 
-         } else { 
-            setApiErrorMsg("Invalid response format: Missing data payload."); 
-            setIsLoading(false); 
-         } 
       } else { 
         const errorMsg = parseBackendError(result, "Invalid admin credentials."); 
         setApiErrorMsg(errorMsg); 
@@ -149,10 +143,7 @@ export default function AdminLoginPage() {
   }; 
 
   if (!isInitialized) return <div className="h-screen w-full bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700"></div>; 
-
-  if (isAuthenticated) { 
-    return <AlreadyLoggedInAlert />; 
-  } 
+  if (isAuthenticated) return <AlreadyLoggedInAlert />; 
 
   return ( 
     <div className="h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700 font-sans overflow-hidden">
@@ -192,9 +183,9 @@ export default function AdminLoginPage() {
                 <Mail className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidEmail ? 'text-red-400' : 'text-slate-400'}`} size={18} />
                 <input
                   type="email"
-                  name="email" // 【修改】：新增属性以支持浏览器密码记住机制
-                  id="email" // 【修改】：新增属性以支持浏览器密码记住机制
-                  autoComplete="username" // 【修改】：新增属性以支持浏览器密码自动填充
+                  name="email" 
+                  id="email" 
+                  autoComplete="username" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={`w-full pl-10 pr-10 py-3 text-sm font-medium rounded-xl outline-none transition-all border ${
@@ -216,9 +207,9 @@ export default function AdminLoginPage() {
                 <Lock className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidPassword ? 'text-red-400' : 'text-slate-400'}`} size={18} />
                 <input
                   type={showPassword ? "text" : "password"}
-                  name="password" // 【修改】：新增属性以支持浏览器密码记住机制
-                  id="password" // 【修改】：新增属性以支持浏览器密码记住机制
-                  autoComplete="current-password" // 【修改】：新增属性以支持浏览器密码自动填充
+                  name="password" 
+                  id="password" 
+                  autoComplete="current-password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={`w-full pl-10 pr-10 py-3 text-sm font-medium rounded-xl outline-none transition-all border ${
@@ -239,6 +230,29 @@ export default function AdminLoginPage() {
               {hasSubmitted && !isValidPassword && (
                 <p className="text-red-500 text-xs mt-1.5 ml-1">Password is required.</p>
               )}
+            </div>
+
+            {/* 自适应的 Remember Me 和 Forgot Password 行 */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                  rememberMe ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300 group-hover:border-emerald-400'
+                }`}>
+                  {rememberMe && <Check size={12} className="text-white" />}
+                </div>
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span className="text-xs font-medium text-slate-600 group-hover:text-emerald-700 transition-colors select-none">
+                  Remember me
+                </span>
+              </label>
+              <Link href="#" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
+                Forgot password?
+              </Link>
             </div>
 
             <button

@@ -1,36 +1,29 @@
-"use client"; // 启用 Next.js 客户端组件模式
+"use client";
 
-import React, { useState } from 'react'; // 引入 React 核心库及状态钩子
-import Link from 'next/link'; // 引入 Next.js 声明式导航链接组件
-import { useRouter } from 'next/navigation'; // 引入 Next.js 客户端路由导航钩子
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Leaf, Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, 
-  Loader2, AlertCircle, CheckCircle, X, CheckCircle2, Info 
-} from 'lucide-react'; // 引入图标库中的各类图标
-import { useAuth } from '@/app/contexts/AuthContext'; // 引入患者端鉴权上下文
+  Loader2, AlertCircle, CheckCircle, X, CheckCircle2, Info, Check
+} from 'lucide-react';
+import { useAuth } from '@/app/contexts/AuthContext';
 
-// --- 辅助函数：解析后端返回的各种复杂错误格式并提取干净的文本 ---
 const parseBackendError = (result: any): string => {
   if (!result) return "Login failed. Please check your credentials."; 
-
   const errors = result.errors || result.Errors || result.data || result.Data; 
   if (errors) { 
-    if (Array.isArray(errors)) { 
-      return errors.join(" | "); 
-    } 
+    if (Array.isArray(errors)) return errors.join(" | "); 
     if (typeof errors === 'object') { 
-      return Object.values(errors) 
-        .flatMap((err: any) => Array.isArray(err) ? err : [err]) 
-        .join(" | "); 
+      return Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]).join(" | "); 
     } 
   } 
-
   return result.message || result.Message || "Login failed. Please check your credentials."; 
 }; 
 
 const AlreadyLoggedInAlert = () => { 
   const router = useRouter(); 
-  React.useEffect(() => { 
+  useEffect(() => { 
     const timer = setTimeout(() => router.replace('/home'), 2000); 
     return () => clearTimeout(timer); 
   }, [router]); 
@@ -60,6 +53,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState(''); 
   const [showPassword, setShowPassword] = useState(false); 
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false); 
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null); 
@@ -68,6 +62,20 @@ export default function LoginPage() {
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); 
   const isValidPassword = password.trim().length > 0; 
+
+  // ==========================================
+  // 读取 Remember Me 记忆数据
+  // ==========================================
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    const savedPassword = localStorage.getItem("rememberedPassword");
+    
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true); 
+    }
+  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent) => { 
     e.preventDefault(); 
@@ -86,64 +94,43 @@ export default function LoginPage() {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ email, password }),
-        // 【核心修复】：必须加上这一行！允许跨域写入和携带 Cookie
-        credentials: 'include', 
+        credentials: 'include', // 必须加上，允许后端颁发 Cookie
       }); 
 
       const result = await response.json(); 
-      
       const isSuccess = result?.success === true || result?.Success === true; 
-      const responseData = result?.data || result?.Data; 
 
-      if (response.ok && isSuccess) { 
-        if (responseData) { 
-           const findProp = (obj: any, key: string) => { 
-             if (!obj) return undefined; 
-             const foundKey = Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase()); 
-             return foundKey ? obj[foundKey] : undefined; 
-           }; 
+      if (response.ok && isSuccess && result?.data?.user) { 
+        // 【优化】：删除繁冗的 Token 提取和重组，直接取后端干净的用户实体并记录登录态
+        const rawUserData = result.data.user;
+        const formattedUser = { 
+            ...rawUserData, 
+            id: String(rawUserData.id || rawUserData.Id || "0") 
+        }; 
 
-           const authToken = findProp(responseData, 'token'); 
-           let rawUserData = findProp(responseData, 'user'); 
-           
-           if (!rawUserData) { 
-               rawUserData = { 
-                   id: findProp(responseData, 'id') || '0', 
-                   fullName: findProp(responseData, 'fullname') || 'User', 
-                   email: email 
-               }; 
-           } 
+        // 维护 Remember me 缓存
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email);
+          localStorage.setItem("rememberedPassword", password);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+          localStorage.removeItem("rememberedPassword");
+        }
 
-           if (authToken) { 
-               const formattedUser = { 
-                 ...rawUserData, 
-                 id: String(rawUserData.id || rawUserData.Id || "0") 
-               }; 
+        login(formattedUser); // 注入全局状态，鉴权及令牌由浏览器 Cookie 全权托管
+        setSuccessMsg("Login successful! Redirecting to dashboard..."); 
+        setTimeout(() => router.push('/home'), 2000); 
 
-               login(formattedUser, authToken); 
-               setSuccessMsg("Login successful! Redirecting to dashboard..."); 
-               setTimeout(() => router.push('/home'), 2000); 
-           } else { 
-               setApiErrorMsg("Token missing from server response."); 
-               setIsLoading(false); 
-           } 
-        } else { 
-           setApiErrorMsg("Invalid response format: Missing data payload."); 
-           setIsLoading(false); 
-        } 
       } else { 
+        // 【优化】：错误处理拦截简化
         const errorMsg = result?.message || result?.Message || "";
 
         if (errorMsg === "请前往后台系统登录") {
           setApiErrorMsg("Your account is not a patient."); 
           setIsLoading(false); 
-          
-          setTimeout(() => {
-            router.push('/admin/login'); 
-          }, 2500); 
+          setTimeout(() => router.push('/admin/login'), 2500); 
         } else { 
-          const parsedError = parseBackendError(result); 
-          setApiErrorMsg(parsedError); 
+          setApiErrorMsg(parseBackendError(result)); 
           setIsLoading(false); 
         }
       } 
@@ -154,31 +141,28 @@ export default function LoginPage() {
     } 
   }; 
 
-  if (!isInitialized) { 
-    return <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500"></div>; 
-  } 
-
-  if (isAuthenticated) { 
-    return <AlreadyLoggedInAlert />; 
-  } 
+  if (!isInitialized) return <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500"></div>; 
+  if (isAuthenticated) return <AlreadyLoggedInAlert />; 
 
   return ( 
     <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500 flex items-center justify-center p-4 relative overflow-hidden">
+      
+      {/* 提示层 */}
       <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
         {apiErrorMsg && ( 
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
-            <AlertCircle className="text-red-600 mt-0.5" size={20} />
+            <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={20} />
             <div className="flex-1">
               <h4 className="font-bold text-sm text-red-700">Login Failed</h4>
               <p className="text-sm text-slate-600 mt-1">{apiErrorMsg}</p>
             </div>
-            <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={18} /></button>
+            <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1 shrink-0"><X size={18} /></button>
           </div>
         )}
 
         {successMsg && (
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
-            <CheckCircle className="text-emerald-600 mt-0.5" size={20} />
+            <CheckCircle className="text-emerald-600 mt-0.5 shrink-0" size={20} />
             <div className="flex-1">
               <h4 className="font-bold text-sm text-emerald-700">Login Successful</h4>
               <p className="text-sm text-slate-600 mt-1">{successMsg}</p>
@@ -199,7 +183,9 @@ export default function LoginPage() {
       </Link>
 
       <div className="relative z-10 bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl overflow-hidden max-w-5xl w-full flex flex-col md:flex-row min-h-[600px] max-h-[92vh] border border-white/50">
-        <div className="md:w-1/2 p-8 sm:p-10 lg:p-16 flex flex-col justify-center w-full bg-white overflow-y-auto custom-scrollbar">
+        
+        {/* 表单区 */}
+        <div className="w-full md:w-1/2 p-6 sm:p-10 lg:p-16 flex flex-col justify-center bg-white overflow-y-auto custom-scrollbar">
           <div className="mb-8">
              <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full w-fit">
                 <div className="p-1.5 bg-emerald-500 rounded-full text-white">
@@ -212,15 +198,16 @@ export default function LoginPage() {
           </div>
 
           <form className="space-y-5" onSubmit={handleLoginSubmit} noValidate>
+            
             <div className="group flex flex-col">
                <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-slate-500">Email Address</label>
                <div className="relative flex items-center">
                   <Mail className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidEmail ? 'text-red-400' : 'text-slate-400'}`} size={18} />
                   <input 
                     type="email" 
-                    name="email" // 【修改】：新增属性以支持浏览器密码自动填充
-                    id="email" // 【修改】：新增属性以支持浏览器密码自动填充
-                    autoComplete="username" // 【修改】：新增属性以支持浏览器密码自动填充
+                    name="email" 
+                    id="email" 
+                    autoComplete="username" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)} 
                     placeholder="example@mail.com" 
@@ -244,9 +231,9 @@ export default function LoginPage() {
                   <Lock className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidPassword ? 'text-red-400' : 'text-slate-400'}`} size={18} />
                   <input 
                     type={showPassword ? "text" : "password"}
-                    name="password" // 【修改】：新增属性以支持浏览器密码自动填充
-                    id="password" // 【修改】：新增属性以支持浏览器密码自动填充
-                    autoComplete="current-password" // 【修改】：新增属性以支持浏览器密码自动填充
+                    name="password" 
+                    id="password" 
+                    autoComplete="current-password" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)} 
                     placeholder="••••••••" 
@@ -263,12 +250,31 @@ export default function LoginPage() {
                {hasSubmitted && !isValidPassword && <span className="text-red-500 text-[11px] mt-1.5 ml-1 font-medium">Please enter your password.</span>}
             </div>
 
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded border flex items-center justify-center transition-all ${
+                  rememberMe ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300 group-hover:border-emerald-400'
+                }`}>
+                  {rememberMe && <Check size={12} className="text-white sm:w-3.5 sm:h-3.5" />}
+                </div>
+                <input 
+                  type="checkbox" 
+                  className="hidden" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span className="text-xs sm:text-sm font-medium text-slate-600 group-hover:text-emerald-700 transition-colors select-none">
+                  Remember me
+                </span>
+              </label>
+            </div>
+
             <button 
                 type="submit" 
-                disabled={isLoading} 
-                className="w-full mt-4 py-3.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/30 active:scale-[0.98]"
+                disabled={isLoading || successMsg !== null} 
+                className="w-full mt-2 py-3.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-80"
             >
-                {isLoading ? (
+                {isLoading || successMsg ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
                     {successMsg ? "Redirecting..." : "Logging in..."}
@@ -283,10 +289,13 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 text-center text-sm">
-            <p className="text-slate-500">Don't have an account? <Link href="/register" className="text-emerald-600 font-bold hover:underline">Create one now</Link></p>
+            <p className="text-slate-500">
+              Don't have an account? <Link href="/register" className="text-emerald-600 font-bold hover:underline transition-all">Create one now</Link>
+            </p>
           </div>
         </div>
 
+        {/* 右侧海报区 */}
         <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80')] bg-cover bg-center transform hover:scale-105 transition-transform duration-[20s] opacity-80"></div>
            <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/95 via-teal-900/60 to-transparent mix-blend-multiply"></div>

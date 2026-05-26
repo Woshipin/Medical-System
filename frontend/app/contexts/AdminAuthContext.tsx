@@ -19,8 +19,7 @@ export const ADMIN_ROLE_NAMES: { [key: number]: string } = { // 声明管理员�
 
 interface AdminAuthContextType { // 声明上下文状态暴露的属性与方法接口
   user: AdminUser | null; // 当前登录的管理员用户对象，未登录则为 null
-  token: string | null; // 兼容性保留字段（现在由 Cookie 托管，此值通常为 null 或静态占位）
-  login: (userData: AdminUser, token: string) => void; // 登录成功回调方法
+  login: (userData: AdminUser) => void; // 【核心修复】：移除了多余的 token 参数，只保留 userData
   logout: () => void; // 退出登录方法
   isAuthenticated: boolean; // 是否已通过身份验证的标志
   isInitialized: boolean; // 上下文是否完成 Cookie 初始化状态读取的标志
@@ -38,7 +37,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
   const originalFetch = typeof window !== 'undefined' ? window.fetch : null!;
 
   // ==========================================
-  // 【重构】：退出登录方法（异步清理 Cookie 与状态）
+  // 【重构】：退出登录方法（异步清理 HttpOnly Cookie，废弃 LocalStorage）
   // ==========================================
   const logout = useCallback(async () => { // 声明登出方法，并使用 useCallback 保证引用地址稳定
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 获取 API 基础地址
@@ -53,7 +52,6 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
     }
 
     setUser(null); // 清空当前内存中的用户对象
-    localStorage.removeItem('admin_user'); // 清理本地残留的用户非敏感缓存
     router.push('/admin/login'); // 强制将页面引导至管理端登录页
   }, [router]); // 依赖于路由实例
 
@@ -63,9 +61,15 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
   useEffect(() => {
     const initializeAuth = async () => {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 获取 API 基础地址
+      
+      // 如果当前就在登录或注册页面，不需要自动验证状态，直接跳过以优化加载
+      if (pathname.includes('/login') || pathname.includes('/register')) {
+        setIsInitialized(true); // 仍需标记初始化已完成
+        return;
+      }
 
       try {
-        // 【核心修改】：去掉了对 /login 的路径拦截。当处于登录页面时，也进行免密状态探查
+        // 呼叫后端免密验证状态探查接口
         const res = await originalFetch(`${API_BASE_URL}/admin/check-auth`, {
           method: 'GET',
           credentials: 'include' // 强行显式加上 credentials，防止加载顺序竞争
@@ -75,7 +79,6 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
           const result = await res.json(); // 解析 JSON
           if (result.success && result.data?.user) { // 如果后端业务表明登录态依然有效
             setUser(result.data.user); // 自动将用户信息还原到全局状态，实现免密自动登录
-            localStorage.setItem('admin_user', JSON.stringify(result.data.user)); // 同步缓存用户信息
           } else {
             setUser(null); // 状态失效清空用户
           }
@@ -134,16 +137,15 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
   // ==========================================
   // 3. 登录成功回调方法
   // ==========================================
-  const login = (userData: AdminUser, authToken: string) => { 
+  // 【核心修复】：移除了多余的 token 参数。
+  const login = (userData: AdminUser) => { 
     if (!userData) return; // 安全防御
     setUser(userData); // 将用户信息对象写入全局 React 状态中管理
-    localStorage.setItem('admin_user', JSON.stringify(userData)); // 保存非敏感数据，免去下次获取时的延迟
   };
 
   return (
     <AdminAuthContext.Provider value={{ 
       user, 
-      token: null, // JWT Token 现隐式保存在 Cookie 中，此处向后兼容返回 null
       login, 
       logout, 
       isAuthenticated: !!user, // 只要内存中的 user 对象存在，即代表已处于登录态

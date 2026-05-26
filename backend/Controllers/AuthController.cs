@@ -74,19 +74,21 @@ namespace MedicalSystem.Controllers
 
             var token = GenerateJwtToken(user); 
 
+            // 【优化】：本地开发统一 Cookie 最佳配置，加入 Path = "/"
             var cookieOptions = new CookieOptions 
             { 
                 HttpOnly = true, 
-                Secure = false, // 【关键修改】
-                SameSite = SameSiteMode.Lax, // 【关键修改】
+                Secure = false, 
+                SameSite = SameSiteMode.Lax, 
+                Path = "/",
                 Expires = DateTime.Now.AddDays(1) 
             }; 
             Response.Cookies.Append("AuthToken", token, cookieOptions);
             
             await _activityLog.LogExplicitAsync(user.Id, user.full_name, "Patient", "Login", "Successfully logged into the patient portal.");
 
+            // 【优化】：删除了返回数据载荷中的明文 token 字段，完全通过安全的 HttpOnly Cookie 托管
             return Ok(ApiResponse<object>.SuccessResponse(new { 
-                token = token, 
                 user = new { 
                     id = user.Id,
                     fullName = user.full_name,
@@ -97,10 +99,10 @@ namespace MedicalSystem.Controllers
         }
 
         // ==========================================
-        // 【新增】：检查 Cookie 登录状态接口
+        // 检查 Cookie 登录状态接口
         // ==========================================
         [HttpGet("check-auth")]
-        [Authorize] // 只有携带了有效 Cookie/Token 才能访问
+        [Authorize] 
         public async Task<IActionResult> CheckAuth()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
@@ -119,25 +121,20 @@ namespace MedicalSystem.Controllers
         }
 
         // ==========================================
-        // 【新增】：注销退出，清除 Cookie 接口
+        // 注销退出，清除 Cookie 接口
         // ==========================================
         [HttpPost("logout")]
         public IActionResult Logout()
         {
+            // 【优化】：删除 Cookie 的配置参数与写入时保持完全一致，保障完美清除
             Response.Cookies.Delete("AuthToken", new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Path = "/"
             });
             return Ok(ApiResponse<string>.SuccessResponse(null, "成功退出登录"));
-        }
-
-        [HttpGet("me")] 
-        [Authorize] 
-        public IActionResult GetCurrentUser() 
-        {
-            return Ok(ApiResponse<string>.SuccessResponse(null, "账号状态正常")); 
         }
 
         private string GenerateJwtToken(User user) 
