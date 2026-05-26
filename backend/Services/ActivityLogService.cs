@@ -1,84 +1,79 @@
-using System; // 引入基础命名空间
-using System.Threading.Tasks; // 引入异步命名空间
-using Microsoft.AspNetCore.Http; // 引入 HTTP 命名空间
-using MedicalSystem.Data; // 引入数据上下文
-using MedicalSystem.Models; // 引入实体模型
-using System.Security.Claims; // 引入 Claims 读取
-using System.IdentityModel.Tokens.Jwt; // 引入 JWT 读取
+using System; 
+using System.Threading.Tasks; 
+using Microsoft.AspNetCore.Http; 
+using MedicalSystem.Data; 
+using MedicalSystem.Models; 
+using System.Security.Claims; 
+using System.IdentityModel.Tokens.Jwt; 
 
-namespace MedicalSystem.Services // 声明服务实现所在的命名空间
+namespace MedicalSystem.Services 
 {
-    public class ActivityLogService : IActivityLogService // 实现日志接口
+    public class ActivityLogService : IActivityLogService 
     {
-        private readonly AppDbContext _context; // 声明只读数据库上下文
-        private readonly IHttpContextAccessor _httpContextAccessor; // 声明 HTTP 上下文访问器
+        private readonly AppDbContext _context; 
+        private readonly IHttpContextAccessor _httpContextAccessor; 
 
-        public ActivityLogService(AppDbContext context, IHttpContextAccessor httpContextAccessor) // 构造注入
+        public ActivityLogService(AppDbContext context, IHttpContextAccessor httpContextAccessor) 
         {
-            _context = context; // 绑定
-            _httpContextAccessor = httpContextAccessor; // 绑定
+            _context = context; 
+            _httpContextAccessor = httpContextAccessor; 
         }
 
-        // 自动提取用户上下文并记录日志
         public async Task LogAsync(string action, string description) 
         {
-            var httpContext = _httpContextAccessor.HttpContext; // 获取当前请求上下文
-            if (httpContext == null) return; // 为空返回
+            var httpContext = _httpContextAccessor.HttpContext; 
+            if (httpContext == null) return; 
 
-            var user = httpContext.User; // 获取主体
-            int? userId = null; // 初始化 ID 
-            string fullName = "Anonymous"; // 初始化姓名
-            string role = "Visitor"; // 初始化角色
+            var user = httpContext.User; 
+            int? userId = null; 
+            string fullName = "Anonymous"; 
+            string role = "Visitor"; 
 
-            if (user.Identity?.IsAuthenticated == true) // 若通过 Token 身份验证
+            if (user.Identity?.IsAuthenticated == true) 
             {
                 var idClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
-                           ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value; // 提取 ID Claim
+                           ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
 
-                if (int.TryParse(idClaim, out var parsedId)) // 尝试强转整型
+                if (int.TryParse(idClaim, out var parsedId)) 
                 {
-                    userId = parsedId; // 赋值
-                    var dbUser = await _context.Users.FindAsync(parsedId); // 查库获取最新的姓名与角色
+                    userId = parsedId; 
+                    var dbUser = await _context.Users.FindAsync(parsedId); 
                     if (dbUser != null)
                     {
-                        fullName = dbUser.full_name; // 【修复】：改用小写 full_name
-                        role = dbUser.role?.ToString() ?? "Visitor"; // 【修复】：改用小写 role，并处理 null 情况
+                        fullName = dbUser.full_name; 
+                        role = dbUser.role?.ToString() ?? "Visitor"; 
                     }
                 }
             }
 
-            var log = new ActivityLog // 创建精简后的实体模型
+            var log = new ActivityLog 
             {
-                // 【修复】：将所有属性名改为模型定义的小写蛇形
                 user_id = userId,
                 full_name = fullName,
                 role = role,
                 action = action, 
                 description = description, 
-                created_at = DateTime.Now
+                created_at = DateTime.Now // 确保获取当前精准时间并入库
             };
 
-            _context.ActivityLogs.Add(log); // 追踪
-            await _context.SaveChangesAsync(); // 入库
+            _context.ActivityLogs.Add(log); 
+            await _context.SaveChangesAsync(); 
         }
 
-        // 手动传入指定参数记录日志
-        // 【修复】：接收可空的 string? role
         public async Task LogExplicitAsync(int? userId, string fullName, string? role, string action, string description)
         {
             var log = new ActivityLog 
             {
-                // 【修复】：将所有属性名改为模型定义的小写蛇形
                 user_id = userId,
                 full_name = fullName,
-                role = role ?? "Visitor", // 如果角色传进来是 null，默认存 Visitor
+                role = role ?? "Visitor", 
                 action = action, 
                 description = description, 
-                created_at = DateTime.Now
+                created_at = DateTime.Now // 确保获取当前精准时间并入库
             };
 
-            _context.ActivityLogs.Add(log); // 追踪
-            await _context.SaveChangesAsync(); // 写入物理数据库
+            _context.ActivityLogs.Add(log); 
+            await _context.SaveChangesAsync(); 
         }
     }
 }

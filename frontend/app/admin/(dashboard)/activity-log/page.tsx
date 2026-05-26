@@ -21,14 +21,14 @@ import Pagination from "@/components/admin/Pagination"; // 引入系统分页组
 // ==========================================
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 定义后端的 API 接口基准路径
 
-interface ActivityLog { // 操作日志接口定义（完全契合后端数据库最新结构）
+interface ActivityLog { // 【修复】：操作日志接口定义必须完全契合后端最新小写蛇形 (snake_case) 结构
   id: number; 
-  userId: number | null; 
-  fullName: string; 
+  user_id: number | null; 
+  full_name: string; 
   role: string; 
-  action: string; // 简短的行为描述：Created, Updated, Deleted, Login, Register 等
-  description: string; // 详细的描述文本，包含多行属性数据快照
-  createdAt: string; 
+  action: string; 
+  description: string; 
+  created_at: string; // 修复前为 createdAt，导致解析出 undefined
 }
 
 // -----------------
@@ -92,15 +92,11 @@ export default function ActivityLogsPage() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 4000);
   };
 
-  const getAuthHeaders = () => { 
-    const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : ""; 
-    return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-  };
-
   const fetchLogs = async () => { 
     try {
       setIsLoading(true); 
-      const res = await fetch(`${API_BASE_URL}/ActivityLogs`, { headers: getAuthHeaders() }); 
+      // 【修改】：使用全局拦截器接管验证，无需再手动获取 token
+      const res = await fetch(`${API_BASE_URL}/ActivityLogs`); 
       if (res.ok) { 
         const json = await res.json(); 
         setLogs(json.data || []); 
@@ -124,6 +120,7 @@ export default function ActivityLogsPage() {
   }, [searchTerm, roleFilter]);
 
   const getRoleBadgeVariant = (roleName: string) => { 
+    if (!roleName) return "secondary";
     const lowerRole = roleName.toLowerCase(); 
     if (lowerRole.includes("super")) return "danger"; 
     if (lowerRole.includes("admin")) return "info"; 
@@ -132,8 +129,8 @@ export default function ActivityLogsPage() {
     return "secondary"; 
   };
 
-  // 根据 Action 动作短语返回不同的颜色标签
   const getActionBadgeVariant = (action: string) => {
+    if (!action) return "secondary";
     const lowerAction = action.toLowerCase();
     if (lowerAction === "created" || lowerAction === "register") return "success"; 
     if (lowerAction === "updated" || lowerAction === "login") return "info"; 
@@ -141,9 +138,13 @@ export default function ActivityLogsPage() {
     return "secondary"; 
   };
 
-  const formatTimestamp = (isoString: string) => { 
+  // 【修复】：更健壮的日期解析逻辑，避免由于字符串不规范出现 NaN
+  const formatTimestamp = (isoString: string | undefined) => { 
+    if (!isoString) return { date: "N/A", time: "N/A" };
     try {
       const dateObj = new Date(isoString); 
+      if (isNaN(dateObj.getTime())) return { date: "Invalid Date", time: "" };
+
       const yyyy = dateObj.getFullYear(); 
       const mm = String(dateObj.getMonth() + 1).padStart(2, '0'); 
       const dd = String(dateObj.getDate()).padStart(2, '0'); 
@@ -155,17 +156,17 @@ export default function ActivityLogsPage() {
         time: `${hh}:${min}:${ss}` 
       };
     } catch (e) {
-      return { date: isoString, time: "" }; 
+      return { date: "Error", time: "" }; 
     }
   };
 
   // ==========================================
   // 【核心解析引擎：从上到下渲染各卡片 Section 链】
   // ==========================================
-  const renderDescriptionDetails = (descriptionText: string) => {
+  const renderDescriptionDetails = (descriptionText: string | undefined) => {
     if (!descriptionText) return null;
 
-    if (!descriptionText.includes("\n")) { // 1. 如果描述中不包含换行符（如兼容旧的简单文本日志）
+    if (!descriptionText.includes("\n")) { 
       return (
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -178,47 +179,43 @@ export default function ActivityLogsPage() {
       );
     } 
 
-    // 2. 【新型 Section 排版】：将 newlines 剥离为自上而下的卡片 Section 链
-    const lines = descriptionText.split("\n"); // 拆分为行数组
-    const title = lines[0]; // 将第一行作为这组卡片大标题
-    const details = lines.slice(1); // 提取后续细节属性列表
+    const lines = descriptionText.split("\n"); 
+    const title = lines[0]; 
+    const details = lines.slice(1); 
 
     return (
       <div className="space-y-4">
-        {/* 操作大标题 */}
         <div className="flex items-center gap-2 text-sm font-extrabold text-slate-800 border-b border-slate-100 pb-2.5">
           <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
           {title}
         </div>
 
-        {/* 纵向 Sections 精美堆叠排版 */}
         <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
           {details.map((line, idx) => {
-            const cleanedLine = line.replace(/^•\s*/, ""); // 剔除后端用来美化的 Bullet •
+            const cleanedLine = line.replace(/^•\s*/, ""); 
             
-            if (cleanedLine.includes("->")) { // 针对新增 (Create) 和删除 (Delete) 的单值属性
-              const [label, value] = cleanedLine.split("->"); // 以 -> 分割提取属性名和属性值
+            if (cleanedLine.includes("->")) { 
+              const [label, value] = cleanedLine.split("->"); 
               return (
                 <div key={idx} className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 animate-in slide-in-from-bottom-2 fade-in">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label.trim()}</span>
-                  <span className="text-sm font-bold text-slate-800">{value.trim()}</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label?.trim()}</span>
+                  <span className="text-sm font-bold text-slate-800">{value?.trim()}</span>
                 </div>
               );
             } 
             
-            if (cleanedLine.includes("➔")) { // 针对修改 (Update) 的新旧值差异对比属性
-              const [label, valDiff] = cleanedLine.split("➔"); // 以 ➔ 分割提取字段名称和差异链
+            if (cleanedLine.includes("➔")) { 
+              const [label, valDiff] = cleanedLine.split("➔"); 
               return (
                 <div key={idx} className="flex flex-col gap-2 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 animate-in slide-in-from-bottom-2 fade-in">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label.trim()}</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label?.trim()}</span>
                   <div className="text-xs font-bold text-slate-700 leading-normal bg-slate-50 p-2.5 rounded-xl border border-slate-100 break-words">
-                    {valDiff.trim()}
+                    {valDiff?.trim()}
                   </div>
                 </div>
               );
             }
 
-            // 兜底：纯文本 Section 卡片
             return (
               <div key={idx} className="bg-white border border-slate-200 p-4 rounded-2xl text-xs font-bold text-slate-700 shadow-sm leading-relaxed">
                 {cleanedLine}
@@ -233,11 +230,11 @@ export default function ActivityLogsPage() {
   const filteredLogs = useMemo(() => { 
     return logs.filter((log) => {
       const matchSearch = 
-        log.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || // 修复为 full_name
         log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.description?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchRole = roleFilter === "all" || log.role.toLowerCase() === roleFilter.toLowerCase(); 
+      const matchRole = roleFilter === "all" || (log.role && log.role.toLowerCase() === roleFilter.toLowerCase()); 
       return matchSearch && matchRole; 
     });
   }, [logs, searchTerm, roleFilter]); 
@@ -253,7 +250,6 @@ export default function ActivityLogsPage() {
     <div className="space-y-5 max-w-[1400px] xl:max-w-full xl:px-4 2xl:px-1 mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">System Activity Logs</h1>
@@ -264,7 +260,6 @@ export default function ActivityLogsPage() {
         </button>
       </div>
 
-      {/* Search and Filters */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-4 items-center justify-between">
         <div className="relative w-full lg:w-[40%]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
@@ -294,7 +289,6 @@ export default function ActivityLogsPage() {
         </div>
       </div>
 
-      {/* Data Table */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading activity logs...</div>
@@ -317,15 +311,14 @@ export default function ActivityLogsPage() {
                   <tr><td colSpan={7} className="p-8 text-center text-slate-600 font-medium text-sm">No activity logs found.</td></tr>
                 ) : (
                   paginatedLogs.map((log) => {
-                    const formattedObj = formatTimestamp(log.createdAt); 
+                    const formattedObj = formatTimestamp(log.created_at); // 【修复】：传递正确的 created_at 属性
                     return (
                       <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-5 py-3 text-sm text-slate-600 font-bold"># {log.id}</td>
                         <td className="px-5 py-3 font-semibold text-slate-900 text-sm">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-slate-900">{log.fullName}</span>
-                            {/* 如果存在 userId，渲染标识 */}
-                            {log.userId && <span className="text-[10px] text-slate-400 font-bold">(ID: {log.userId})</span>}
+                            <span className="text-slate-900">{log.full_name || "N/A"}</span> 
+                            {log.user_id && <span className="text-[10px] text-slate-400 font-bold">(ID: {log.user_id})</span>}
                           </div>
                         </td>
                         <td className="px-5 py-3">
@@ -353,7 +346,6 @@ export default function ActivityLogsPage() {
           </div>
         )}
         
-        {/* Pagination Controls */}
         {!isLoading && filteredLogs.length > 0 && (
           <Pagination
             currentPage={currentPage}
@@ -379,13 +371,12 @@ export default function ActivityLogsPage() {
             <div className="p-6 bg-slate-50 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
-                {/* 移除 IP 模块，保留 User, Role, Action 和 Date 模块 */}
                 <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100"><User className="w-4 h-4 text-slate-500" /></div>
                   <div className="overflow-hidden">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Operator Name</p>
                     <p className="text-sm font-bold text-slate-900 truncate">
-                      {viewData.fullName} {viewData.userId && `(ID: ${viewData.userId})`}
+                      {viewData.full_name || "N/A"} {viewData.user_id && `(ID: ${viewData.user_id})`}
                     </p>
                   </div>
                 </div>
@@ -411,13 +402,12 @@ export default function ActivityLogsPage() {
                   <div className="overflow-hidden">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Logged At</p>
                     <p className="text-sm font-bold text-slate-900 truncate">
-                      {formatTimestamp(viewData.createdAt).date} {formatTimestamp(viewData.createdAt).time}
+                      {formatTimestamp(viewData.created_at).date} {formatTimestamp(viewData.created_at).time}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* 【核心解析渲染区】：展示自上而下的多个 Section 数据快照 */}
               {renderDescriptionDetails(viewData.description)}
             </div>
 

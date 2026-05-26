@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization; 
 using MedicalSystem.Services; 
 using Microsoft.AspNetCore.Http; 
+using Microsoft.EntityFrameworkCore; // 新增：为了使用 EF 查库
 
 namespace MedicalSystem.Controllers 
 {
@@ -22,12 +23,14 @@ namespace MedicalSystem.Controllers
         private readonly UserManager<User> _userManager; 
         private readonly IConfiguration _configuration; 
         private readonly IActivityLogService _activityLog; 
+        private readonly Data.AppDbContext _context; // 新增：注入数据库上下文用于查表
 
-        public AuthController(UserManager<User> userManager, IConfiguration configuration, IActivityLogService activityLog) 
+        public AuthController(UserManager<User> userManager, IConfiguration configuration, IActivityLogService activityLog, Data.AppDbContext context) 
         {
             _userManager = userManager; 
             _configuration = configuration; 
             _activityLog = activityLog; 
+            _context = context; // 绑定上下文
         }
 
         [HttpPost("register")] 
@@ -49,7 +52,18 @@ namespace MedicalSystem.Controllers
             var result = await _userManager.CreateAsync(user, model.Password); 
             if (result.Succeeded) 
             {
-                await _activityLog.LogExplicitAsync(user.Id, user.full_name, "Patient", "Register", $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender ID -> {user.gender_id}\n• Role -> Patient\n• Status -> Active");
+                // 【核心优化】：去数据库中把数字 ID 翻译为名称文本
+                var genderName = await _context.Genders.Where(g => g.id == model.GenderId).Select(g => g.name).FirstOrDefaultAsync() ?? "Unknown";
+
+                // 【核心优化】：日志记录中直接展示具体的性别名称，而不是 ID 数字
+                await _activityLog.LogExplicitAsync(
+                    user.Id, 
+                    user.full_name, 
+                    "Patient", 
+                    "Register", 
+                    $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender -> {genderName}\n• Role -> Patient\n• Status -> Active"
+                );
+                
                 return Ok(ApiResponse<string>.SuccessResponse(null, "注册成功")); 
             }
 
@@ -74,7 +88,6 @@ namespace MedicalSystem.Controllers
 
             var token = GenerateJwtToken(user); 
 
-            // 【优化】：本地开发统一 Cookie 最佳配置，加入 Path = "/"
             var cookieOptions = new CookieOptions 
             { 
                 HttpOnly = true, 
@@ -85,9 +98,15 @@ namespace MedicalSystem.Controllers
             }; 
             Response.Cookies.Append("AuthToken", token, cookieOptions);
             
-            await _activityLog.LogExplicitAsync(user.Id, user.full_name, "Patient", "Login", "Successfully logged into the patient portal.");
+            // 【核心优化】：患者端（User）的登录记录排版格式与 Admin 保持完全一致的详细化多行展示
+            await _activityLog.LogExplicitAsync(
+                user.Id, 
+                user.full_name, 
+                "Patient", 
+                "Login", 
+                $"Logged into the patient portal:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Role -> Patient"
+            );
 
-            // 【优化】：删除了返回数据载荷中的明文 token 字段，完全通过安全的 HttpOnly Cookie 托管
             return Ok(ApiResponse<object>.SuccessResponse(new { 
                 user = new { 
                     id = user.Id,
@@ -98,9 +117,6 @@ namespace MedicalSystem.Controllers
             }, "登录成功")); 
         }
 
-        // ==========================================
-        // 检查 Cookie 登录状态接口
-        // ==========================================
         [HttpGet("check-auth")]
         [Authorize] 
         public async Task<IActionResult> CheckAuth()
@@ -120,13 +136,9 @@ namespace MedicalSystem.Controllers
             }, "认证有效"));
         }
 
-        // ==========================================
-        // 注销退出，清除 Cookie 接口
-        // ==========================================
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            // 【优化】：删除 Cookie 的配置参数与写入时保持完全一致，保障完美清除
             Response.Cookies.Delete("AuthToken", new CookieOptions
             {
                 HttpOnly = true,

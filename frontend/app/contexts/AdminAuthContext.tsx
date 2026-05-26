@@ -19,7 +19,7 @@ export const ADMIN_ROLE_NAMES: { [key: number]: string } = { // 声明管理员�
 
 interface AdminAuthContextType { // 声明上下文状态暴露的属性与方法接口
   user: AdminUser | null; // 当前登录的管理员用户对象，未登录则为 null
-  login: (userData: AdminUser) => void; // 【核心修复】：移除了多余的 token 参数，只保留 userData
+  login: (userData: AdminUser) => void; // 登录成功回调方法
   logout: () => void; // 退出登录方法
   isAuthenticated: boolean; // 是否已通过身份验证的标志
   isInitialized: boolean; // 上下文是否完成 Cookie 初始化状态读取的标志
@@ -56,14 +56,23 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
   }, [router]); // 依赖于路由实例
 
   // ==========================================
-  // 【重构】：1. 初始化时自动向后端 check-auth 探查 Cookie 是否有效（支持登录页自动跳转）
+  // 【安全重构】：1. 初始化验证，增加路由范围判定与越权过滤（彻底打碎闪烁循环）
   // ==========================================
   useEffect(() => {
     const initializeAuth = async () => {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api'; // 获取 API 基础地址
       
-      // 如果当前就在登录或注册页面，不需要自动验证状态，直接跳过以优化加载
-      if (pathname.includes('/login') || pathname.includes('/register')) {
+      // ==========================================
+      // 【黄金规则】：只有当前路径是以 "/admin" 开头（管理后台页面）时，才触发验证！
+      // 如果处于前台页面（如 /home, /about 等），直接放行，不发送任何网络请求，彻底防止无限循环闪烁！
+      // ==========================================
+      if (!pathname.startsWith('/admin')) {
+        setIsInitialized(true); // 直接标记初始化完成
+        return; // 提前退出，不执行后续任何 C# 鉴权和重定向操作
+      }
+
+      // 如果当前就在管理端登录或注册页面，不需要自动验证状态，直接跳过以优化加载
+      if (pathname.includes('/admin/login') || pathname.includes('/admin/register')) {
         setIsInitialized(true); // 仍需标记初始化已完成
         return;
       }
@@ -78,7 +87,17 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
         if (res.ok) { // 如果响应状态码为 200
           const result = await res.json(); // 解析 JSON
           if (result.success && result.data?.user) { // 如果后端业务表明登录态依然有效
-            setUser(result.data.user); // 自动将用户信息还原到全局状态，实现免密自动登录
+            const loggedUser = result.data.user;
+
+            // 如果发现当前登录的 Cookie 属于患者 (Patient)，强行阻断其在管理后台页面停留
+            if (loggedUser.role?.toLowerCase() === "patient") {
+              console.warn("患者无权访问后台系统，强制重定向至患者前台首页");
+              setUser(null); // 强制抹除后台内存状态
+              router.push('/home'); // 强行将其送回前台患者首页
+            } else {
+              setUser(loggedUser); // 只有 SuperAdmin, Admin, Doctor 允许载入后台状态
+            }
+
           } else {
             setUser(null); // 状态失效清空用户
           }
@@ -93,7 +112,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
     };
 
     initializeAuth(); // 启动验证
-  }, [pathname]); // 依赖于路径变化，在进入新页面时自动校验
+  }, [pathname, router]); // 依赖于路径变化，在进入新页面时自动校验
 
   // ==========================================
   // 【核心修改】：2. 全局安全 Fetch 拦截器 (自动注入 credentials: 'include')
@@ -137,7 +156,6 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => { //
   // ==========================================
   // 3. 登录成功回调方法
   // ==========================================
-  // 【核心修复】：移除了多余的 token 参数。
   const login = (userData: AdminUser) => { 
     if (!userData) return; // 安全防御
     setUser(userData); // 将用户信息对象写入全局 React 状态中管理
