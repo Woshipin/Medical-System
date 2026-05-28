@@ -14,7 +14,11 @@ namespace MedicalSystem.Models // 声明实体模型所在的命名空间
         [StringLength(20)] // 限制对应字符串的最大长度为 20 个字符
         public string name { get; set; } = null!; // 性别名称属性（例如 "Male", "Female" 等）
 
-        // 【修改】：is_active 改为 status
-        public bool status { get; set; } = true; // 属性状态是否有效，默认为启用（true）
+        /// <summary>
+        /// 性别状态（0: 停用, 1: 启用）
+        /// </summary>
+        [Required]
+        [Range(0, 1, ErrorMessage = "状态值必须为 0 或 1")]
+        public int status { get; set; } = 1; // 属性状态是否有效，默认为启用（1）
     }
 }

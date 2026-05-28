@@ -1,25 +1,40 @@
-"use client"; // 启用 Next.js 客户端组件模式
+"use client";
 
-import React, { useState, useEffect } from 'react'; // 引入 React 核心库及钩子
-import { Mail, Lock, Activity, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle, X, CheckCircle2, Info, Loader2, Check } from 'lucide-react'; 
+import React, { useState, useEffect } from 'react'; 
+import { Mail, Lock, Activity, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle, X, Info, Loader2, Check } from 'lucide-react'; 
 import Link from 'next/link'; 
 import { useRouter } from 'next/navigation'; 
 import { useAdminAuth } from '@/app/contexts/AdminAuthContext'; 
 
-// --- 解析后端各类错误的辅助函数 ---
+// 【修复核心】：彻底重写错误解析函数，确保100%返回纯净的字符串，屏蔽 [object Object]
 const parseBackendError = (result: any, defaultMsg: string = "Invalid admin credentials."): string => {
-  if (!result) return defaultMsg; 
-  const errors = result.errors || result.Errors || result.data || result.Data; 
-  if (errors) { 
-    if (Array.isArray(errors)) return errors.join(" | "); 
-    if (typeof errors === 'object') { 
-      return Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]).join(" | "); 
+  try {
+    if (!result) return defaultMsg; 
+
+    // 1. 优先提取明确的 message 字段
+    const msg = result.message || result.Message;
+    if (typeof msg === 'string' && msg.trim().length > 0) {
+      return msg;
+    }
+
+    // 2. 其次提取 errors 字典或数组
+    const errors = result.errors || result.Errors; 
+    if (errors) { 
+      if (Array.isArray(errors)) {
+         return errors.map(e => typeof e === 'object' ? JSON.stringify(e) : String(e)).join(" | ");
+      } 
+      if (typeof errors === 'object') { 
+         const valArray = Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]);
+         return valArray.map(e => typeof e === 'object' ? JSON.stringify(e) : String(e)).join(" | ");
+      } 
     } 
-  } 
-  return result.message || result.Message || defaultMsg; 
+
+    return defaultMsg; 
+  } catch (error) {
+    return defaultMsg;
+  }
 }; 
 
-// --- 重复登录拦截拦截组件 ---
 const AlreadyLoggedInAlert = () => {
   const router = useRouter(); 
   useEffect(() => { 
@@ -52,7 +67,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState(''); 
   const [showPassword, setShowPassword] = useState(false); 
-  const [rememberMe, setRememberMe] = useState(false); // 新增状态：记住密码
+  const [rememberMe, setRememberMe] = useState(false); 
 
   const [isLoading, setIsLoading] = useState(false); 
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null); 
@@ -62,9 +77,6 @@ export default function AdminLoginPage() {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); 
   const isValidPassword = password.trim().length > 0; 
 
-  // ==========================================
-  // 读取 Remember Me 记忆数据
-  // ==========================================
   useEffect(() => {
     const savedEmail = localStorage.getItem("adminRememberedEmail");
     const savedPassword = localStorage.getItem("adminRememberedPassword");
@@ -72,7 +84,7 @@ export default function AdminLoginPage() {
     if (savedEmail && savedPassword) {
       setEmail(savedEmail);
       setPassword(savedPassword);
-      setRememberMe(true); // 如果存有密码，自动勾选复选框
+      setRememberMe(true); 
     }
   }, []);
 
@@ -92,14 +104,13 @@ export default function AdminLoginPage() {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ email, password }),
-        credentials: 'include', // 关键配置：允许后端安全植入 HttpOnly Cookie
       }); 
       
       let result; 
       const contentType = response.headers.get("content-type"); 
-      if (response.status === 404) { 
-         throw new Error("API endpoint not found (404). Backend server might be offline."); 
-      } 
+      
+      if (response.status === 404) throw new Error("API endpoint not found (404). Backend server might be offline."); 
+      
       if (contentType && contentType.toLowerCase().includes("application/json")) { 
         result = await response.json(); 
       } else { 
@@ -108,17 +119,15 @@ export default function AdminLoginPage() {
 
       const isSuccess = result?.success === true || result?.Success === true; 
 
-      if (response.ok && isSuccess && result?.data?.user) { 
-         // 简化逻辑：直接提取并写入安全的用户资料
+      if (response.ok && isSuccess && result?.data?.user && result?.data?.token) { 
          const rawUserData = result.data.user;
+         const adminToken = result.data.token; 
+         
          const formattedUser = { 
             ...rawUserData, 
             id: String(rawUserData.id || rawUserData.Id || "0") 
          }; 
 
-         // ==========================================
-         // 处理 Remember Me 缓存（登录成功后执行）
-         // ==========================================
          if (rememberMe) {
            localStorage.setItem("adminRememberedEmail", email);
            localStorage.setItem("adminRememberedPassword", password);
@@ -127,17 +136,20 @@ export default function AdminLoginPage() {
            localStorage.removeItem("adminRememberedPassword");
          }
 
-         login(formattedUser); // 同步到上下文状态，身份 Token 验证全交由 Cookie 自动托管
-         setSuccessMsg("Welcome back! Accessing dashboard..."); 
+         login(formattedUser, adminToken); 
+         setSuccessMsg(result?.message || result?.Message || "Welcome back! Accessing dashboard..."); 
          setTimeout(() => router.push('/admin/dashboard'), 2000); 
 
       } else { 
+        // 解析错误信息
         const errorMsg = parseBackendError(result, "Invalid admin credentials."); 
         setApiErrorMsg(errorMsg); 
         setIsLoading(false); 
       } 
     } catch (err: any) { 
-      setApiErrorMsg(err.message || "Cannot connect to server. Please check your connection."); 
+      // 捕捉网络级错误
+      const fallBackMsg = err?.message && typeof err.message === 'string' ? err.message : "Cannot connect to server. Please check your connection.";
+      setApiErrorMsg(fallBackMsg); 
       setIsLoading(false); 
     } 
   }; 
@@ -148,7 +160,7 @@ export default function AdminLoginPage() {
   return ( 
     <div className="h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700 font-sans overflow-hidden">
       
-      <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
+      <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4 flex-col gap-2 items-center">
         {apiErrorMsg && ( 
           <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-6 fade-in duration-300">
             <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={18} />
@@ -157,6 +169,16 @@ export default function AdminLoginPage() {
               <p className="text-xs text-slate-600 mt-0.5 break-words">{apiErrorMsg}</p>
             </div>
             <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1 shrink-0"><X size={16} /></button>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 text-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-6 fade-in duration-300">
+            <CheckCircle className="text-emerald-600 mt-0.5 shrink-0" size={18} />
+            <div className="flex-1">
+              <h4 className="font-bold text-xs text-emerald-700">Success</h4>
+              <p className="text-xs text-slate-600 mt-0.5 break-words">{successMsg}</p>
+            </div>
           </div>
         )}
       </div>
@@ -232,7 +254,6 @@ export default function AdminLoginPage() {
               )}
             </div>
 
-            {/* 自适应的 Remember Me 和 Forgot Password 行 */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
               <label className="flex items-center gap-2 cursor-pointer group">
                 <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
@@ -250,9 +271,6 @@ export default function AdminLoginPage() {
                   Remember me
                 </span>
               </label>
-              <Link href="#" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
-                Forgot password?
-              </Link>
             </div>
 
             <button
@@ -269,22 +287,9 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p className="text-slate-500 text-xs font-medium">
-              New administrator?{' '}
-              <Link href="/admin/register" className="font-extrabold text-emerald-600 hover:underline transition-all">
-                Create Account
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
-      
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-      `}</style>
+      <style jsx global>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }`}</style>
     </div>
   );
 }

@@ -5,14 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity; 
 using Microsoft.AspNetCore.Mvc; 
 using MedicalSystem.Models; 
-using System.IdentityModel.Tokens.Jwt; 
 using System.Security.Claims; 
-using System.Text; 
-using Microsoft.IdentityModel.Tokens; 
 using Microsoft.AspNetCore.Authorization; 
 using MedicalSystem.Services; 
 using Microsoft.AspNetCore.Http; 
-using Microsoft.EntityFrameworkCore; // 新增：为了使用 EF 查库
+using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.IO; 
 
 namespace MedicalSystem.Controllers 
 {
@@ -21,16 +20,31 @@ namespace MedicalSystem.Controllers
     public class AuthController : ControllerBase 
     {
         private readonly UserManager<User> _userManager; 
-        private readonly IConfiguration _configuration; 
         private readonly IActivityLogService _activityLog; 
-        private readonly Data.AppDbContext _context; // 新增：注入数据库上下文用于查表
+        private readonly Data.AppDbContext _context; 
+        private readonly ITokenService _tokenService;
 
-        public AuthController(UserManager<User> userManager, IConfiguration configuration, IActivityLogService activityLog, Data.AppDbContext context) 
+        public AuthController(
+            UserManager<User> userManager, 
+            IActivityLogService activityLog, 
+            Data.AppDbContext context,
+            ITokenService tokenService) 
         {
             _userManager = userManager; 
-            _configuration = configuration; 
             _activityLog = activityLog; 
-            _context = context; // 绑定上下文
+            _context = context; 
+            _tokenService = tokenService;
+        }
+
+        private void LogToFile(string functionName, string message)
+        {
+            try
+            {
+                string logPath = Path.Combine(Directory.GetCurrentDirectory(), "backend.log");
+                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [AuthController.{functionName}] {message}{Environment.NewLine}";
+                System.IO.File.AppendAllText(logPath, logEntry);
+            }
+            catch { }
         }
 
         [HttpPost("register")] 
@@ -40,33 +54,37 @@ namespace MedicalSystem.Controllers
             {
                 UserName = model.Email, 
                 Email = model.Email, 
-                full_name = model.FullName, 
+                FullName = model.FullName, 
                 PhoneNumber = model.PhoneNumber, 
-                gender_id = model.GenderId, 
-                role = UserRole.Patient, 
-                status = true,
-                created_at = DateTime.Now, 
-                updated_at = DateTime.Now 
+                GenderId = model.GenderId, 
+                Role = UserRole.Patient, 
+                Status = 1, 
+                CreatedAt = DateTime.UtcNow, 
+                UpdatedAt = DateTime.UtcNow 
             };
 
             var result = await _userManager.CreateAsync(user, model.Password); 
             if (result.Succeeded) 
             {
-                // 【核心优化】：去数据库中把数字 ID 翻译为名称文本
-                var genderName = await _context.Genders.Where(g => g.id == model.GenderId).Select(g => g.name).FirstOrDefaultAsync() ?? "Unknown";
+                // 【修复】：恢复患者注册的系统日志和完整详情
+                var genderName = await _context.Genders
+                    .Where(g => g.id == model.GenderId)
+                    .Select(g => g.name)
+                    .FirstOrDefaultAsync() ?? "Unknown";
 
-                // 【核心优化】：日志记录中直接展示具体的性别名称，而不是 ID 数字
                 await _activityLog.LogExplicitAsync(
                     user.Id, 
-                    user.full_name, 
+                    user.FullName, 
                     "Patient", 
                     "Register", 
-                    $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender -> {genderName}\n• Role -> Patient\n• Status -> Active"
+                    $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender -> {genderName}\n• Role -> Patient\n• Status -> Active"
                 );
-                
-                return Ok(ApiResponse<string>.SuccessResponse(null, "注册成功")); 
+
+                LogToFile("Register", $"Success: Patient account created for {user.Email}");
+                return Ok(ApiResponse<string>.SuccessResponse(null, "Registration successful")); 
             }
 
+            LogToFile("Register", $"Failed: Error creating patient {user.Email}");
             return BadRequest(ApiResponse<List<string>>.FailureResponse("注册失败", result.Errors.Select(e => e.Description).ToList())); 
         }
 
@@ -76,45 +94,75 @@ namespace MedicalSystem.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email); 
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) 
             {
+                // 【恢复】：记录密码错误的系统日志
                 await _activityLog.LogExplicitAsync(null, "Anonymous", "Visitor", "LoginFail", $"Failed login attempt - Details: [AttemptedEmail: '{model.Email}']");
+                LogToFile("Login", $"Failed: Invalid credentials for patient {model.Email}");
                 return Unauthorized(ApiResponse<string>.FailureResponse("账号或密码错误")); 
             }
 
-            if (user.role != UserRole.Patient) 
+            if (user.Role != UserRole.Patient) 
             {
-                await _activityLog.LogExplicitAsync(user.Id, user.full_name, user.role.ToString(), "LoginFail", $"Blocked attempt to access patient portal with non-patient role - Details: [Email: '{user.Email}', ActualRole: '{user.role}']");
+                // 【恢复】：记录串台拦截的系统日志
+                await _activityLog.LogExplicitAsync(user.Id, user.FullName, user.Role.ToString(), "LoginFail", $"Blocked attempt to access patient portal - Details: [Email: '{user.Email}', ActualRole: '{user.Role}']");
+                LogToFile("Login", $"Failed: Admin/Doctor account {model.Email} attempted to access Patient portal");
                 return Unauthorized(ApiResponse<string>.FailureResponse("请前往后台系统登录")); 
             }
 
-            var token = GenerateJwtToken(user); 
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            var cookieOptions = new CookieOptions 
-            { 
-                HttpOnly = true, 
-                Secure = false, 
-                SameSite = SameSiteMode.Lax, 
-                Path = "/",
-                Expires = DateTime.Now.AddDays(1) 
-            }; 
-            Response.Cookies.Append("AuthToken", token, cookieOptions);
+            _tokenService.SetTokenCookies(HttpContext, accessToken, refreshToken);
             
-            // 【核心优化】：患者端（User）的登录记录排版格式与 Admin 保持完全一致的详细化多行展示
+            // 【修复】：恢复患者登录的系统日志完整详情
             await _activityLog.LogExplicitAsync(
                 user.Id, 
-                user.full_name, 
+                user.FullName, 
                 "Patient", 
                 "Login", 
-                $"Logged into the patient portal:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Role -> Patient"
+                $"Logged into the patient portal:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Role -> Patient"
             );
+
+            LogToFile("Login", $"Success: Patient {user.Email} logged in successfully");
 
             return Ok(ApiResponse<object>.SuccessResponse(new { 
                 user = new { 
                     id = user.Id,
-                    fullName = user.full_name,
+                    fullName = user.FullName,
                     email = user.Email,
-                    roleValue = (int)(user.role ?? UserRole.Patient) 
+                    roleValue = (int)user.Role 
                 } 
-            }, "登录成功")); 
+            }, "Patient login successful")); 
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            if (!Request.Cookies.TryGetValue("RefreshToken", out var oldRefreshTokenString) || string.IsNullOrEmpty(oldRefreshTokenString))
+            {
+                LogToFile("Refresh", "Failed: RefreshToken cookie missing");
+                return Unauthorized(ApiResponse<string>.FailureResponse("凭证缺失，请重新登录"));
+            }
+
+            var savedToken = await _context.UserRefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == oldRefreshTokenString && !rt.IsRevoked);
+
+            if (savedToken == null || savedToken.ExpiresAt < DateTime.UtcNow || savedToken.User.Status != 1)
+            {
+                LogToFile("Refresh", "Failed: RefreshToken expired, invalid or user disabled");
+                return Unauthorized(ApiResponse<string>.FailureResponse("凭证已过期或无效，请重新登录"));
+            }
+
+            savedToken.IsRevoked = true;
+            _context.UserRefreshTokens.Update(savedToken);
+
+            var newAccessToken = _tokenService.GenerateAccessToken(savedToken.User);
+            var newRefreshTokenString = await _tokenService.GenerateRefreshTokenAsync(savedToken.UserId);
+
+            _tokenService.SetTokenCookies(HttpContext, newAccessToken, newRefreshTokenString);
+
+            LogToFile("Refresh", $"Success: Tokens refreshed for user {savedToken.User.Email}");
+            return Ok(ApiResponse<string>.SuccessResponse(null, "Token refreshed successfully"));
         }
 
         [HttpGet("check-auth")]
@@ -124,45 +172,46 @@ namespace MedicalSystem.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             var user = await _userManager.FindByIdAsync(userId!);
             
-            if (user == null || user.status != true) return Unauthorized(ApiResponse<string>.FailureResponse("账号无效或已被禁用"));
+            if (user == null || user.Status != 1 || user.Role != UserRole.Patient) 
+            {
+                LogToFile("CheckAuth", $"Failed: Unauthorized access or wrong role (Expected Patient). UserID: {userId}");
+                return Unauthorized(ApiResponse<string>.FailureResponse("账号无效或非患者角色，请重新登录"));
+            }
 
+            LogToFile("CheckAuth", $"Success: Token validated for Patient {user.Email}");
             return Ok(ApiResponse<object>.SuccessResponse(new {
                 user = new {
                     id = user.Id,
-                    fullName = user.full_name,
+                    fullName = user.FullName,
                     email = user.Email,
-                    roleValue = (int)(user.role ?? UserRole.Patient)
+                    roleValue = (int)user.Role
                 }
             }, "认证有效"));
         }
 
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            Response.Cookies.Delete("AuthToken", new CookieOptions
+            if (Request.Cookies.TryGetValue("RefreshToken", out var refreshTokenString))
             {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
-                Path = "/"
-            });
-            return Ok(ApiResponse<string>.SuccessResponse(null, "成功退出登录"));
-        }
+                var tokenInDb = await _context.UserRefreshTokens
+                    .FirstOrDefaultAsync(rt => rt.Token == refreshTokenString);
+                if (tokenInDb != null)
+                {
+                    tokenInDb.IsRevoked = true;
+                    _context.UserRefreshTokens.Update(tokenInDb);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
-        private string GenerateJwtToken(User user) 
-        {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)); 
-            var claims = new[] { 
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), 
-                new Claim(ClaimTypes.Role, user.role.ToString() ?? "Patient") 
-            };
-            var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims, 
-                expires: DateTime.Now.AddDays(1), signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)); 
-            return new JwtSecurityTokenHandler().WriteToken(token); 
+            _tokenService.ClearTokenCookies(HttpContext);
+            LogToFile("Logout", "Success: Patient logged out and tokens cleared.");
+            return Ok(ApiResponse<string>.SuccessResponse(null, "Patient logged out successfully"));
         }
     }
 
-    public class FrontendRegisterDto { 
+    public class FrontendRegisterDto 
+    { 
         public string FullName { get; set; } = null!; 
         public string Email { get; set; } = null!; 
         public string Password { get; set; } = null!; 
@@ -170,7 +219,8 @@ namespace MedicalSystem.Controllers
         public int GenderId { get; set; } 
     }
 
-    public class LoginDto { 
+    public class LoginDto 
+    { 
         public string Email { get; set; } = null!; 
         public string Password { get; set; } = null!; 
     }

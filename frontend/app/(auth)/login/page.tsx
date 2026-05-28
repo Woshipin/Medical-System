@@ -9,16 +9,31 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/app/contexts/AuthContext';
 
-const parseBackendError = (result: any): string => {
-  if (!result) return "Login failed. Please check your credentials."; 
-  const errors = result.errors || result.Errors || result.data || result.Data; 
-  if (errors) { 
-    if (Array.isArray(errors)) return errors.join(" | "); 
-    if (typeof errors === 'object') { 
-      return Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]).join(" | "); 
+// 【防 [object Object] 升级版】：严格提取纯文本错误信息
+const parseBackendError = (result: any, defaultMsg: string = "Login failed. Please check your credentials."): string => {
+  try {
+    if (!result) return defaultMsg; 
+
+    const msg = result.message || result.Message;
+    if (typeof msg === 'string' && msg.trim().length > 0) {
+      return msg;
+    }
+
+    const errors = result.errors || result.Errors; 
+    if (errors) { 
+      if (Array.isArray(errors)) {
+         return errors.map(e => typeof e === 'object' ? JSON.stringify(e) : String(e)).join(" | ");
+      } 
+      if (typeof errors === 'object') { 
+         const valArray = Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]);
+         return valArray.map(e => typeof e === 'object' ? JSON.stringify(e) : String(e)).join(" | ");
+      } 
     } 
-  } 
-  return result.message || result.Message || "Login failed. Please check your credentials."; 
+
+    return defaultMsg; 
+  } catch (error) {
+    return defaultMsg;
+  }
 }; 
 
 const AlreadyLoggedInAlert = () => { 
@@ -63,9 +78,6 @@ export default function LoginPage() {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); 
   const isValidPassword = password.trim().length > 0; 
 
-  // ==========================================
-  // 读取 Remember Me 记忆数据
-  // ==========================================
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
     const savedPassword = localStorage.getItem("rememberedPassword");
@@ -94,21 +106,19 @@ export default function LoginPage() {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ email, password }),
-        credentials: 'include', // 必须加上，允许后端颁发 Cookie
+        credentials: 'include', 
       }); 
 
       const result = await response.json(); 
       const isSuccess = result?.success === true || result?.Success === true; 
 
       if (response.ok && isSuccess && result?.data?.user) { 
-        // 【优化】：删除繁冗的 Token 提取和重组，直接取后端干净的用户实体并记录登录态
         const rawUserData = result.data.user;
         const formattedUser = { 
             ...rawUserData, 
             id: String(rawUserData.id || rawUserData.Id || "0") 
         }; 
 
-        // 维护 Remember me 缓存
         if (rememberMe) {
           localStorage.setItem("rememberedEmail", email);
           localStorage.setItem("rememberedPassword", password);
@@ -117,12 +127,11 @@ export default function LoginPage() {
           localStorage.removeItem("rememberedPassword");
         }
 
-        login(formattedUser); // 注入全局状态，鉴权及令牌由浏览器 Cookie 全权托管
-        setSuccessMsg("Login successful! Redirecting to dashboard..."); 
+        login(formattedUser); 
+        setSuccessMsg(result?.message || result?.Message || "Login successful! Redirecting to dashboard..."); 
         setTimeout(() => router.push('/home'), 2000); 
 
       } else { 
-        // 【优化】：错误处理拦截简化
         const errorMsg = result?.message || result?.Message || "";
 
         if (errorMsg === "请前往后台系统登录") {
@@ -135,7 +144,6 @@ export default function LoginPage() {
         }
       } 
     } catch (err) { 
-      console.error("Fetch Error:", err); 
       setApiErrorMsg("Unable to connect to the server. Please ensure the backend is running."); 
       setIsLoading(false); 
     } 
@@ -148,7 +156,7 @@ export default function LoginPage() {
     <div className="h-screen w-full bg-gradient-to-br from-teal-900 via-emerald-800 to-emerald-500 flex items-center justify-center p-4 relative overflow-hidden">
       
       {/* 提示层 */}
-      <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
+      <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4 flex-col gap-2 items-center">
         {apiErrorMsg && ( 
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
             <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={20} />
@@ -164,7 +172,7 @@ export default function LoginPage() {
           <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 text-slate-800 px-5 py-4 rounded-xl shadow-2xl flex items-start gap-4 animate-in slide-in-from-top-6 fade-in duration-300">
             <CheckCircle className="text-emerald-600 mt-0.5 shrink-0" size={20} />
             <div className="flex-1">
-              <h4 className="font-bold text-sm text-emerald-700">Login Successful</h4>
+              <h4 className="font-bold text-sm text-emerald-700">Success</h4>
               <p className="text-sm text-slate-600 mt-1">{successMsg}</p>
             </div>
           </div>
@@ -225,6 +233,7 @@ export default function LoginPage() {
             <div className="group flex flex-col">
                <div className="flex justify-between items-center mb-1.5">
                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Password</label>
+                   {/* 【恢复】：忘记密码链接 */}
                    <Link href="#" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline">Forgot password?</Link>
                </div>
                <div className="relative flex items-center">
@@ -288,42 +297,22 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* 【恢复】：表单底部的去注册区域 */}
           <div className="mt-8 text-center text-sm">
             <p className="text-slate-500">
-              Don't have an account? <Link href="/register" className="text-emerald-600 font-bold hover:underline transition-all">Create one now</Link>
+              Don't have an account? <Link href="/register" className="text-emerald-600 font-bold hover:underline transition-all">Register now</Link>
             </p>
           </div>
+
         </div>
 
-        {/* 右侧海报区 */}
+        {/* 右侧海报区不变 */}
         <div className="hidden md:block md:w-1/2 relative overflow-hidden bg-slate-900">
            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80')] bg-cover bg-center transform hover:scale-105 transition-transform duration-[20s] opacity-80"></div>
            <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/95 via-teal-900/60 to-transparent mix-blend-multiply"></div>
-           
-           <div className="absolute inset-0 p-12 flex flex-col justify-end text-white z-10">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl mb-4 shadow-xl">
-                  <div className="flex items-center gap-3 mb-3">
-                     <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                     </span>
-                     <span className="font-semibold text-emerald-100 text-xs tracking-wide uppercase">System Operational</span>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">Patient-Centric Technology</h3>
-                  <p className="text-emerald-50 text-opacity-90 leading-relaxed text-sm">
-                    Experience seamless medical management. Your data is protected by military-grade encryption protocols.
-                  </p>
-              </div>
-           </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-      `}</style>
+      <style jsx global>{`.custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }`}</style>
     </div>
   );
 }

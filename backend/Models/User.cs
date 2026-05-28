@@ -1,36 +1,85 @@
-using Microsoft.AspNetCore.Identity; // 引入 ASP.NET Core Identity 成员身份管理框架
-using System;
-using System.ComponentModel.DataAnnotations; // 引入数据注解命名空间
+using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MedicalSystem.Models // 声明实体模型所在的命名空间
+namespace MedicalSystem.Models
 {
-    /// <summary>
-    /// 用户角色定义
-    /// </summary>
-    public enum UserRole { SuperAdmin = 0, Admin = 1, Doctor = 2, Patient = 3 } // 定义用户角色枚举
-
-    /// <summary>
-    /// 系统核心用户类。主键 ID 为自增数字。
-    /// </summary>
-    public class User : IdentityUser<int> // 继承 IdentityUser 并指定主键类型为 int 整型
+    public class User : IdentityUser<int>
     {
-        // 注意：基类自带的 Id, Email, PhoneNumber, PasswordHash 属性无需在此重写，
-        // 我们已在 AppDbContext 中通过 Fluent API 统一配置了它们的小写映射和严格物理显示顺序。
+        [Required(ErrorMessage = "姓名不能为空")]
+        [StringLength(100)]
+        [Column("full_name")]
+        public string FullName { get; set; } = null!;
 
-        [Required(ErrorMessage = "真实姓名是必填项")] 
-        [StringLength(100)] 
-        public string full_name { get; set; } = null!; // 真实姓名
+        [Column("profile_image_url")]
+        [StringLength(255)]
+        public string? ProfileImageUrl { get; set; }
 
-        public int? gender_id { get; set; } // 性别关联 ID
-        
-        public virtual Gender? gender { get; set; } // 导航属性
+        [Column("gender_id")]
+        public int? GenderId { get; set; }
 
-        public bool? status { get; set; } = true; // 账号状态
+        // 性别导航属性，让 Include(u => u.Gender) 可以加载性别字典资料。
+        [ForeignKey(nameof(GenderId))]
+        public virtual Gender? Gender { get; set; }
 
-        public UserRole? role { get; set; } // 业务角色
+        [Column("date_of_birth")]
+        public DateOnly? DateOfBirth { get; set; }
 
-        public DateTime? created_at { get; set; } = DateTime.Now; // 创建时间
+        // 重写基类的 PhoneNumber 以应用自定义列名和长度
+        [Column("phone_number")]
+        [StringLength(20)]
+        public override string? PhoneNumber { get; set; }
 
-        public DateTime? updated_at { get; set; } = DateTime.Now; // 更新时间
+        [Column("phone_number_alt")]
+        [StringLength(20)]
+        public string? PhoneNumberAlt { get; set; }
+
+        [Column("address_line_1")]
+        [StringLength(200)]
+        public string? AddressLine1 { get; set; }
+
+        [Column("address_line_2")]
+        [StringLength(200)]
+        public string? AddressLine2 { get; set; }
+
+        [Column("city")]
+        [StringLength(100)]
+        public string? City { get; set; }
+
+        [Column("state")]
+        [StringLength(100)]
+        public string? State { get; set; }
+
+        [Column("postal_code")]
+        [StringLength(20)]
+        public string? PostalCode { get; set; }
+
+        [Column("country")]
+        [StringLength(100)]
+        public string? Country { get; set; }
+
+        [Column("role")]
+        public UserRole Role { get; set; }
+
+        [Column("status")]
+        public int Status { get; set; } = 1;
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // 双向导航属性
+        public virtual Doctor? Doctor { get; set; }
+        public virtual PatientProfile? PatientProfile { get; set; }
+    }
+
+    public enum UserRole
+    {
+        SuperAdmin = 0,
+        Admin = 1,
+        Doctor = 2,
+        Patient = 3
     }
 }

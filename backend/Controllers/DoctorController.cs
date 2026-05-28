@@ -1,4 +1,4 @@
-using System; 
+﻿using System; 
 using System.Collections.Generic; 
 using System.Linq; 
 using System.Threading.Tasks; 
@@ -30,38 +30,42 @@ namespace MedicalSystem.Controllers
         public async Task<IActionResult> GetDoctors() 
         {
             var doctors = await _context.Doctors 
-                .Include(d => d.user) 
-                    .ThenInclude(u => u!.gender) 
+                .Include(d => d.User) 
+                    .ThenInclude(u => u!.Gender) 
                 .ToListAsync(); 
 
+            // 銆愭牳蹇冧慨澶嶃€戯細鍦?Select 鏌ヨ鎶曞奖涓紝琛ュ厖 qualifications, biography, resumePdf 瀛楁杩斿洖缁欏墠绔?
             var result = doctors.Select(d => new 
             {
-                d.id,
-                d.user_id,
-                d.license_number,
-                d.specialty_id,
-                d.title_id,
-                d.department_id,
-                DateOfBirth = d.date_of_birth.ToString("yyyy-MM-dd"),
-                d.office_location_id,
-                d.years_of_experience,
-                d.address,
-                d.postal_code,
-                d.office_phone,
-                DateJoin = d.date_join.ToString("yyyy-MM-dd"),
-                DateLeft = d.date_left?.ToString("yyyy-MM-dd"),
-                d.status,
-                d.remark,
-                User = d.user != null ? new
+                d.Id,
+                userId = d.UserId,
+                licenseNumber = d.LicenseNumber,
+                specialtyId = d.SpecialtyId,
+                titleId = d.TitleId,
+                departmentId = d.DepartmentId,
+                dateOfBirth = d.DateOfBirth.ToString("yyyy-MM-dd"),
+                officeLocationId = d.OfficeLocationId,
+                yearsOfExperience = d.YearsOfExperience,
+                d.Address,
+                postalCode = d.PostalCode,
+                officePhone = d.OfficePhone,
+                dateJoin = d.DateJoin.ToString("yyyy-MM-dd"),
+                dateLeft = d.DateLeft?.ToString("yyyy-MM-dd"),
+                d.Status,
+                d.Remark,
+                d.Qualifications, // 琛ュ叏杩斿洖
+                d.Biography, // 琛ュ叏杩斿洖
+                resumePdf = d.ResumePdf != null ? Convert.ToBase64String(d.ResumePdf) : null, // 琛ュ叏浜岃繘鍒惰浆Base64
+                User = d.User != null ? new
                 {
-                    d.user.Id,
-                    d.user.full_name,
-                    d.user.Email,
-                    d.user.PhoneNumber,
-                    d.user.gender_id,
-                    d.user.role,
-                    d.user.status,
-                    Gender = d.user.gender != null ? new { d.user.gender.id, d.user.gender.name } : null
+                    d.User.Id,
+                    FullName = d.User.FullName,
+                    d.User.Email,
+                    d.User.PhoneNumber,
+                    GenderId = d.User.GenderId, // 鎻愪緵鎬у埆澶栭敭 ID 鐢ㄤ簬鍓嶇鍏滃簳鍖归厤
+                    d.User.Role,
+                    d.User.Status,
+                    Gender = d.User.Gender != null ? new { d.User.Gender.id, d.User.Gender.name } : null
                 } : null
             });
 
@@ -84,13 +88,13 @@ namespace MedicalSystem.Controllers
             {
                 UserName = input.Email,
                 Email = input.Email,
-                full_name = input.FullName,
+                FullName = input.FullName,
                 PhoneNumber = input.Phone,
-                gender_id = input.GenderId,
-                role = UserRole.Doctor, 
-                status = input.UserStatus,
-                created_at = DateTime.Now,
-                updated_at = DateTime.Now
+                GenderId = input.GenderId,
+                Role = UserRole.Doctor, 
+                Status = input.UserStatus, 
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             var result = await _userManager.CreateAsync(user, input.Password ?? string.Empty); 
@@ -106,30 +110,34 @@ namespace MedicalSystem.Controllers
                 return BadRequest(new { message = "Failed to create user.", errors = errorDict });
             }
 
+            // 銆愭牳蹇冧慨澶嶃€戯細鍦ㄥ疄浣撳疄渚嬪寲涓紝鏄犲皠骞跺瓨鍏?DTO 涓紶鏉ョ殑璧勮川銆佺畝浠嬪拰 PDF 浜岃繘鍒剁畝鍘嗘暟鎹?
             var doctor = new Doctor 
             {
-                user_id = user.Id, 
-                license_number = input.LicenseNumber,
-                specialty_id = input.SpecialtyId,
-                title_id = input.TitleId,
-                department_id = input.DepartmentId,
-                date_of_birth = DateOnly.Parse(input.DateOfBirth),
-                office_location_id = input.OfficeLocationId,
-                years_of_experience = input.YearsOfExperience,
-                address = input.Address,
-                postal_code = input.PostalCode,
-                office_phone = input.OfficePhone,
-                date_join = DateOnly.Parse(input.DateJoin),
-                date_left = string.IsNullOrEmpty(input.DateLeft) ? null : DateOnly.Parse(input.DateLeft),
-                status = input.DoctorStatus,
-                remark = input.Remark,
-                updated_at = DateTime.Now
+                UserId = user.Id, 
+                LicenseNumber = input.LicenseNumber,
+                SpecialtyId = input.SpecialtyId,
+                TitleId = input.TitleId,
+                DepartmentId = input.DepartmentId,
+                DateOfBirth = DateOnly.Parse(input.DateOfBirth),
+                OfficeLocationId = input.OfficeLocationId,
+                YearsOfExperience = input.YearsOfExperience,
+                Address = input.Address,
+                PostalCode = input.PostalCode,
+                OfficePhone = input.OfficePhone,
+                DateJoin = DateOnly.Parse(input.DateJoin),
+                DateLeft = string.IsNullOrEmpty(input.DateLeft) ? null : DateOnly.Parse(input.DateLeft),
+                Status = input.DoctorStatus,
+                Remark = input.Remark,
+                Qualifications = input.Qualifications, // 鏄犲皠瀛樺叆鏁版嵁搴?
+                Biography = input.Biography, // 鏄犲皠瀛樺叆鏁版嵁搴?
+                ResumePdf = string.IsNullOrEmpty(input.ResumePdf) ? null : Convert.FromBase64String(input.ResumePdf), // 鏄犲皠杞瓨浜岃繘鍒?
+                UpdatedAt = DateTime.Now
             };
 
             _context.Doctors.Add(doctor); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Created", $"Created new Doctor Profile & User account:\n• User ID -> {user.Id}\n• Full Name -> {user.full_name}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• User Status -> {(user.status == true ? "Active" : "Inactive")}\n• License Number -> {doctor.license_number}\n• Specialty ID -> {doctor.specialty_id}\n• Department ID -> {doctor.department_id}\n• Doctor Status Code -> {doctor.status}");
+            await _activityLog.LogAsync("Created", $"Created new Doctor Profile & User account:\n鈥?User ID -> {user.Id}\n鈥?Full Name -> {user.FullName}\n鈥?Email -> {user.Email}\n鈥?Phone -> {user.PhoneNumber ?? "None"}\n鈥?User Status -> {(user.Status == 1 ? "Active" : "Inactive")}\n鈥?License Number -> {doctor.LicenseNumber}\n鈥?Specialty ID -> {doctor.SpecialtyId}\n鈥?Department ID -> {doctor.DepartmentId}\n鈥?Doctor Status Code -> {doctor.Status}");
 
             return Ok(new { message = "Doctor successfully created." }); 
         }
@@ -137,77 +145,89 @@ namespace MedicalSystem.Controllers
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] DoctorCreateUpdateDto input) 
         {
-            var doctor = await _context.Doctors.Include(d => d.user).FirstOrDefaultAsync(d => d.id == id); 
-            if (doctor == null || doctor.user == null) 
+            var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id); 
+            if (doctor == null || doctor.User == null) 
                 return NotFound(new { message = "Doctor not found." }); 
 
             var changes = new List<string>(); 
-            if (doctor.user.full_name != input.FullName) changes.Add($"• Full Name -> {doctor.user.full_name} ➔ {input.FullName}"); 
-            if (doctor.user.Email != input.Email) changes.Add($"• Email -> {doctor.user.Email} ➔ {input.Email}"); 
-            if (doctor.user.PhoneNumber != input.Phone) changes.Add($"• Phone -> {doctor.user.PhoneNumber ?? "None"} ➔ {input.Phone ?? "None"}"); 
-            if (doctor.user.gender_id != input.GenderId) changes.Add($"• Gender ID -> {doctor.user.gender_id} ➔ {input.GenderId}"); 
-            if (doctor.user.status != input.UserStatus) changes.Add($"• User Status -> {(doctor.user.status == true ? "Active" : "Inactive")} ➔ {(input.UserStatus ? "Active" : "Inactive")}"); 
+            if (doctor.User.FullName != input.FullName) changes.Add($"鈥?Full Name -> {doctor.User.FullName} 鉃?{input.FullName}"); 
+            if (doctor.User.Email != input.Email) changes.Add($"鈥?Email -> {doctor.User.Email} 鉃?{input.Email}"); 
+            if (doctor.User.PhoneNumber != input.Phone) changes.Add($"鈥?Phone -> {doctor.User.PhoneNumber ?? "None"} 鉃?{input.Phone ?? "None"}"); 
+            if (doctor.User.GenderId != input.GenderId) changes.Add($"鈥?Gender ID -> {doctor.User.GenderId} 鉃?{input.GenderId}"); 
+            
+            if (doctor.User.Status != input.UserStatus) changes.Add($"鈥?User Status -> {(doctor.User.Status == 1 ? "Active" : "Inactive")} 鉃?{(input.UserStatus == 1 ? "Active" : "Inactive")}"); 
 
-            if (doctor.license_number != input.LicenseNumber) changes.Add($"• License -> {doctor.license_number} ➔ {input.LicenseNumber}"); 
-            if (doctor.specialty_id != input.SpecialtyId) changes.Add($"• Specialty ID -> {doctor.specialty_id} ➔ {input.SpecialtyId}"); 
-            if (doctor.title_id != input.TitleId) changes.Add($"• Title ID -> {doctor.title_id} ➔ {input.TitleId}"); 
-            if (doctor.department_id != input.DepartmentId) changes.Add($"• Department ID -> {doctor.department_id} ➔ {input.DepartmentId}"); 
-            if (doctor.date_of_birth != DateOnly.Parse(input.DateOfBirth)) changes.Add($"• Date Of Birth -> {doctor.date_of_birth} ➔ {input.DateOfBirth}"); 
-            if (doctor.office_location_id != input.OfficeLocationId) changes.Add($"• Office Location ID -> {doctor.office_location_id} ➔ {input.OfficeLocationId}"); 
-            if (doctor.years_of_experience != input.YearsOfExperience) changes.Add($"• Experience Years -> {doctor.years_of_experience} ➔ {input.YearsOfExperience}"); 
-            if (doctor.status != input.DoctorStatus) changes.Add($"• Doctor Status Code -> {doctor.status} ➔ {input.DoctorStatus}");
+            if (doctor.LicenseNumber != input.LicenseNumber) changes.Add($"鈥?License -> {doctor.LicenseNumber} 鉃?{input.LicenseNumber}"); 
+            if (doctor.SpecialtyId != input.SpecialtyId) changes.Add($"鈥?Specialty ID -> {doctor.SpecialtyId} 鉃?{input.SpecialtyId}"); 
+            if (doctor.TitleId != input.TitleId) changes.Add($"鈥?Title ID -> {doctor.TitleId} 鉃?{input.TitleId}"); 
+            if (doctor.DepartmentId != input.DepartmentId) changes.Add($"鈥?Department ID -> {doctor.DepartmentId} 鉃?{input.DepartmentId}"); 
+            if (doctor.DateOfBirth != DateOnly.Parse(input.DateOfBirth)) changes.Add($"鈥?Date Of Birth -> {doctor.DateOfBirth} 鉃?{input.DateOfBirth}"); 
+            if (doctor.OfficeLocationId != input.OfficeLocationId) changes.Add($"鈥?Office Location ID -> {doctor.OfficeLocationId} 鉃?{input.OfficeLocationId}"); 
+            if (doctor.YearsOfExperience != input.YearsOfExperience) changes.Add($"鈥?Experience Years -> {doctor.YearsOfExperience} 鉃?{input.YearsOfExperience}"); 
+            if (doctor.Status != input.DoctorStatus) changes.Add($"鈥?Doctor Status Code -> {doctor.Status} 鉃?{input.DoctorStatus}");
 
-            if (!string.IsNullOrWhiteSpace(input.Email) && input.Email != doctor.user.Email)
+            if (!string.IsNullOrWhiteSpace(input.Email) && input.Email != doctor.User.Email)
             {
                 var existingUser = await _userManager.FindByEmailAsync(input.Email); 
-                if (existingUser != null && existingUser.Id != doctor.user_id) 
+                if (existingUser != null && existingUser.Id != doctor.UserId) 
                 {
                     return BadRequest(new { 
                         message = "Validation failed.", 
                         errors = new { email = new[] { "This email address is already taken by another user." } } 
                     });
                 }
-                doctor.user.Email = input.Email; 
-                doctor.user.UserName = input.Email; 
+                doctor.User.Email = input.Email; 
+                doctor.User.UserName = input.Email; 
             }
 
-            doctor.user.full_name = input.FullName;
-            doctor.user.gender_id = input.GenderId;
-            doctor.user.PhoneNumber = input.Phone;
-            doctor.user.status = input.UserStatus;
+            doctor.User.FullName = input.FullName;
+            doctor.User.GenderId = input.GenderId;
+            doctor.User.PhoneNumber = input.Phone;
+            doctor.User.Status = input.UserStatus; 
 
-            var updateResult = await _userManager.UpdateAsync(doctor.user); 
+            var updateResult = await _userManager.UpdateAsync(doctor.User); 
             if (!updateResult.Succeeded) return BadRequest(new { message = "Failed to update user." }); 
 
             if (!string.IsNullOrWhiteSpace(input.Password)) 
             {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(doctor.user); 
-                var pwdResult = await _userManager.ResetPasswordAsync(doctor.user, token, input.Password); 
+                var token = await _userManager.GeneratePasswordResetTokenAsync(doctor.User); 
+                var pwdResult = await _userManager.ResetPasswordAsync(doctor.User, token, input.Password); 
                 if (!pwdResult.Succeeded) return BadRequest(new { message = "Failed to update password." }); 
-                changes.Add("• Password -> [Modified]"); 
+                changes.Add("鈥?Password -> [Modified]"); 
             }
 
-            doctor.license_number = input.LicenseNumber;
-            doctor.specialty_id = input.SpecialtyId;
-            doctor.title_id = input.TitleId;
-            doctor.department_id = input.DepartmentId;
-            doctor.date_of_birth = DateOnly.Parse(input.DateOfBirth);
-            doctor.office_location_id = input.OfficeLocationId;
-            doctor.years_of_experience = input.YearsOfExperience;
-            doctor.address = input.Address;
-            doctor.postal_code = input.PostalCode;
-            doctor.office_phone = input.OfficePhone;
-            doctor.date_join = DateOnly.Parse(input.DateJoin);
-            doctor.date_left = string.IsNullOrEmpty(input.DateLeft) ? null : DateOnly.Parse(input.DateLeft);
-            doctor.status = input.DoctorStatus;
-            doctor.remark = input.Remark;
-            doctor.updated_at = DateTime.Now; 
+            doctor.LicenseNumber = input.LicenseNumber;
+            doctor.SpecialtyId = input.SpecialtyId;
+            doctor.TitleId = input.TitleId;
+            doctor.DepartmentId = input.DepartmentId;
+            doctor.DateOfBirth = DateOnly.Parse(input.DateOfBirth);
+            doctor.OfficeLocationId = input.OfficeLocationId;
+            doctor.YearsOfExperience = input.YearsOfExperience;
+            doctor.Address = input.Address;
+            doctor.PostalCode = input.PostalCode;
+            doctor.OfficePhone = input.OfficePhone;
+            doctor.DateJoin = DateOnly.Parse(input.DateJoin);
+            doctor.DateLeft = string.IsNullOrEmpty(input.DateLeft) ? null : DateOnly.Parse(input.DateLeft);
+            doctor.Status = input.DoctorStatus;
+            doctor.Remark = input.Remark;
+            
+            // 銆愭牳蹇冧慨澶嶃€戯細鍦ㄤ慨鏀归€昏緫涓紝鏄犲皠鏇存柊璧勮川銆佺畝浠嬩笌绠€鍘?PDF 瀛楁
+            doctor.Qualifications = input.Qualifications; 
+            doctor.Biography = input.Biography; 
+            
+            if (!string.IsNullOrEmpty(input.ResumePdf))
+            {
+                doctor.ResumePdf = Convert.FromBase64String(input.ResumePdf); 
+                changes.Add("鈥?Resume PDF -> [Updated]");
+            }
+            
+            doctor.UpdatedAt = DateTime.Now; 
 
             await _context.SaveChangesAsync(); 
 
             string logDetails = changes.Any() 
                 ? $"Updated Doctor profile (ID: {id}):\n{string.Join("\n", changes)}" 
-                : $"Updated Doctor profile (ID: {id}):\n• No fields were modified."; 
+                : $"Updated Doctor profile (ID: {id}):\n鈥?No fields were modified."; 
             
             await _activityLog.LogAsync("Updated", logDetails); 
 
@@ -217,19 +237,19 @@ namespace MedicalSystem.Controllers
         [HttpDelete("{id}")] 
         public async Task<IActionResult> Delete(int id) 
         {
-            var doctor = await _context.Doctors.Include(d => d.user).FirstOrDefaultAsync(d => d.id == id); 
+            var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id); 
             if (doctor == null) return NotFound(new { message = "Record not found." }); 
 
-            string userEmail = doctor.user?.Email ?? "None"; 
-            string fullName = doctor.user?.full_name ?? "None"; 
-            string userPhone = doctor.user?.PhoneNumber ?? "None"; 
-            string license = doctor.license_number;
-            int dept = doctor.department_id;
-            string dob = doctor.date_of_birth.ToString();
+            string userEmail = doctor.User?.Email ?? "None"; 
+            string fullName = doctor.User?.FullName ?? "None"; 
+            string userPhone = doctor.User?.PhoneNumber ?? "None"; 
+            string license = doctor.LicenseNumber;
+            int dept = doctor.DepartmentId;
+            string dob = doctor.DateOfBirth.ToString();
 
-            if (doctor.user != null) 
+            if (doctor.User != null) 
             {
-                await _userManager.DeleteAsync(doctor.user); 
+                await _userManager.DeleteAsync(doctor.User); 
             }
             else 
             {
@@ -237,13 +257,12 @@ namespace MedicalSystem.Controllers
                 await _context.SaveChangesAsync(); 
             }
 
-            await _activityLog.LogAsync("Deleted", $"Deleted Doctor profile & associated User account:\n• Doctor ID -> {id}\n• User ID -> {doctor.user_id}\n• Full Name -> {fullName}\n• Email -> {userEmail}\n• Phone -> {userPhone}\n• License -> {license}\n• Department ID -> {dept}\n• DOB -> {dob}");
+            await _activityLog.LogAsync("Deleted", $"Deleted Doctor profile & associated User account:\n鈥?Doctor ID -> {id}\n鈥?User ID -> {doctor.UserId}\n鈥?Full Name -> {fullName}\n鈥?Email -> {userEmail}\n鈥?Phone -> {userPhone}\n鈥?License -> {license}\n鈥?Department ID -> {dept}\n鈥?DOB -> {dob}");
             
             return Ok(new { message = "Doctor record successfully deleted." }); 
         }
     }
 
-    // 【修改】：配合模型变动，所有文本类型映射改为关联 ID，并加上新字段
     public class DoctorCreateUpdateDto 
     {
         public string FullName { get; set; } = null!; 
@@ -251,7 +270,7 @@ namespace MedicalSystem.Controllers
         public string? Password { get; set; } 
         public string? Phone { get; set; } 
         public int GenderId { get; set; } 
-        public bool UserStatus { get; set; } = true; // 对应 user.status
+        public int UserStatus { get; set; } = 1; 
         public string LicenseNumber { get; set; } = null!; 
         public int SpecialtyId { get; set; } 
         public int TitleId { get; set; } 
@@ -259,14 +278,19 @@ namespace MedicalSystem.Controllers
         public string DateOfBirth { get; set; } = null!; 
         public int? OfficeLocationId { get; set; } 
         public int YearsOfExperience { get; set; } 
-        
-        // --- 新增字段 ---
         public string? Address { get; set; }
         public string? PostalCode { get; set; }
         public string? OfficePhone { get; set; }
         public string DateJoin { get; set; } = null!;
         public string? DateLeft { get; set; }
-        public int DoctorStatus { get; set; } // 对应 doctor.status
+        public int DoctorStatus { get; set; } 
         public string? Remark { get; set; }
+
+        // ==================== 鏍稿績琛ュ叏锛欴TO 涓敞鍐屾槧灏勫瓧娈?====================
+        public string? Qualifications { get; set; } 
+        public string? Biography { get; set; } 
+        public string? ResumePdf { get; set; } 
     }
 }
+
+

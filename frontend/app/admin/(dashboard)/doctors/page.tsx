@@ -2,38 +2,49 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Search, Filter, Plus, Edit, Trash2, X, AlertTriangle, Eye, User,
-  Mail, Phone, Shield, CheckCircle2, ChevronDown, Stethoscope, Briefcase, Calendar, MapPin, Award, Lock, EyeOff
+  Mail, Phone, Shield, CheckCircle2, ChevronDown, Stethoscope, Briefcase, Calendar, MapPin, Award, Lock, EyeOff, FileText, AlignLeft, Info
 } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 
 // ==========================================
 // 环境变量与接口定义
 // ==========================================
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api';
 
 interface SystemDoctor {
   id: number;
   userId: number;
   licenseNumber: string;
-  specialty: string;
-  title: string;
-  department: string;
+  // 【核心修复】：属性名已修正为驼峰，完美对接后端 JSON 输出
+  specialtyId: number; 
+  titleId: number; 
+  departmentId: number; 
+  officeLocationId: number | null; 
   dateOfBirth: string;
-  officeLocation: string;
   yearsOfExperience: number;
+  qualifications: string | null; 
+  biography: string | null; 
+  address: string | null; 
+  postalCode: string | null; 
+  officePhone: string | null; 
+  dateJoin: string; 
+  dateLeft: string | null; 
+  status: number; 
+  remark: string | null; 
+  resumePdf: string | null; 
   user: {
     id: number;
-    fullName: string;
+    full_name: string; 
     email: string;
     phoneNumber: string | null;
-    genderId: number;
+    gender_id: number; // 后端嵌套输出保留了下划线
     role: number;
-    isActive: boolean;
+    status: number; 
     gender?: { id: number; name: string };
   };
 }
 
-interface DropdownOption { value: number | string | boolean; label: string; }
+interface DropdownOption { value: number; label: string; }
 
 // -----------------
 // UI 辅助组件
@@ -49,7 +60,7 @@ const Badge = ({ children, variant }: { children: React.ReactNode; variant: "suc
   return <span className={`px-2 py-0.5 rounded-md text-xs font-bold border ${colors[variant]}`}>{children}</span>;
 };
 
-// Toast 提示组件 (居中显示，占据50%宽度)
+// Toast 提示组件
 const Toast = ({ show, message, type, onClose }: { show: boolean, message: string, type: 'success' | 'error', onClose: () => void }) => {
   if (!show) return null;
   return (
@@ -66,16 +77,25 @@ const Toast = ({ show, message, type, onClose }: { show: boolean, message: strin
 };
 
 export default function DoctorsPage() {
-  // 数据状态
+  // 数据列表状态
   const [doctors, setDoctors] = useState<SystemDoctor[]>([]);
   const [genderOptions, setGenderOptions] = useState<DropdownOption[]>([]);
-  const [activeDepartments, setActiveDepartments] = useState<DropdownOption[]>([]); // 存储活跃的部门供表单使用
+  
+  // 下拉选项集状态
+  const [departmentOptions, setDepartmentOptions] = useState<DropdownOption[]>([]); 
+  const [specialtyOptions, setSpecialtyOptions] = useState<DropdownOption[]>([]); 
+  const [titleOptions, setTitleOptions] = useState<DropdownOption[]>([]); 
+  const [officeLocationOptions, setOfficeLocationOptions] = useState<DropdownOption[]>([]); 
+
   const [isLoading, setIsLoading] = useState(true);
 
   // 筛选状态
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [specialtyFilter, setSpecialtyFilter] = useState("all");
+  const [titleFilter, setTitleFilter] = useState("all");
+  const [officeLocationFilter, setOfficeLocationFilter] = useState("all");
 
   // Pagination 状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,6 +111,7 @@ export default function DoctorsPage() {
   const [formData, setFormData] = useState<any>({});
   const [phoneCode, setPhoneCode] = useState("+65");
   const [phoneBody, setPhoneBody] = useState("");
+  const [pdfFileName, setPdfFileName] = useState<string>(""); 
   const [viewData, setViewData] = useState<SystemDoctor | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -110,13 +131,17 @@ export default function DoctorsPage() {
     return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
   };
 
+  // 并发加载数据
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [doctorsRes, gendersRes, deptsRes] = await Promise.all([
+      const [doctorsRes, gendersRes, deptsRes, specialtiesRes, titlesRes, locationsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/doctors`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE_URL}/genders`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE_URL}/Department`, { headers: getAuthHeaders() }), // 拉取部门数据
+        fetch(`${API_BASE_URL}/Department`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/Specialty`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/Title`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/OfficeLocation`, { headers: getAuthHeaders() }),
       ]);
 
       if (doctorsRes.ok) {
@@ -129,11 +154,19 @@ export default function DoctorsPage() {
       }
       if (deptsRes.ok) {
         const deptsJson = await deptsRes.json();
-        // 过滤出 Active 的 Department 并映射给表单使用 (value 使用 name，因为原有 doctor 数据存储的是字符串 name)
-        const activeDepts = deptsJson
-          .filter((d: any) => d.isActive === true)
-          .map((d: any) => ({ value: d.name, label: d.name }));
-        setActiveDepartments(activeDepts);
+        setDepartmentOptions(deptsJson.filter((d: any) => d.status === 1).map((d: any) => ({ value: d.id, label: d.name })));
+      }
+      if (specialtiesRes.ok) {
+        const specialtiesJson = await specialtiesRes.json();
+        setSpecialtyOptions((specialtiesJson.data || []).filter((s: any) => s.status === 1).map((s: any) => ({ value: s.id, label: s.name })));
+      }
+      if (titlesRes.ok) {
+        const titlesJson = await titlesRes.json();
+        setTitleOptions((titlesJson.data || []).filter((t: any) => t.status === 1).map((t: any) => ({ value: t.id, label: t.name })));
+      }
+      if (locationsRes.ok) {
+        const locationsJson = await locationsRes.json();
+        setOfficeLocationOptions((locationsJson.data || []).filter((l: any) => l.status === 1).map((l: any) => ({ value: l.id, label: l.name })));
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -145,29 +178,48 @@ export default function DoctorsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // 重置分页状态
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, departmentFilter, statusFilter]);
+  }, [searchTerm, departmentFilter, statusFilter, specialtyFilter, titleFilter, officeLocationFilter]);
 
-  const departmentOptions = useMemo(() => {
-    const deps = new Set(doctors.map(d => d.department));
-    return Array.from(deps);
-  }, [doctors]);
+  // ID 解构翻译
+  const getDepartmentLabel = (id: number) => departmentOptions.find(d => d.value === id)?.label || "N/A";
+  const getSpecialtyLabel = (id: number) => specialtyOptions.find(s => s.value === id)?.label || "N/A";
+  const getTitleLabel = (id: number) => titleOptions.find(t => t.value === id)?.label || "N/A";
+  const getOfficeLocationLabel = (id: number | null) => {
+    if (!id) return "-";
+    return officeLocationOptions.find(l => l.value === id)?.label || "N/A";
+  };
+  const getGenderLabel = (id: number) => genderOptions.find(g => g.value === id)?.label || "N/A";
 
+  const getDoctorStatusLabel = (statusCode: number) => {
+    switch (statusCode) {
+      case 0: return { label: "Active / Working", variant: "success" };
+      case 1: return { label: "Suspended", variant: "danger" };
+      case 2: return { label: "On Leave", variant: "warning" };
+      case 3: return { label: "Terminated", variant: "secondary" };
+      default: return { label: "Unknown", variant: "secondary" };
+    }
+  };
+
+  // 联动过滤
   const filteredDoctors = useMemo(() => {
     return doctors.filter((doc) => {
       const matchSearch =
-        doc.user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.specialty?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchDept = departmentFilter === "all" || doc.department === departmentFilter;
-      const matchStatus = statusFilter === "all" || doc.user.isActive.toString() === statusFilter;
-      return matchSearch && matchDept && matchStatus;
+        getSpecialtyLabel(doc.specialtyId)?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchDept = departmentFilter === "all" || doc.departmentId.toString() === departmentFilter;
+      const matchStatus = statusFilter === "all" || doc.user.status.toString() === statusFilter;
+      const matchSpecialty = specialtyFilter === "all" || doc.specialtyId.toString() === specialtyFilter;
+      const matchTitle = titleFilter === "all" || doc.titleId.toString() === titleFilter;
+      const matchLocation = officeLocationFilter === "all" || doc.officeLocationId?.toString() === officeLocationFilter;
+      
+      return matchSearch && matchDept && matchStatus && matchSpecialty && matchTitle && matchLocation;
     });
-  }, [doctors, searchTerm, departmentFilter, statusFilter]);
+  }, [doctors, searchTerm, departmentFilter, statusFilter, specialtyFilter, titleFilter, officeLocationFilter, specialtyOptions, departmentOptions, titleOptions, officeLocationOptions]);
 
-  // Pagination 计算逻辑
   const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
   const paginatedDoctors = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -182,10 +234,20 @@ export default function DoctorsPage() {
     setCurrentStep(1);
     setErrors({});
     setShowPassword(false);
+    setPdfFileName("");
     setFormData({
       fullName: "", email: "", password: "", genderId: genderOptions.length > 0 ? genderOptions[0].value : "", 
-      role: 2, isActive: true, 
-      licenseNumber: "", specialty: "", title: "", department: "", dateOfBirth: "", officeLocation: "", yearsOfExperience: 0 
+      role: 2, userStatus: 1, 
+      licenseNumber: "", 
+      specialtyId: specialtyOptions.length > 0 ? specialtyOptions[0].value : "", 
+      titleId: titleOptions.length > 0 ? titleOptions[0].value : "", 
+      departmentId: departmentOptions.length > 0 ? departmentOptions[0].value : "", 
+      dateOfBirth: "", 
+      officeLocationId: officeLocationOptions.length > 0 ? officeLocationOptions[0].value : "", 
+      yearsOfExperience: 0,
+      address: "", postalCode: "", officePhone: "", 
+      dateJoin: "", dateLeft: "", doctorStatus: 0, 
+      qualifications: "", biography: "", remark: "", resumePdf: null 
     });
     setPhoneCode("+65");
     setPhoneBody("");
@@ -197,22 +259,35 @@ export default function DoctorsPage() {
     setCurrentStep(1);
     setErrors({});
     setShowPassword(false);
+    setPdfFileName(doc.resumePdf ? "Uploaded_Resume.pdf" : "");
+    
+    // 【核心修复】：为所有 string 类型数据提供 `|| ""` 兜底，彻底解决 Uncontrolled Input 报错！
     setFormData({
       id: doc.id,
       userId: doc.userId,
-      fullName: doc.user.fullName,
-      email: doc.user.email,
+      fullName: doc.user.full_name || "", 
+      email: doc.user.email || "",
       password: "", 
-      genderId: doc.user.genderId,
+      genderId: doc.user.gender_id || "", // 后端传回时为 gender_id
       role: doc.user.role,
-      isActive: doc.user.isActive,
-      licenseNumber: doc.licenseNumber,
-      specialty: doc.specialty,
-      title: doc.title,
-      department: doc.department,
-      dateOfBirth: doc.dateOfBirth,
-      officeLocation: doc.officeLocation || "",
-      yearsOfExperience: doc.yearsOfExperience,
+      userStatus: doc.user.status ?? 1, 
+      licenseNumber: doc.licenseNumber || "",
+      specialtyId: doc.specialtyId || "", // 对应后端驼峰
+      titleId: doc.titleId || "",
+      departmentId: doc.departmentId || "",
+      dateOfBirth: doc.dateOfBirth || "",
+      officeLocationId: doc.officeLocationId || "",
+      yearsOfExperience: doc.yearsOfExperience || 0,
+      address: doc.address || "",
+      postalCode: doc.postalCode || "", 
+      officePhone: doc.officePhone || "", 
+      dateJoin: doc.dateJoin || "",
+      dateLeft: doc.dateLeft || "",
+      doctorStatus: doc.status ?? 0,
+      qualifications: doc.qualifications || "", 
+      biography: doc.biography || "", 
+      remark: doc.remark || "",
+      resumePdf: doc.resumePdf || null
     });
 
     if (doc.user.phoneNumber?.startsWith("+60")) {
@@ -225,10 +300,43 @@ export default function DoctorsPage() {
     setIsModalOpen(true);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handlePdfUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf") {
+        setErrors(prev => ({ ...prev, resumePdf: "Only PDF format files are allowed." }));
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) { 
+        setErrors(prev => ({ ...prev, resumePdf: "File size cannot exceed 2MB." }));
+        return;
+      }
+      setPdfFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Str = (reader.result as string).split(",")[1];
+        setFormData((prev: any) => ({ ...prev, resumePdf: base64Str }));
+        if (errors.resumePdf) setErrors(prev => ({ ...prev, resumePdf: "" }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" })); // Clear error on typing
+    
+    if (name === "postalCode") {
+      const numericVal = value.replace(/\D/g, "").slice(0, 6);
+      setFormData((prev: any) => ({ ...prev, [name]: numericVal }));
+    } else if (name === "officePhone") {
+      const limitLen = phoneCode === "+65" ? 8 : 10;
+      const numericVal = value.replace(/\D/g, "").slice(0, limitLen);
+      setFormData((prev: any) => ({ ...prev, [name]: numericVal }));
+    } else {
+      setFormData((prev: any) => ({ ...prev, [name]: value }));
+    }
+
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" })); 
   };
 
   const handlePhoneBodyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,8 +350,9 @@ export default function DoctorsPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$/;
 
-    if (!formData.fullName.trim()) newErrors.fullName = "Please enter your full name.";
-    if (!formData.email.trim() || !emailRegex.test(formData.email)) newErrors.email = "Please enter a valid email address.";
+    // 【核心修复】：加上 ?. 安全链，即便 undefined 也不会崩溃
+    if (!formData.fullName?.trim()) newErrors.fullName = "Please enter your full name.";
+    if (!formData.email?.trim() || !emailRegex.test(formData.email)) newErrors.email = "Please enter a valid email address.";
     
     if (modalMode === "create" && !formData.password) {
       newErrors.password = "Password must be at least 6 characters, including letters and numbers.";
@@ -267,15 +376,25 @@ export default function DoctorsPage() {
     setCurrentStep(2);
   };
 
-  // 验证第二步并保存 (优化了错误捕获逻辑)
+  // 验证第二步并保存
   const handleSave = async () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.licenseNumber.trim()) newErrors.licenseNumber = "License number is required.";
-    if (!formData.department?.trim()) newErrors.department = "Department is required.";
-    if (!formData.specialty.trim()) newErrors.specialty = "Specialty is required.";
-    if (!formData.title.trim()) newErrors.title = "Professional title is required.";
+    // 【核心修复】：加上 ?. 安全链，完全杜绝 null.trim() 的页面崩溃
+    if (!formData.licenseNumber?.trim()) newErrors.licenseNumber = "License number is required.";
+    if (!formData.departmentId) newErrors.departmentId = "Department choice is required.";
+    if (!formData.specialtyId) newErrors.specialtyId = "Specialty choice is required.";
+    if (!formData.titleId) newErrors.titleId = "Professional title choice is required.";
     if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
+    if (!formData.dateJoin) newErrors.dateJoin = "Date join is required.";
+
+    if (formData.officePhone) {
+      if (phoneCode === "+65" && formData.officePhone.length !== 8) {
+        newErrors.officePhone = "Singapore office phone must be exactly 8 digits.";
+      } else if (phoneCode === "+60" && (formData.officePhone.length < 9 || formData.officePhone.length > 10)) {
+        newErrors.officePhone = "Malaysia office phone must be 9 or 10 digits.";
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -287,8 +406,21 @@ export default function DoctorsPage() {
         ...formData,
         phone: `${phoneCode}${phoneBody}`,
         genderId: Number(formData.genderId),
+        departmentId: Number(formData.departmentId),
+        specialtyId: Number(formData.specialtyId),
+        titleId: Number(formData.titleId),
+        officeLocationId: formData.officeLocationId ? Number(formData.officeLocationId) : null,
         yearsOfExperience: Number(formData.yearsOfExperience),
-        isActive: formData.isActive === "true" || formData.isActive === true,
+        userStatus: Number(formData.userStatus), 
+        doctorStatus: Number(formData.doctorStatus), 
+        dateLeft: formData.dateLeft || null,
+        address: formData.address || null,
+        postalCode: formData.postalCode || null,
+        officePhone: formData.officePhone || null,
+        qualifications: formData.qualifications || null,
+        biography: formData.biography || null,
+        remark: formData.remark || null,
+        resumePdf: formData.resumePdf || null
       };
 
       if (modalMode === "edit" && !formData.password) delete payload.password;
@@ -304,8 +436,6 @@ export default function DoctorsPage() {
         fetchData();
       } else {
         const errorData = await res.json();
-        
-        // 尝试捕获后端返回的字段级错误 (如果后端支持)
         const fieldErrors = errorData.errors || errorData.validationErrors;
         
         if (fieldErrors && typeof fieldErrors === 'object' && Object.keys(fieldErrors).length > 0) {
@@ -313,12 +443,11 @@ export default function DoctorsPage() {
           let hasStep1Error = false;
 
           Object.keys(fieldErrors).forEach((key) => {
-            // 兼容后端返回数组或字符串形式的错误信息
             const errorMsg = Array.isArray(fieldErrors[key]) ? fieldErrors[key][0] : fieldErrors[key];
-            backendMappedErrors[key] = errorMsg;
+            const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+            backendMappedErrors[camelKey] = errorMsg;
 
-            // 检查错误是否属于第一步的字段
-            if (['fullName', 'email', 'password', 'phone', 'genderId', 'role', 'isActive'].includes(key)) {
+            if (['fullName', 'email', 'password', 'phone', 'genderId', 'role', 'userStatus'].includes(camelKey)) {
               hasStep1Error = true;
             }
           });
@@ -326,13 +455,12 @@ export default function DoctorsPage() {
           setErrors(backendMappedErrors);
 
           if (hasStep1Error) {
-            setCurrentStep(1); // 自动退回第一步让用户修改
+            setCurrentStep(1); 
             showToast("error", "Error found in User Account Info. Please fix highlighted fields.");
           } else {
             showToast("error", errorData.message || "Please fix the highlighted errors below.");
           }
         } else {
-          // 如果后端只返回了 message 字符串，直接显示详细 message
           showToast("error", errorData.message || "Failed to save details. Please check your inputs.");
         }
       }
@@ -354,13 +482,12 @@ export default function DoctorsPage() {
         showToast("success", "Doctor deleted successfully.");
         fetchData();
       } else {
-        // 安全读取 JSON，防止后端抛出非 JSON 错误导致前端崩溃
         let errorMessage = "Failed to delete doctor.";
         try {
           const errorData = await res.json();
           errorMessage = errorData.message || errorMessage;
         } catch (parseError) {
-          console.error("Non-JSON error returned from server");
+          console.error("Non-JSON error returned");
         }
         showToast("error", errorMessage);
       }
@@ -374,7 +501,7 @@ export default function DoctorsPage() {
   };
 
   return (
-    <div className="space-y-5 max-w-[1400px] mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
+    <div className="space-y-5 max-w-[1400px] xl:max-w-full xl:px-4 2xl:px-6 mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
 
       {/* Header */}
@@ -389,11 +516,14 @@ export default function DoctorsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full lg:w-[40%]">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col xl:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full xl:w-[25%]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
           <input
-            type="text"
+            type="search"
+            id="doctorSearchQueryNoAutofill"
+            name="doctorSearchQueryNoAutofill"
+            autoComplete="off"
             className="block w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium transition-colors"
             placeholder="Search by name, email or specialty..."
             value={searchTerm}
@@ -401,32 +531,64 @@ export default function DoctorsPage() {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
-          <div className="hidden sm:flex items-center text-sm font-semibold text-slate-800"><Filter className="w-4 h-4 mr-1.5" /> Filters:</div>
-          <div className="flex w-full sm:w-auto gap-3">
-            <div className="relative flex-1 sm:flex-none">
-              <select
-                className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
-                value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}
-              >
-                <option value="all">All Departments</option>
-                {departmentOptions.map(dep => <option key={dep} value={dep}>{dep}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-            </div>
-
-            <div className="relative flex-1 sm:flex-none">
-              <select
-                className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
-                value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-            </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 w-full xl:w-auto">
+          
+          <div className="relative">
+            <select
+              className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
+              value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}
+            >
+              <option value="all">All Departments</option>
+              {departmentOptions.map(dep => <option key={dep.value} value={dep.value}>{dep.label}</option>)}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           </div>
+
+          <div className="relative">
+            <select
+              className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
+              value={specialtyFilter} onChange={(e) => setSpecialtyFilter(e.target.value)}
+            >
+              <option value="all">All Specialties</option>
+              {specialtyOptions.map(spec => <option key={spec.value} value={spec.value}>{spec.label}</option>)}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          </div>
+
+          <div className="relative">
+            <select
+              className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
+              value={titleFilter} onChange={(e) => setTitleFilter(e.target.value)}
+            >
+              <option value="all">All Titles</option>
+              {titleOptions.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          </div>
+
+          <div className="relative">
+            <select
+              className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
+              value={officeLocationFilter} onChange={(e) => setOfficeLocationFilter(e.target.value)}
+            >
+              <option value="all">All Locations</option>
+              {officeLocationOptions.map(loc => <option key={loc.value} value={loc.value}>{loc.label}</option>)}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          </div>
+
+          <div className="relative">
+            <select
+              className="w-full appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer"
+              value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          </div>
+
         </div>
       </div>
 
@@ -436,17 +598,17 @@ export default function DoctorsPage() {
           <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading doctor database...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full whitespace-nowrap text-left border-collapse min-w-[1000px]">
+            <table className="w-full whitespace-nowrap text-left border-collapse min-w-[1100px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Full Name</th>
+                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Name</th>
                   <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Email</th>
                   <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Phone Number</th>
+                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Office Number</th>
                   <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Department</th>
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Office Location</th>
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Professional Title</th>
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Role</th>
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Status</th>
+                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Title</th>
+                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">Specialty</th>
+                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase">OfficeLocation</th>
                   <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase text-right">Actions</th>
                 </tr>
               </thead>
@@ -456,18 +618,14 @@ export default function DoctorsPage() {
                 ) : (
                   paginatedDoctors.map((doc) => (
                     <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 text-sm font-semibold text-slate-900">{doc.user.fullName}</td>
+                      <td className="px-5 py-3 text-sm font-semibold text-slate-900">{doc.user.full_name}</td>
                       <td className="px-5 py-3 text-sm text-slate-700">{doc.user.email}</td>
                       <td className="px-5 py-3 text-sm text-slate-700">{doc.user.phoneNumber || "-"}</td>
-                      <td className="px-5 py-3 text-sm text-slate-700">{doc.department}</td>
-                      <td className="px-5 py-3 text-sm text-slate-700">{doc.officeLocation || "-"}</td>
-                      <td className="px-5 py-3 text-sm text-slate-700">{doc.title}</td>
-                      <td className="px-5 py-3">
-                        <Badge variant="info">Doctor</Badge>
-                      </td>
-                      <td className="px-5 py-3">
-                        <Badge variant={doc.user.isActive ? "success" : "danger"}>{doc.user.isActive ? "Active" : "Inactive"}</Badge>
-                      </td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{doc.officePhone || "-"}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{getDepartmentLabel(doc.departmentId)}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{getTitleLabel(doc.titleId)}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{getSpecialtyLabel(doc.specialtyId)}</td>
+                      <td className="px-5 py-3 text-sm text-slate-700">{getOfficeLocationLabel(doc.officeLocationId)}</td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <button onClick={() => { setViewData(doc); setIsViewModalOpen(true); }} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Eye className="w-4 h-4" /></button>
@@ -499,15 +657,19 @@ export default function DoctorsPage() {
       {/* Create / Edit Modal (2-Step Wizard)         */}
       {/* ========================================= */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <form 
+            onSubmit={(e) => e.preventDefault()} 
+            autoComplete="new-password"
+            className="bg-white rounded-xl shadow-xl w-full max-w-3xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto"
+          >
             
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">{modalMode === "create" ? "Register New Doctor" : "Edit Doctor Profile"}</h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">Step {currentStep} of 2: {currentStep === 1 ? 'User Account Info' : 'Professional Details'}</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-1.5 rounded-full transition-colors bg-slate-50 hover:bg-slate-100"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-1.5 rounded-full transition-colors bg-slate-50 hover:bg-slate-100"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="p-6">
@@ -526,6 +688,7 @@ export default function DoctorsPage() {
                         </div>
                         <input 
                           type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} 
+                          autoComplete="new-password"
                           className={`w-full pl-10 pr-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${
                             errors.fullName 
                               ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" 
@@ -546,6 +709,7 @@ export default function DoctorsPage() {
                         </div>
                         <input 
                           type="email" name="email" value={formData.email} onChange={handleInputChange} 
+                          autoComplete="new-password"
                           className={`w-full pl-10 pr-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${
                             errors.email 
                               ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" 
@@ -566,6 +730,7 @@ export default function DoctorsPage() {
                         </div>
                         <input 
                           type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange} 
+                          autoComplete="new-password"
                           className={`w-full pl-10 pr-10 py-2.5 text-sm rounded-lg outline-none transition-colors border ${
                             errors.password 
                               ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" 
@@ -620,7 +785,9 @@ export default function DoctorsPage() {
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Gender</label>
                       <div className="relative">
                         <select name="genderId" value={formData.genderId} onChange={handleInputChange} className="appearance-none w-full px-3 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
-                          {genderOptions.map((g) => (<option key={g.value as string} value={g.value as string}>{g.label}</option>))}
+                          {genderOptions.map((g) => (
+                            <option key={g.value} value={g.value}>{g.label}</option>
+                          ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       </div>
@@ -640,9 +807,9 @@ export default function DoctorsPage() {
                       <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Account Status</label>
                         <div className="relative">
-                          <select name="isActive" value={formData.isActive} onChange={handleInputChange} className="appearance-none w-full px-3 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
-                            <option value="true">Active</option>
-                            <option value="false">Inactive</option>
+                          <select name="userStatus" value={formData.userStatus} onChange={handleInputChange} className="appearance-none w-full px-3 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
@@ -667,47 +834,109 @@ export default function DoctorsPage() {
                       {errors.licenseNumber && <p className="text-red-500 text-[11px] mt-1.5">{errors.licenseNumber}</p>}
                     </div>
 
-                    {/* Department Dropdown (Modified) */}
+                    {/* Department Dropdown */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Department</label>
                       <div className="relative">
                         <select 
-                          name="department" 
-                          value={formData.department} 
+                          name="departmentId" 
+                          value={formData.departmentId} 
                           onChange={handleInputChange} 
-                          className={`appearance-none w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border cursor-pointer ${errors.department ? "bg-red-50 border-red-300 text-red-500 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500"}`}
+                          className={`appearance-none w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border cursor-pointer ${errors.departmentId ? "bg-red-50 border-red-300 text-red-500 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500"}`}
                         >
                           <option value="" disabled>Select Department</option>
-                          {activeDepartments.map(dep => (
-                            <option key={dep.value as string} value={dep.value as string}>{dep.label}</option>
+                          {departmentOptions.map(dep => (
+                            <option key={dep.value} value={dep.value}>{dep.label}</option>
                           ))}
                         </select>
-                        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${errors.department ? 'text-red-400' : 'text-slate-400'}`} />
+                        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${errors.departmentId ? 'text-red-400' : 'text-slate-400'}`} />
                       </div>
-                      {errors.department && <p className="text-red-500 text-[11px] mt-1.5">{errors.department}</p>}
+                      {errors.departmentId && <p className="text-red-500 text-[11px] mt-1.5">{errors.departmentId}</p>}
                     </div>
 
+                    {/* Specialty Dropdown */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Specialty</label>
+                      <div className="relative">
+                        <select 
+                          name="specialtyId" 
+                          value={formData.specialtyId} 
+                          onChange={handleInputChange} 
+                          className={`appearance-none w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border cursor-pointer ${errors.specialtyId ? "bg-red-50 border-red-300 text-red-500 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500"}`}
+                        >
+                          <option value="" disabled>Select Specialty</option>
+                          {specialtyOptions.map(spec => (
+                            <option key={spec.value} value={spec.value}>{spec.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${errors.specialtyId ? 'text-red-400' : 'text-slate-400'}`} />
+                      </div>
+                      {errors.specialtyId && <p className="text-red-500 text-[11px] mt-1.5">{errors.specialtyId}</p>}
+                    </div>
+
+                    {/* Address */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Address</label>
                       <input 
-                        type="text" name="specialty" value={formData.specialty} onChange={handleInputChange} 
-                        className={`w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${errors.specialty ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"}`} 
-                        placeholder="e.g. Interventional Cardiology" 
+                        type="text" name="address" value={formData.address} onChange={handleInputChange} 
+                        className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                        placeholder="e.g. 123 Clinic Road" 
                       />
-                      {errors.specialty && <p className="text-red-500 text-[11px] mt-1.5">{errors.specialty}</p>}
+                    </div>
+
+                    {/* Qualifications */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Qualifications</label>
+                      <textarea 
+                        name="qualifications" value={formData.qualifications} onChange={handleInputChange} rows={2}
+                        className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none" 
+                        placeholder="e.g. PhD in Cardiology, FACC Board Certified" 
+                      />
+                    </div>
+
+                    {/* PDF 简历上传 */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Resume (PDF)</label>
+                      <div className="relative">
+                        <input 
+                          type="file" id="resumePdfUploadField" accept=".pdf" onChange={handlePdfUploadChange} 
+                          className="hidden" 
+                        />
+                        <label 
+                          htmlFor="resumePdfUploadField" 
+                          className={`w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-lg border cursor-pointer transition-colors ${
+                            errors.resumePdf ? "bg-red-50 border-red-300 text-red-500" : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span className="truncate pr-4">{pdfFileName || "Upload PDF resume (Max 2MB)"}</span>
+                          <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                        </label>
+                      </div>
+                      {errors.resumePdf && <p className="text-red-500 text-[11px] mt-1.5">{errors.resumePdf}</p>}
                     </div>
                   </div>
 
                   <div className="space-y-5">
+                    {/* Professional Title Dropdown */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Professional Title</label>
-                      <input 
-                        type="text" name="title" value={formData.title} onChange={handleInputChange} 
-                        className={`w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${errors.title ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"}`} 
-                        placeholder="e.g. Senior Consultant" 
-                      />
-                      {errors.title && <p className="text-red-500 text-[11px] mt-1.5">{errors.title}</p>}
+                      <div className="relative">
+                        <select 
+                          name="titleId" 
+                          value={formData.titleId} 
+                          onChange={handleInputChange} 
+                          className={`appearance-none w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border cursor-pointer ${errors.titleId ? "bg-red-50 border-red-300 text-red-500 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500"}`}
+                        >
+                          <option value="" disabled>Select Title</option>
+                          {titleOptions.map(t => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${errors.titleId ? 'text-red-400' : 'text-slate-400'}`} />
+                      </div>
+                      {errors.titleId && <p className="text-red-500 text-[11px] mt-1.5">{errors.titleId}</p>}
                     </div>
+
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date of Birth</label>
                       <input 
@@ -716,15 +945,111 @@ export default function DoctorsPage() {
                       />
                       {errors.dateOfBirth && <p className="text-red-500 text-[11px] mt-1.5">{errors.dateOfBirth}</p>}
                     </div>
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Years of Exp.</label>
                         <input type="number" min="0" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleInputChange} className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="e.g. 10" />
                       </div>
+                      
+                      {/* Office Location Dropdown */}
                       <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Office Location</label>
-                        <input type="text" name="officeLocation" value={formData.officeLocation} onChange={handleInputChange} className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Room 402" />
+                        <div className="relative">
+                          <select 
+                            name="officeLocationId" 
+                            value={formData.officeLocationId} 
+                            onChange={handleInputChange} 
+                            className="appearance-none w-full px-3 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                          >
+                            <option value="">Select Office</option>
+                            {officeLocationOptions.map(loc => (
+                              <option key={loc.value} value={loc.value}>{loc.label}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Postal Code */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Postal Code</label>
+                        <input 
+                          type="text" name="postalCode" value={formData.postalCode} onChange={handleInputChange} maxLength={6}
+                          className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                          placeholder="Max 6 digits" 
+                        />
+                      </div>
+                      
+                      {/* Office Phone */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Office Phone</label>
+                        <input 
+                          type="text" name="officePhone" value={formData.officePhone} onChange={handleInputChange} 
+                          maxLength={phoneCode === "+65" ? 8 : 10}
+                          className={`w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${
+                            errors.officePhone 
+                              ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" 
+                              : "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"
+                          }`} 
+                          placeholder={phoneCode === "+65" ? "e.g. 62345678" : "e.g. 362345678"} 
+                        />
+                        {errors.officePhone && <p className="text-red-500 text-[11px] mt-1.5">{errors.officePhone}</p>}
+                      </div>
+                    </div>
+
+                    {/* Biography */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Biography</label>
+                      <textarea 
+                        name="biography" value={formData.biography} onChange={handleInputChange} rows={2}
+                        className="w-full px-3 py-2 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none" 
+                        placeholder="e.g. Over 15 years experience in general cardiology treatment..." 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Additional fields row */}
+                  <div className="col-span-1 md:col-span-2 border-t border-slate-100 pt-5 mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Join</label>
+                      <input 
+                        type="date" name="dateJoin" value={formData.dateJoin} onChange={handleInputChange} 
+                        className={`w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors border [color-scheme:light] ${errors.dateJoin ? "bg-red-50 border-red-300 text-red-500 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500"}`} 
+                      />
+                      {errors.dateJoin && <p className="text-red-500 text-[11px] mt-1.5">{errors.dateJoin}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Left <span className="text-slate-400 font-medium ml-1 lowercase">(Optional)</span></label>
+                      <input 
+                        type="date" name="dateLeft" value={formData.dateLeft || ""} onChange={handleInputChange} 
+                        className="w-full px-3 py-2.5 text-sm rounded-lg bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none [color-scheme:light]" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Doctor Work Status</label>
+                      <div className="relative">
+                        <select name="doctorStatus" value={formData.doctorStatus} onChange={handleInputChange} className="appearance-none w-full px-3 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                          <option value={0}>Active / Working</option>
+                          <option value={1}>Suspended</option>
+                          <option value={2}>On Leave</option>
+                          <option value={3}>Terminated</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Remark <span className="text-slate-400 font-medium ml-1 lowercase">(Optional)</span></label>
+                      <input 
+                        type="text" name="remark" value={formData.remark || ""} onChange={handleInputChange} 
+                        className="w-full px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                        placeholder="Internal staff remarks..." 
+                      />
                     </div>
                   </div>
                 </div>
@@ -735,21 +1060,21 @@ export default function DoctorsPage() {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row justify-between items-center gap-3">
               <div className="w-full sm:w-auto">
                 {currentStep === 2 && (
-                  <button onClick={() => setCurrentStep(1)} className="w-full sm:w-auto px-5 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 font-semibold transition">Back to User Info</button>
+                  <button type="button" onClick={() => setCurrentStep(1)} className="w-full sm:w-auto px-5 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 font-semibold transition">Back to User Info</button>
                 )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <button onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 font-semibold transition">Cancel</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 font-semibold transition">Cancel</button>
                 {currentStep === 1 ? (
-                  <button onClick={handleNextStep} className="w-full sm:w-auto px-5 py-2.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold shadow-sm transition">Continue Next</button>
+                  <button type="button" onClick={handleNextStep} className="w-full sm:w-auto px-5 py-2.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold shadow-sm transition">Continue Next</button>
                 ) : (
-                  <button onClick={handleSave} className="w-full sm:w-auto px-5 py-2.5 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-semibold shadow-sm transition">Save Doctor</button>
+                  <button type="button" onClick={handleSave} className="w-full sm:w-auto px-5 py-2.5 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-semibold shadow-sm transition">Save Doctor</button>
                 )}
               </div>
             </div>
 
-          </div>
+          </form>
         </div>
       )}
 
@@ -765,19 +1090,19 @@ export default function DoctorsPage() {
             </div>
 
             {/* Content area with Scrollbar */}
-            <div className="p-6 bg-slate-50 overflow-y-auto">
+            <div className="p-6 bg-slate-50 overflow-y-auto custom-scrollbar">
               
               {/* Section 1: User Account Details */}
               <div className="mb-6">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2"><User className="w-4 h-4 text-slate-500" /> Account Details</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[
-                    { label: "Full Name", value: viewData.user.fullName, icon: User },
+                    { label: "Full Name", value: viewData.user.full_name, icon: User },
                     { label: "Email Address", value: viewData.user.email, icon: Mail },
                     { label: "Phone Number", value: viewData.user.phoneNumber || "N/A", icon: Phone },
-                    { label: "Gender", value: viewData.user.gender?.name || "N/A", icon: CheckCircle2 },
+                    { label: "Gender", value: getGenderLabel(viewData.user.gender_id), icon: CheckCircle2 }, 
                     { label: "System Role", value: "Doctor", icon: Shield, isBadge: true, variant: "info" },
-                    { label: "Status", value: viewData.user.isActive ? "Active" : "Inactive", icon: CheckCircle2, isBadge: true, variant: viewData.user.isActive ? "success" : "danger" },
+                    { label: "Account Status", value: viewData.user.status === 1 ? "Active" : "Inactive", icon: CheckCircle2, isBadge: true, variant: viewData.user.status === 1 ? "success" : "danger" },
                   ].map((item, idx) => (
                     <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100"><item.icon className="w-4 h-4 text-slate-500" /></div>
@@ -796,21 +1121,52 @@ export default function DoctorsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[
                     { label: "License Number", value: viewData.licenseNumber, icon: Award },
-                    { label: "Department", value: viewData.department, icon: Briefcase },
-                    { label: "Specialty", value: viewData.specialty, icon: Stethoscope },
-                    { label: "Professional Title", value: viewData.title, icon: Award },
+                    { label: "Department", value: getDepartmentLabel(viewData.departmentId), icon: Briefcase },
+                    { label: "Specialty", value: getSpecialtyLabel(viewData.specialtyId), icon: Stethoscope },
+                    { label: "Professional Title", value: getTitleLabel(viewData.titleId), icon: Award },
                     { label: "Years of Exp.", value: `${viewData.yearsOfExperience} Years`, icon: Award },
-                    { label: "Office Location", value: viewData.officeLocation || "N/A", icon: MapPin },
+                    { label: "Office Location", value: getOfficeLocationLabel(viewData.officeLocationId), icon: MapPin },
                     { label: "Date of Birth", value: viewData.dateOfBirth, icon: Calendar },
+                    { label: "Date Join", value: viewData.dateJoin, icon: Calendar },
+                    { label: "Date Left", value: viewData.dateLeft || "Still Employed", icon: Calendar },
+                    { label: "Work Status", value: getDoctorStatusLabel(viewData.status).label, icon: CheckCircle2, isBadge: true, variant: getDoctorStatusLabel(viewData.status).variant },
+                    { label: "Office Phone", value: viewData.officePhone || "N/A", icon: Phone },
+                    { label: "Postal Code", value: viewData.postalCode || "N/A", icon: MapPin },
+                    { label: "Qualifications", value: viewData.qualifications || "N/A", icon: FileText },
+                    { label: "Biography", value: viewData.biography || "N/A", icon: AlignLeft },
+                    { label: "Address", value: viewData.address || "N/A", icon: MapPin },
+                    { label: "Remark", value: viewData.remark || "N/A", icon: Info },
                   ].map((item, idx) => (
                     <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100"><item.icon className="w-4 h-4 text-slate-500" /></div>
                       <div className="overflow-hidden">
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{item.label}</p>
-                        <p className="text-sm font-bold text-slate-900 truncate">{item.value}</p>
+                        {item.isBadge ? <div className="mt-1"><Badge variant={item.variant as any}>{item.value}</Badge></div> : <p className="text-sm font-bold text-slate-900 truncate">{item.value}</p>}
                       </div>
                     </div>
                   ))}
+                  
+                  {/* 查看简历专属附件块 */}
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+                      <FileText className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Resume (PDF)</p>
+                      {viewData.resumePdf ? (
+                        <a 
+                          href={`data:application/pdf;base64,${viewData.resumePdf}`} 
+                          download={`${viewData.user.full_name}_Resume.pdf`}
+                          className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline truncate inline-block"
+                        >
+                          Download Document
+                        </a>
+                      ) : (
+                        <p className="text-sm font-bold text-slate-900 truncate">Not Uploaded</p>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               </div>
 

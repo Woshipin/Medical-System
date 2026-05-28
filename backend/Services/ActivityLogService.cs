@@ -1,4 +1,4 @@
-using System; 
+﻿using System; 
 using System.Threading.Tasks; 
 using Microsoft.AspNetCore.Http; 
 using MedicalSystem.Data; 
@@ -40,8 +40,8 @@ namespace MedicalSystem.Services
                     var dbUser = await _context.Users.FindAsync(parsedId); 
                     if (dbUser != null)
                     {
-                        fullName = dbUser.full_name; 
-                        role = dbUser.role?.ToString() ?? "Visitor"; 
+                        fullName = dbUser.FullName; 
+                        role = dbUser.Role.ToString() ?? "Visitor"; 
                     }
                 }
             }
@@ -53,7 +53,7 @@ namespace MedicalSystem.Services
                 role = role,
                 action = action, 
                 description = description, 
-                created_at = DateTime.Now // 确保获取当前精准时间并入库
+                created_at = DateTime.Now // 纭繚鑾峰彇褰撳墠绮惧噯鏃堕棿骞跺叆搴?
             };
 
             _context.ActivityLogs.Add(log); 
@@ -69,7 +69,7 @@ namespace MedicalSystem.Services
                 role = role ?? "Visitor", 
                 action = action, 
                 description = description, 
-                created_at = DateTime.Now // 确保获取当前精准时间并入库
+                created_at = DateTime.Now // 纭繚鑾峰彇褰撳墠绮惧噯鏃堕棿骞跺叆搴?
             };
 
             _context.ActivityLogs.Add(log); 
@@ -77,3 +77,4 @@ namespace MedicalSystem.Services
         }
     }
 }
+

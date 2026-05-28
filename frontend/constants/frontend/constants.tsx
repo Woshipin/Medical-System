@@ -1,4 +1,4 @@
-import { Doctor, ServiceItem, BlogPost, Testimonial, Department, FAQItem } from './types';
+import { Doctor, ServiceItem, BlogPost, Testimonial, Department, FAQItem } from '@/types/frontend/types';
 import { Stethoscope, Activity, Heart, Eye, Baby, Brain, Microscope, Pill, Bone, ActivitySquare } from 'lucide-react';
 
 export const DOCTORS: Doctor[] = [

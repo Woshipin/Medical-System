@@ -1,7 +1,7 @@
 // app/(frontend)/doctor/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation'; // 导入 Next.js 导航钩子
 import { Button } from '@/components/frontend/Button';
@@ -18,7 +18,7 @@ import {
  * 3. 参数获取：使用 useSearchParams() 从 URL 获取选中的科室信息。
  * 4. 路由逻辑：删除了 setView，改为使用 Link 或 router.push。
  */
-export default function DoctorsPage() {
+function DoctorsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -204,5 +204,14 @@ export default function DoctorsPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function DoctorsPage() {
+  // Next.js 16 要求使用 useSearchParams 的客户端内容放在 Suspense 中，避免预渲染时报错。
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <DoctorsPageContent />
+    </Suspense>
   );
 }

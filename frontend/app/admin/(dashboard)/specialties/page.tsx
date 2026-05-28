@@ -11,8 +11,6 @@ import {
   Eye,
   CheckCircle2,
   ChevronDown,
-  Building2,
-  MapPin,
   Activity
 } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
@@ -22,11 +20,10 @@ import Pagination from "@/components/admin/Pagination";
 // ==========================================
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api';
 
-export interface Department {
+export interface Specialty {
   id?: number;
   name: string;
-  location: string;
-  status: number; // 【核心修改】：配合后端，将 status 的定义从 boolean 更改为 number（0 = 停用, 1 = 启用）
+  status: number; // 0 = 停用, 1 = 启用
 }
 
 // -----------------
@@ -71,9 +68,9 @@ const Toast = ({ show, message, type, onClose }: { show: boolean, message: strin
   );
 };
 
-export default function DepartmentsPage() {
+export default function SpecialtiesPage() {
   // Data states
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filter states
@@ -94,9 +91,9 @@ export default function DepartmentsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Delete and notification states
-  const [viewData, setViewData] = useState<Department | null>(null);
+  const [viewData, setViewData] = useState<Specialty | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [deptToDelete, setDeptToDelete] = useState<number | null>(null);
+  const [specialtyToDelete, setSpecialtyToDelete] = useState<number | null>(null);
   const [toast, setToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({ show: false, message: "", type: "success" });
 
   const showToast = (type: 'success' | 'error', message: string) => {
@@ -116,16 +113,16 @@ export default function DepartmentsPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/Department`, { headers: getHeaders() });
+      const res = await fetch(`${API_BASE_URL}/Specialty`, { headers: getHeaders() });
       if (res.ok) {
-        const data = await res.json();
-        setDepartments(data);
+        const json = await res.json();
+        setSpecialties(json.data || []);
       } else {
-        throw new Error("Failed to fetch departments");
+        throw new Error("Failed to fetch specialties");
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      showToast("error", "Failed to load department database.");
+      showToast("error", "Failed to load medical specialties.");
     } finally {
       setIsLoading(false);
     }
@@ -141,24 +138,20 @@ export default function DepartmentsPage() {
   }, [searchTerm, statusFilter]);
 
   // Filtering Logic
-  const filteredDepartments = useMemo(() => {
-    return departments.filter((dept) => {
-      const matchSearch =
-        dept.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dept.location?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // 【修复】：使用 dept.status 的字符串化与 0 / 1 状态进行匹配
-      const matchStatus = statusFilter === "all" || dept.status?.toString() === statusFilter;
+  const filteredSpecialties = useMemo(() => {
+    return specialties.filter((s) => {
+      const matchSearch = s.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = statusFilter === "all" || s.status?.toString() === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [departments, searchTerm, statusFilter]);
+  }, [specialties, searchTerm, statusFilter]);
 
   // Pagination Logic
-  const totalPages = Math.ceil(filteredDepartments.length / itemsPerPage);
-  const paginatedDepartments = useMemo(() => {
+  const totalPages = Math.ceil(filteredSpecialties.length / itemsPerPage);
+  const paginatedSpecialties = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredDepartments.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredDepartments, currentPage, itemsPerPage]);
+    return filteredSpecialties.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredSpecialties, currentPage, itemsPerPage]);
 
   // ---------------
   // Modal Handlers
@@ -166,29 +159,27 @@ export default function DepartmentsPage() {
   const openCreateModal = () => {
     setModalMode("create");
     setErrors({});
-    setFormData({ name: "", location: "", status: 1 }); // 【修复】：默认状态设为整型值 1 (启用)
+    setFormData({ name: "", status: 1 });
     setIsModalOpen(true);
   };
 
-  const openEditModal = (dept: Department) => {
+  const openEditModal = (spec: Specialty) => {
     setModalMode("edit");
     setErrors({});
-    setFormData({ id: dept.id, name: dept.name, location: dept.location, status: dept.status ?? 1 }); // 【修复】：绑定整型值
+    setFormData({ id: spec.id, name: spec.name, status: spec.status ?? 1 });
     setIsModalOpen(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" })); // Clear error on typing
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
   };
 
   // Create / Update Save Handler
   const handleSave = async () => {
-    // 1. Frontend validation
     const newErrors: Record<string, string> = {};
-    if (!formData.name?.trim()) newErrors.name = "Please enter department name.";
-    if (!formData.location?.trim()) newErrors.location = "Please enter location / floor.";
+    if (!formData.name?.trim()) newErrors.name = "Please enter medical specialty name.";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -196,30 +187,29 @@ export default function DepartmentsPage() {
     }
 
     try {
-      // 安全转化 status 为整型：1 为启用 Active，0 为停用 Inactive
       const targetStatusValue = (formData.status === "1" || formData.status === 1 || formData.status === "true" || formData.status === true) ? 1 : 0;
 
-      const payload: Department = {
+      const payload: Specialty = {
         name: formData.name,
-        location: formData.location,
-        status: targetStatusValue, // 【修复】：传递给后端 DTO 需要的整型 status (0 或 1)，避开反序列化异常
+        status: targetStatusValue,
       };
 
       if (formData.id) {
         payload.id = formData.id;
       }
 
-      const url = modalMode === "create" ? `${API_BASE_URL}/Department` : `${API_BASE_URL}/Department/${formData.id}`;
+      const url = modalMode === "create" ? `${API_BASE_URL}/Specialty` : `${API_BASE_URL}/Specialty/${formData.id}`;
       const method = modalMode === "create" ? "POST" : "PUT";
 
       const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) });
 
       if (res.ok) {
         setIsModalOpen(false);
-        showToast("success", modalMode === "create" ? "Department created successfully!" : "Department updated successfully!");
+        showToast("success", modalMode === "create" ? "Specialty created successfully!" : "Specialty updated successfully!");
         fetchData();
       } else {
-        showToast("error", "Failed to save department data.");
+        const errorData = await res.json();
+        showToast("error", errorData.message || "Failed to save specialty data.");
       }
     } catch (err) {
       console.error(err);
@@ -229,41 +219,37 @@ export default function DepartmentsPage() {
 
   // Delete Handler
   const confirmDelete = async () => {
-    if (!deptToDelete) return;
+    if (!specialtyToDelete) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/Department/${deptToDelete}`, { method: "DELETE", headers: getHeaders() });
+      const res = await fetch(`${API_BASE_URL}/Specialty/${specialtyToDelete}`, { method: "DELETE", headers: getHeaders() });
       if (res.ok) {
-        showToast("success", "Department deleted successfully.");
+        showToast("success", "Specialty deleted successfully.");
         fetchData();
       } else {
-        showToast("error", "Failed to delete department.");
+        const errorData = await res.json();
+        showToast("error", errorData.message || "Failed to delete specialty.");
       }
     } catch (err) {
       console.error(err);
       showToast("error", "A network error occurred while deleting.");
     } finally {
       setIsDeleteAlertOpen(false);
-      setDeptToDelete(null);
+      setSpecialtyToDelete(null);
     }
   };
 
   return (
-    // ==========================================
-    // 【布局适配】：
-    // 将原有的 max-w-[1400px] 改为桌面端与大屏幕自适应伸展全宽 (xl:max-w-full xl:px-4 2xl:px-6)，
-    // 使得该页面在大屏、iPad、Mobile等不同规格屏幕上均能自适应，避免显示变形或左右两侧空白过宽。
-    // ==========================================
     <div className="space-y-5 max-w-[1400px] xl:max-w-full xl:px-4 2xl:px-6 mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Departments Management</h1>
-          <p className="text-slate-600 mt-1 text-sm font-medium">Manage hospital departments and their locations.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Medical Specialties</h1>
+          <p className="text-slate-600 mt-1 text-sm font-medium">Manage clinical departments and doctor professional specialties.</p>
         </div>
         <button onClick={openCreateModal} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center justify-center gap-2">
-          <Plus className="w-4 h-4" /> Add Department
+          <Plus className="w-4 h-4" /> Add Specialty
         </button>
       </div>
 
@@ -274,7 +260,7 @@ export default function DepartmentsPage() {
           <input
             type="text"
             className="block w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium transition-colors"
-            placeholder="Search by department name or location..."
+            placeholder="Search by specialty name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -284,7 +270,6 @@ export default function DepartmentsPage() {
           <div className="hidden sm:flex items-center text-sm font-semibold text-slate-800"><Filter className="w-4 h-4 mr-1.5" /> Filters:</div>
 
           <div className="relative flex-1 sm:flex-none">
-            {/* 【修复】：过滤选项变更为整型关联字符 "1" / "0" */}
             <select className="w-full sm:w-48 appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">All Status</option>
               <option value="1">Active</option>
@@ -298,37 +283,34 @@ export default function DepartmentsPage() {
       {/* Data Table */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
-          <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading department database...</div>
+          <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading specialties...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider">Department Name</th>
-                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider">Location / Floor</th>
+                  <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider">Medical Specialty</th>
                   <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider">Status</th>
                   <th className="px-5 py-3 text-[11px] font-bold text-slate-600 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {paginatedDepartments.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-slate-600 font-medium text-sm">No departments found.</td></tr>
+                {paginatedSpecialties.length === 0 ? (
+                  <tr><td colSpan={3} className="p-8 text-center text-slate-600 font-medium text-sm">No specialties found.</td></tr>
                 ) : (
-                  paginatedDepartments.map((dept) => (
-                    <tr key={dept.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3 font-semibold text-slate-900 text-sm">{dept.name}</td>
-                      <td className="px-5 py-3 text-sm text-slate-700">{dept.location}</td>
+                  paginatedSpecialties.map((spec) => (
+                    <tr key={spec.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3 font-semibold text-slate-900 text-sm">{spec.name}</td>
                       <td className="px-5 py-3">
-                        {/* 【修复】：Badge 渲染逻辑修改为 (dept.status === 1) 判断 */}
-                        <Badge variant={dept.status === 1 ? "success" : "danger"}>
-                          {dept.status === 1 ? "Active" : "Inactive"}
+                        <Badge variant={spec.status === 1 ? "success" : "danger"}>
+                          {spec.status === 1 ? "Active" : "Inactive"}
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => { setViewData(dept); setIsViewModalOpen(true); }} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Eye className="w-4 h-4" /></button>
-                          <button onClick={() => openEditModal(dept)} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"><Edit className="w-4 h-4" /></button>
-                          <button onClick={() => { setDeptToDelete(dept.id!); setIsDeleteAlertOpen(true); }} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => { setViewData(spec); setIsViewModalOpen(true); }} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Eye className="w-4 h-4" /></button>
+                          <button onClick={() => openEditModal(spec)} className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"><Edit className="w-4 h-4" /></button>
+                          <button onClick={() => { setSpecialtyToDelete(spec.id!); setIsDeleteAlertOpen(true); }} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -340,11 +322,11 @@ export default function DepartmentsPage() {
         )}
 
         {/* Pagination Controls */}
-        {!isLoading && filteredDepartments.length > 0 && (
+        {!isLoading && filteredSpecialties.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredDepartments.length}
+            totalItems={filteredSpecialties.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
           />
@@ -358,34 +340,24 @@ export default function DepartmentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-slate-900">{modalMode === "create" ? "Create Department" : "Edit Department"}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{modalMode === "create" ? "Create Specialty" : "Edit Specialty"}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-1.5 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Department Name</label>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Specialty Name</label>
                 <div className="relative">
-                  <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors.name ? 'text-red-400' : 'text-slate-400'}`}><Building2 className="w-4 h-4" /></div>
+                  <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors.name ? 'text-red-400' : 'text-slate-400'}`}><Activity className="w-4 h-4" /></div>
                   <input type="text" name="name" value={formData.name || ""} onChange={handleInputChange} className={`w-full pl-10 pr-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${errors.name ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"}`} placeholder="e.g. Cardiology" />
                 </div>
                 {errors.name && <p className="text-red-500 text-[11px] mt-1.5">{errors.name}</p>}
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Location / Floor</label>
-                <div className="relative">
-                  <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors.location ? 'text-red-400' : 'text-slate-400'}`}><MapPin className="w-4 h-4" /></div>
-                  <input type="text" name="location" value={formData.location || ""} onChange={handleInputChange} className={`w-full pl-10 pr-3 py-2.5 text-sm rounded-lg outline-none transition-colors border ${errors.location ? "bg-red-50 border-red-300 text-red-500 placeholder-red-300 focus:ring-2 focus:ring-red-200" : "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500"}`} placeholder="e.g. Block A, Floor 3" />
-                </div>
-                {errors.location && <p className="text-red-500 text-[11px] mt-1.5">{errors.location}</p>}
-              </div>
-
-              <div>
                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Operational Status</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Activity className="w-4 h-4" /></div>
-                  {/* 【修复】：value 默认值支持整型选项字符（"1" 为启用营业，"0" 为关闭停业） */}
                   <select name="status" value={formData.status !== undefined ? formData.status.toString() : "1"} onChange={handleInputChange} className="appearance-none w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
                     <option value="1">Active (Operating)</option>
                     <option value="0">Inactive (Closed)</option>
@@ -397,7 +369,7 @@ export default function DepartmentsPage() {
 
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-3">
               <button onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 font-semibold transition">Cancel</button>
-              <button onClick={handleSave} className="w-full sm:w-auto px-5 py-2.5 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-semibold shadow-sm transition">Save Department</button>
+              <button onClick={handleSave} className="w-full sm:w-auto px-5 py-2.5 text-sm text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg font-semibold shadow-sm transition">Save Specialty</button>
             </div>
           </div>
         </div>
@@ -410,16 +382,14 @@ export default function DepartmentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-white">
-              <h2 className="text-lg font-bold text-slate-900">Department Details</h2>
+              <h2 className="text-lg font-bold text-slate-900">Specialty Details</h2>
               <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-1.5 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="p-6 bg-slate-50">
               <div className="grid grid-cols-1 gap-4">
                 {[
-                  { label: "Department Name", value: viewData.name, icon: Building2 },
-                  { label: "Location", value: viewData.location, icon: MapPin },
-                  // 【修复】：查看抽屉组件中的状态，改为 (viewData.status === 1) 判断形式
+                  { label: "Specialty Name", value: viewData.name, icon: Activity },
                   { label: "Status", value: viewData.status === 1 ? "Active" : "Inactive", icon: Activity, isBadge: true, variant: viewData.status === 1 ? "success" : "danger" },
                 ].map((item, idx) => (
                   <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3 transition-all">
@@ -447,8 +417,8 @@ export default function DepartmentsPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100"><AlertTriangle className="w-8 h-8 text-red-500" /></div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Department</h3>
-            <p className="text-slate-600 text-sm font-medium mb-6">Are you sure you want to delete this department? This action cannot be undone.</p>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Specialty</h3>
+            <p className="text-slate-600 text-sm font-medium mb-6">Are you sure you want to delete this specialty? This action cannot be undone.</p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={() => setIsDeleteAlertOpen(false)} className="flex-1 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg font-semibold transition">Cancel</button>
               <button onClick={confirmDelete} className="flex-1 py-2.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg font-semibold shadow-sm transition">Delete</button>

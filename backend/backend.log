@@ -1,0 +1,68 @@
+[2026-05-28 15:24:40] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 15:24:41] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:24:41] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:24:49] [AuthController.CheckAuth] Success: Token validated for Patient sss@gmail.com
+[2026-05-28 15:25:04] [AuthController.Logout] Success: Patient logged out and tokens cleared.
+[2026-05-28 15:25:04] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:07] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:09] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:12] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:14] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:38] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:46] [AuthController.Register] Success: Patient account created for www@gmail.com
+[2026-05-28 15:27:49] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:27:52] [AuthController.Login] Success: Patient www@gmail.com logged in successfully
+[2026-05-28 15:27:54] [AuthController.CheckAuth] Success: Token validated for Patient www@gmail.com
+[2026-05-28 15:28:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:28:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:28:04] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-05-28 15:28:41] [AdminController.Register] Success: Admin account created for qqq@gmail.com with role Admin
+[2026-05-28 15:28:47] [AdminController.Login] Success: Admin qqq@gmail.com (Admin) logged in successfully.
+[2026-05-28 15:28:47] [AdminController.CheckAuth] Success: Token validated for Admin qqq@gmail.com
+[2026-05-28 15:28:47] [AdminController.CheckAuth] Success: Token validated for Admin qqq@gmail.com
+[2026-05-28 15:28:54] [AdminController.CheckAuth] Success: Token validated for Admin qqq@gmail.com
+[2026-05-28 15:28:54] [AdminController.CheckAuth] Success: Token validated for Admin qqq@gmail.com
+[2026-05-28 15:36:09] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-05-28 15:36:14] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 15:36:14] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:36:14] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:36:16] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:36:16] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:36:36] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-05-28 15:37:02] [AdminController.Register] Success: Admin account created for ooo@gmail.com with role Doctor
+[2026-05-28 15:37:09] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 15:37:09] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:37:09] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:37:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:37:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:39:48] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:39:48] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:39:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:39:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:39:55] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-05-28 15:40:13] [AdminController.Register] Success: Admin account created for ccc@gmail.com with role Admin
+[2026-05-28 15:40:18] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 15:40:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:40:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:40:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:40:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:11] [AdminController.Register] Success: Admin account created for vvv@gmail.com with role SuperAdmin
+[2026-05-28 15:41:16] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 15:41:16] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:16] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:30] [AuthController.CheckAuth] Success: Token validated for Patient www@gmail.com
+[2026-05-28 15:41:32] [AuthController.Logout] Success: Patient logged out and tokens cleared.
+[2026-05-28 15:41:32] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:41:34] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:41:43] [AuthController.Register] Success: Patient account created for aaa@gmail.com
+[2026-05-28 15:41:45] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 15:41:47] [AuthController.Login] Success: Patient www@gmail.com logged in successfully
+[2026-05-28 15:41:50] [AuthController.CheckAuth] Success: Token validated for Patient www@gmail.com
+[2026-05-28 15:41:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:41:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com

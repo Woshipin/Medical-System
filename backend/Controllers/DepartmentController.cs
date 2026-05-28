@@ -35,7 +35,8 @@ namespace MedicalSystem.Controllers
             _context.Departments.Add(department); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Created", $"Created new Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status ? "Active" : "Inactive")}");
+            // 【修改】：使用 (department.status == 1) 判定是否启用
+            await _activityLog.LogAsync("Created", $"Created new Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status == 1 ? "Active" : "Inactive")}");
 
             return CreatedAtAction(nameof(GetDepartments), new { id = department.id }, department); 
         }
@@ -51,7 +52,9 @@ namespace MedicalSystem.Controllers
             var changes = new List<string>(); 
             if (existing.name != department.name) changes.Add($"• Department Name -> {existing.name} ➔ {department.name}"); 
             if (existing.location != department.location) changes.Add($"• Location -> {existing.location} ➔ {department.location}"); 
-            if (existing.status != department.status) changes.Add($"• Status -> {(existing.status ? "Active" : "Inactive")} ➔ {(department.status ? "Active" : "Inactive")}"); 
+            
+            // 【修改】：将状态比对和日志记录修改为兼容整型状态 (1 = Active, 0 = Inactive)
+            if (existing.status != department.status) changes.Add($"• Status -> {(existing.status == 1 ? "Active" : "Inactive")} ➔ {(department.status == 1 ? "Active" : "Inactive")}"); 
 
             _context.Entry(department).State = EntityState.Modified; 
 
@@ -82,7 +85,8 @@ namespace MedicalSystem.Controllers
             _context.Departments.Remove(department); 
             await _context.SaveChangesAsync(); 
 
-            await _activityLog.LogAsync("Deleted", $"Deleted Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status ? "Active" : "Inactive")}");
+            // 【修改】：删除记录时的日志输出修改为整型状态判定
+            await _activityLog.LogAsync("Deleted", $"Deleted Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status == 1 ? "Active" : "Inactive")}");
 
             return NoContent(); 
         }
