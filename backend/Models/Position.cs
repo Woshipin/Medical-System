@@ -7,8 +7,8 @@ namespace MedicalSystem.Models
     /// <summary>
     /// 医生职称表
     /// </summary>
-    [Table("Titles")]
-    public class Title
+    [Table("Titles")] // 如果数据库表名依然是 Titles，保留此处的映射
+    public class Position
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

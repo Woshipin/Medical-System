@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.FileProviders; // 引入文件提供器命名空间
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +18,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// 注册 ASP.NET Core Identity，并使用项目自定义的 User 模型。
+// 注册 ASP.NET Core Identity，并使用项目自定义 of User 模型。
 builder.Services
     .AddIdentity<User, IdentityRole<int>>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -124,5 +126,19 @@ if (app.Environment.IsDevelopment())
 app.UseCors("FrontendCors");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// 核心修改点：配置并注册静态文件服务，允许直接访问 user-image 文件夹内的照片，并确保启动时自动创建
+var userImagePath = Path.Combine(Directory.GetCurrentDirectory(), "user-image");
+if (!Directory.Exists(userImagePath))
+{
+    Directory.CreateDirectory(userImagePath);
+}
+app.UseStaticFiles(); // 支持 wwwroot
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(userImagePath),
+    RequestPath = "/user-image"
+});
+
 app.MapControllers();
 app.Run();

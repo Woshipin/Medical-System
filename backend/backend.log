@@ -66,3 +66,112 @@
 [2026-05-28 15:41:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
 [2026-05-28 15:41:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
 [2026-05-28 15:41:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:46:15] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:46:15] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:46:46] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:46:46] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:56:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:56:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:56:23] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:56:54] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:56:54] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:56:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:57:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:57:57] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:57:57] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:58:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:58:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:58:04] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:58:04] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:24] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:24] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:42] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:42] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:45] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:45] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 15:59:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:03:37] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 16:03:38] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:03:38] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:03:39] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:03:39] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:05:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:05:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:08] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:08] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:20:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:26:37] [AdminController.Register] Success: Admin account created for doctor123@gmail.com with role Doctor
+[2026-05-28 16:27:51] [AdminController.Login] Success: Admin ahpin7762@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 16:27:52] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:27:52] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:27:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:27:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:28:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:28:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-05-28 16:28:09] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 16:28:11] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 16:28:31] [AuthController.Register] Transaction Failed: An error occurred while saving the entity changes. See the inner exception for details.
+[2026-05-28 16:28:43] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 16:29:00] [AuthController.Register] Transaction Failed: An error occurred while saving the entity changes. See the inner exception for details.
+[2026-05-28 16:33:04] [AuthController.CheckAuth] Failed: Unauthorized access or wrong role (Expected Patient). UserID: 7
+[2026-05-28 16:33:19] [AuthController.Register] Warning: User created but profile failed to initialize: An error occurred while saving the entity changes. See the inner exception for details.
+[2026-05-28 16:55:17] [AuthController.Register] Success: Patient account & Profile initialized for patient123@gmail.com
+[2026-05-28 16:55:59] [AuthController.Login] Success: Patient patient@gmail.com logged in successfully
+[2026-05-28 16:56:02] [AuthController.CheckAuth] Success: Token validated for Patient patient@gmail.com
+[2026-05-28 16:56:09] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-05-28 16:56:09] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-05-28 16:56:35] [AdminController.Register] Success: Admin account created for doctor123@gmail.com with role Doctor
+[2026-05-28 17:03:01] [AdminController.Register] Success: Admin account created for doctor1@gmail.com with role Doctor
+[2026-05-28 17:08:01] [AdminController.Register] Success: Admin account created for doctor666@gmail.com with role Doctor
+[2026-05-28 17:18:18] [AdminController.Login] Failed: Invalid credentials for ahpin7762@gmail.com
+[2026-05-28 17:18:40] [AdminController.Login] Success: Admin superadmin@gmail.com (SuperAdmin) logged in successfully.
+[2026-05-28 17:18:40] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:40] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:43] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:43] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:46] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:46] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:51] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:18:51] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:20:58] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:20:58] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:21:01] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:21:01] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:30:25] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:30:25] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:30:31] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:30:31] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:33:02] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:33:02] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:33:52] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:33:52] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:34:02] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:34:02] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:34:46] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:34:46] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:44:48] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:44:48] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:55:29] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:55:29] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:59:40] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:59:40] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:59:44] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:59:44] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:59:52] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
+[2026-05-28 17:59:52] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com

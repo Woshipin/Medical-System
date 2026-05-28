@@ -5,6 +5,7 @@ using MedicalSystem.Models; // 引入本项目中的领域实体类命名空间�
 using System; // 引入系统基础命名空间，提供 DateTime 以及基础的类型支持
 using System.Threading; // 引入线程命名空间以支持 CancellationToken
 using System.Threading.Tasks; // 引入异步任务命名空间
+using System.Linq;
 
 namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
 {
@@ -19,11 +20,14 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
         
         // ==================== 基础字典与组织架构实体 ====================
         public DbSet<Specialty> Specialties { get; set; } = null!; // 定义并注册 Specialties（专科表）数据集映射
-        public DbSet<Title> Titles { get; set; } = null!; // 定义并注册 Titles（职称表）数据集映射
+        public DbSet<Position> Positions { get; set; } = null!; // 已将旧的 Titles 变更为 Positions（职称/职位表）数据集映射
         public DbSet<OfficeLocation> OfficeLocations { get; set; } = null!; // 定义并注册 OfficeLocations（诊室位置表）数据集映射
 
         // ==================== 新增注册双 Token 实体集 ====================
         public DbSet<UserRefreshToken> UserRefreshTokens { get; set; } = null!; // 注册用于安全认证校验的 Refresh Token 存储集
+
+        // ==================== 注册患者详细病历档案集 ====================
+        public DbSet<PatientProfile> PatientProfiles { get; set; } = null!;
 
         public override Task<int> SaveChangesAsync(CancellationToken ct = default) // 覆写 EF Core 的异步数据保存方法，自动更新最后编辑时间
         {
@@ -32,7 +36,7 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
 
             foreach (var entry in entries) // 循环遍历每一个正在被修改 of User 实体数据
             {
-                // 使用规范的 PascalCase 属性，并建议统一采用 UTC 时间规避服务器时区差异
+                // 使用规范 of PascalCase 属性，并建议统一采用 UTC 时间规避服务器时区差异
                 entry.Entity.UpdatedAt = DateTime.UtcNow; 
             }
             return base.SaveChangesAsync(ct); // 调用基类原生异步保存方法完成物理入库，并返回影响行数
@@ -126,10 +130,11 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
                 new Specialty { id = 3, name = "Pediatrics Care", status = 1, created_at = seedDate, updated_at = seedDate }
             );
 
-            builder.Entity<Title>().HasData(
-                new Title { id = 1, name = "Chief Physician", status = 1, created_at = seedDate, updated_at = seedDate },
-                new Title { id = 2, name = "Associate Chief Physician", status = 1, created_at = seedDate, updated_at = seedDate },
-                new Title { id = 3, name = "Attending Physician", status = 1, created_at = seedDate, updated_at = seedDate }
+            // 修改点：此处已完全采用新的 Position 实体类进行初始种子数据构造
+            builder.Entity<Position>().HasData(
+                new Position { id = 1, name = "Chief Physician", status = 1, created_at = seedDate, updated_at = seedDate },
+                new Position { id = 2, name = "Associate Chief Physician", status = 1, created_at = seedDate, updated_at = seedDate },
+                new Position { id = 3, name = "Attending Physician", status = 1, created_at = seedDate, updated_at = seedDate }
             );
 
             builder.Entity<OfficeLocation>().HasData(

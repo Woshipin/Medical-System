@@ -13,6 +13,7 @@ using MedicalSystem.Services;
 using Microsoft.AspNetCore.Http; 
 using System.IO; 
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace MedicalSystem.Controllers 
 {
@@ -23,17 +24,16 @@ namespace MedicalSystem.Controllers
         private readonly UserManager<User> _userManager; 
         private readonly IConfiguration _configuration; 
         private readonly IActivityLogService _activityLog; 
+        private readonly Data.AppDbContext _context; 
 
-        public AdminController(UserManager<User> userManager, IConfiguration configuration, IActivityLogService activityLog) 
+        public AdminController(UserManager<User> userManager, IConfiguration configuration, IActivityLogService activityLog, Data.AppDbContext context) 
         {
             _userManager = userManager; 
             _configuration = configuration; 
             _activityLog = activityLog; 
+            _context = context;
         }
 
-        // ==========================================
-        // 写入 backend.log 的辅助方法
-        // ==========================================
         private void LogToFile(string functionName, string message)
         {
             try
@@ -54,6 +54,9 @@ namespace MedicalSystem.Controllers
                 return BadRequest(ApiResponse<string>.FailureResponse("Invalid user role.")); 
             }
 
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null) return BadRequest(ApiResponse<string>.FailureResponse("Email already exists."));
+
             var user = new User 
             {
                 UserName = model.Email, 
@@ -63,28 +66,57 @@ namespace MedicalSystem.Controllers
                 Role = userRole,            
                 GenderId = 1,              
                 Status = 1, 
-                CreatedAt = DateTime.Now,  
-                UpdatedAt = DateTime.Now   
+                CreatedAt = DateTime.UtcNow,  
+                UpdatedAt = DateTime.UtcNow   
             };
 
             var result = await _userManager.CreateAsync(user, model.Password); 
-            if (result.Succeeded) 
+            if (!result.Succeeded)
             {
-                // 【已彻底修复】：拼接入所有详细信息
-                await _activityLog.LogExplicitAsync(
-                    user.Id, 
-                    user.FullName, 
-                    user.Role.ToString(), 
-                    "Created", 
-                    $"Created new staff account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Role -> {user.Role}\n• Status -> Active"
-                );
-                
-                LogToFile("Register", $"Success: Admin account created for {user.Email} with role {user.Role}");
-                return Ok(ApiResponse<string>.SuccessResponse(null, "Admin account created successfully.")); 
+                LogToFile("Register", $"Failed: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                return BadRequest(ApiResponse<List<string>>.FailureResponse("Account creation failed.", result.Errors.Select(e => e.Description).ToList()));
             }
 
-            LogToFile("Register", $"Failed: Error creating account for {user.Email}. Reasons: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            return BadRequest(ApiResponse<List<string>>.FailureResponse("Account creation failed.", result.Errors.Select(e => e.Description).ToList())); 
+            try
+            {
+                if (userRole == UserRole.Patient)
+                {
+                    var profile = new PatientProfile
+                    {
+                        UserId = user.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.PatientProfiles.Add(profile);
+                }
+                else if (userRole == UserRole.Doctor)
+                {
+                    // 修复点：移除了 LicenseNumber, SpecialtyId, PositionId, DepartmentId, YearsOfExperience, DateOfBirth, DateJoin 等默认值赋能，使其自动存入 NULL
+                    var doctor = new Doctor
+                    {
+                        UserId = user.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.Doctors.Add(doctor);
+                }
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                LogToFile("Register", $"Warning: Relative Profile mapping failed to save: {ex.Message}");
+            }
+
+            await _activityLog.LogExplicitAsync(
+                user.Id, 
+                user.FullName, 
+                user.Role.ToString(), 
+                "Created", 
+                $"Created new staff account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Role -> {user.Role}\n• Status -> Active"
+            );
+            
+            LogToFile("Register", $"Success: Admin account created for {user.Email} with role {user.Role}");
+            return Ok(ApiResponse<string>.SuccessResponse(null, "Admin account created successfully.")); 
         }
 
         [HttpPost("login")] 
@@ -107,7 +139,6 @@ namespace MedicalSystem.Controllers
 
             var token = GenerateJwtToken(user); 
 
-            // 【已彻底修复】：拼接入所有详细信息
             await _activityLog.LogExplicitAsync(
                 user.Id, 
                 user.FullName, 
@@ -173,7 +204,8 @@ namespace MedicalSystem.Controllers
         }
     }
 
-    public class AdminRegisterDto { 
+    public class AdminRegisterDto 
+    { 
         public string Email { get; set; } = null!; 
         public string Password { get; set; } = null!; 
         public string FullName { get; set; } = null!; 
@@ -181,7 +213,8 @@ namespace MedicalSystem.Controllers
         public string Role { get; set; } = null!; 
     }
 
-    public class AdminLoginDto { 
+    public class AdminLoginDto 
+    { 
         public string Email { get; set; } = null!; 
         public string Password { get; set; } = null!; 
     }

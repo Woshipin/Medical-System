@@ -50,6 +50,9 @@ namespace MedicalSystem.Controllers
         [HttpPost("register")] 
         public async Task<IActionResult> Register([FromBody] FrontendRegisterDto model) 
         {
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null) return BadRequest(ApiResponse<string>.FailureResponse("Email already registered."));
+
             var user = new User 
             {
                 UserName = model.Email, 
@@ -64,28 +67,43 @@ namespace MedicalSystem.Controllers
             };
 
             var result = await _userManager.CreateAsync(user, model.Password); 
-            if (result.Succeeded) 
+            if (!result.Succeeded)
             {
-                // 【修复】：恢复患者注册的系统日志和完整详情
-                var genderName = await _context.Genders
-                    .Where(g => g.id == model.GenderId)
-                    .Select(g => g.name)
-                    .FirstOrDefaultAsync() ?? "Unknown";
-
-                await _activityLog.LogExplicitAsync(
-                    user.Id, 
-                    user.FullName, 
-                    "Patient", 
-                    "Register", 
-                    $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender -> {genderName}\n• Role -> Patient\n• Status -> Active"
-                );
-
-                LogToFile("Register", $"Success: Patient account created for {user.Email}");
-                return Ok(ApiResponse<string>.SuccessResponse(null, "Registration successful")); 
+                LogToFile("Register", $"Failed: Errors -> {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                return BadRequest(ApiResponse<List<string>>.FailureResponse("Registration failed.", result.Errors.Select(e => e.Description).ToList()));
             }
 
-            LogToFile("Register", $"Failed: Error creating patient {user.Email}");
-            return BadRequest(ApiResponse<List<string>>.FailureResponse("注册失败", result.Errors.Select(e => e.Description).ToList())); 
+            try
+            {
+                var profile = new PatientProfile
+                {
+                    UserId = user.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.PatientProfiles.Add(profile);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                LogToFile("Register", $"Warning: User created but profile failed to initialize: {ex.Message}");
+            }
+
+            var genderName = await _context.Genders
+                .Where(g => g.id == model.GenderId)
+                .Select(g => g.name)
+                .FirstOrDefaultAsync() ?? "Unknown";
+
+            await _activityLog.LogExplicitAsync(
+                user.Id, 
+                user.FullName, 
+                "Patient", 
+                "Register", 
+                $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender -> {genderName}\n• Role -> Patient\n• Status -> Active"
+            );
+
+            LogToFile("Register", $"Success: Patient account & Profile initialized for {user.Email}");
+            return Ok(ApiResponse<string>.SuccessResponse(null, "Registration successful")); 
         }
 
         [HttpPost("login")] 
@@ -94,18 +112,16 @@ namespace MedicalSystem.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email); 
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) 
             {
-                // 【恢复】：记录密码错误的系统日志
                 await _activityLog.LogExplicitAsync(null, "Anonymous", "Visitor", "LoginFail", $"Failed login attempt - Details: [AttemptedEmail: '{model.Email}']");
                 LogToFile("Login", $"Failed: Invalid credentials for patient {model.Email}");
-                return Unauthorized(ApiResponse<string>.FailureResponse("账号或密码错误")); 
+                return Unauthorized(ApiResponse<string>.FailureResponse("Invalid email or password.")); 
             }
 
             if (user.Role != UserRole.Patient) 
             {
-                // 【恢复】：记录串台拦截的系统日志
                 await _activityLog.LogExplicitAsync(user.Id, user.FullName, user.Role.ToString(), "LoginFail", $"Blocked attempt to access patient portal - Details: [Email: '{user.Email}', ActualRole: '{user.Role}']");
                 LogToFile("Login", $"Failed: Admin/Doctor account {model.Email} attempted to access Patient portal");
-                return Unauthorized(ApiResponse<string>.FailureResponse("请前往后台系统登录")); 
+                return Unauthorized(ApiResponse<string>.FailureResponse("Please use the admin system entrance.")); 
             }
 
             var accessToken = _tokenService.GenerateAccessToken(user);
@@ -113,7 +129,6 @@ namespace MedicalSystem.Controllers
 
             _tokenService.SetTokenCookies(HttpContext, accessToken, refreshToken);
             
-            // 【修复】：恢复患者登录的系统日志完整详情
             await _activityLog.LogExplicitAsync(
                 user.Id, 
                 user.FullName, 
@@ -140,7 +155,7 @@ namespace MedicalSystem.Controllers
             if (!Request.Cookies.TryGetValue("RefreshToken", out var oldRefreshTokenString) || string.IsNullOrEmpty(oldRefreshTokenString))
             {
                 LogToFile("Refresh", "Failed: RefreshToken cookie missing");
-                return Unauthorized(ApiResponse<string>.FailureResponse("凭证缺失，请重新登录"));
+                return Unauthorized(ApiResponse<string>.FailureResponse("Session credentials missing, please re-login."));
             }
 
             var savedToken = await _context.UserRefreshTokens
@@ -150,7 +165,7 @@ namespace MedicalSystem.Controllers
             if (savedToken == null || savedToken.ExpiresAt < DateTime.UtcNow || savedToken.User.Status != 1)
             {
                 LogToFile("Refresh", "Failed: RefreshToken expired, invalid or user disabled");
-                return Unauthorized(ApiResponse<string>.FailureResponse("凭证已过期或无效，请重新登录"));
+                return Unauthorized(ApiResponse<string>.FailureResponse("Session credentials expired or invalid, please re-login."));
             }
 
             savedToken.IsRevoked = true;
@@ -175,7 +190,7 @@ namespace MedicalSystem.Controllers
             if (user == null || user.Status != 1 || user.Role != UserRole.Patient) 
             {
                 LogToFile("CheckAuth", $"Failed: Unauthorized access or wrong role (Expected Patient). UserID: {userId}");
-                return Unauthorized(ApiResponse<string>.FailureResponse("账号无效或非患者角色，请重新登录"));
+                return Unauthorized(ApiResponse<string>.FailureResponse("Session invalid or incorrect privileges."));
             }
 
             LogToFile("CheckAuth", $"Success: Token validated for Patient {user.Email}");

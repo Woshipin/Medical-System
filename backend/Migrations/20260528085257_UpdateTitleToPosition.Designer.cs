@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260528064932_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260528085257_UpdateTitleToPosition")]
+    partial class UpdateTitleToPosition
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -178,11 +178,6 @@ namespace backend.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
-                        .HasColumnName("address");
-
                     b.Property<string>("Biography")
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)")
@@ -223,10 +218,9 @@ namespace backend.Migrations
                         .HasColumnType("varchar(50)")
                         .HasColumnName("office_phone");
 
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("postal_code");
+                    b.Property<int>("PositionId")
+                        .HasColumnType("int")
+                        .HasColumnName("position_id");
 
                     b.Property<string>("Qualifications")
                         .HasMaxLength(500)
@@ -238,26 +232,9 @@ namespace backend.Migrations
                         .HasColumnType("varchar(1000)")
                         .HasColumnName("remark");
 
-                    b.Property<byte[]>("ResumePdf")
-                        .HasColumnType("longblob")
-                        .HasColumnName("resume_pdf");
-
-                    b.Property<string>("SignatureImageUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("signature_image_url");
-
                     b.Property<int>("SpecialtyId")
                         .HasColumnType("int")
                         .HasColumnName("specialty_id");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int")
-                        .HasColumnName("status");
-
-                    b.Property<int>("TitleId")
-                        .HasColumnType("int")
-                        .HasColumnName("title_id");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -424,7 +401,60 @@ namespace backend.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PatientProfile");
+                    b.ToTable("PatientProfiles");
+                });
+
+            modelBuilder.Entity("MedicalSystem.Models.Position", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<DateTime>("created_at")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("updated_at")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("id");
+
+                    b.ToTable("Titles");
+
+                    b.HasData(
+                        new
+                        {
+                            id = 1,
+                            created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            name = "Chief Physician",
+                            status = 1,
+                            updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            id = 2,
+                            created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            name = "Associate Chief Physician",
+                            status = 1,
+                            updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            id = 3,
+                            created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            name = "Attending Physician",
+                            status = 1,
+                            updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("MedicalSystem.Models.Specialty", b =>
@@ -475,59 +505,6 @@ namespace backend.Migrations
                             id = 3,
                             created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
                             name = "Pediatrics Care",
-                            status = 1,
-                            updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
-                        });
-                });
-
-            modelBuilder.Entity("MedicalSystem.Models.Title", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("id"));
-
-                    b.Property<DateTime>("created_at")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<int>("status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("updated_at")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("id");
-
-                    b.ToTable("Titles");
-
-                    b.HasData(
-                        new
-                        {
-                            id = 1,
-                            created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
-                            name = "Chief Physician",
-                            status = 1,
-                            updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            id = 2,
-                            created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
-                            name = "Associate Chief Physician",
-                            status = 1,
-                            updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            id = 3,
-                            created_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
-                            name = "Attending Physician",
                             status = 1,
                             updated_at = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
@@ -720,7 +697,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "PIN@GMAIL.COM",
                             NormalizedUserName = "PIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEG5z0iTCWxTL9/8aeU8wVcG60lW+LuQnCkbYJzaYFwEy2P+jeLKF6GZCVpC7DfCbOw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOboQ32iViL9T4ceuhv1xiX6rgSfuyYjKfRdnYr28jV3GO1u6jwrsxVeblJAeUz/jw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 3,
@@ -743,7 +720,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "SUPERADMIN@GMAIL.COM",
                             NormalizedUserName = "SUPERADMIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEEB3LI/RGk0MkqmuTJLrelerIyq98u5diMa750CNARryYZ2lJ1bO3iLdJyP762s08w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEN6HpcsfzsjFat4l2SUYi3c5ArAYNDQtCB7LUK5Mdtxd8GSZg1xZvE2/bMCUDCOZrw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 0,
@@ -766,7 +743,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEASNtnJPa88uffBw9E70PMV/paiLBD6Tpm+cEdVpvP5sTCXLIyOIFTRZFio+/O+htQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEMXmW/Jy9PKa2iBLj9ubvytmijK6rf7zDwVzie5Oiny26Qp7gV+xEFw0LyPgQWAFhA==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 1,
@@ -789,7 +766,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "DOCTOR@GMAIL.COM",
                             NormalizedUserName = "DOCTOR@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEO2VzRvVz+LuNW+WC1DvsU7JMPOM2AQBtc7nz7YfZMaiJA9rmURKYfCC6N/aE97YxQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEHTz4FQsP03SZBdYEAQuS6gHfVwJ0tki7zQJXeuVuCy2EgciaErRRKefzPYIxu1eqw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 2,
@@ -812,7 +789,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "PATIENT@GMAIL.COM",
                             NormalizedUserName = "PATIENT@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEH8Gs1nrrtVTwb5U0zoTUbKNaK+6p9j/5lGeFhL+kKtNSVr06GA4x/eLlhfHZ5V0nA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBc+oyC0JxfiEoi0poUUp0haexznvhR+Am9T+nwGTt5SNcGPQUEY7ZiWF59+bzZwAQ==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 3,

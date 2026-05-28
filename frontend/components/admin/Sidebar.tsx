@@ -25,7 +25,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const generalMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { id: 'activity_log', label: 'Activity Log', icon: ShieldCheck, href: '/admin/activity-log' },
-    { id: 'users', label: 'System Users', icon: ShieldCheck, href: '/admin/users' },
+    { id: 'users', label: 'Staff', icon: ShieldCheck, href: '/admin/staffs' },
+    { id: 'patients', label: 'Patients', icon: Stethoscope, href: '/admin/patients' },
     { id: 'services', label: 'Services', icon: Activity, href: '/admin/services' },
     { id: 'departments', label: 'Departments', icon: Building2, href: '/admin/departments' },
     { id: 'genders', label: 'Genders', icon: Users, href: '/admin/genders' }, // 新增性别管理项
