@@ -246,7 +246,39 @@ namespace MedicalSystem.Controllers
                 await _context.SaveChangesAsync(); 
                 await transaction.CommitAsync();
 
-                await _activityLog.LogAsync("Created", $"Created new Doctor Profile & User account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}");
+                // 记录 Create 的全部 information
+                var details = new List<string>
+                {
+                    $"• USER ID -> {user.Id}",
+                    $"• FULL NAME -> {user.FullName}",
+                    $"• EMAIL -> {user.Email}",
+                    $"• DATE OF BIRTH -> {user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• PHONE -> {user.PhoneNumber ?? "None"}",
+                    $"• ALT PHONE -> {user.PhoneNumberAlt ?? "None"}",
+                    $"• GENDER ID -> {user.GenderId?.ToString() ?? "None"}",
+                    $"• ADDRESS LINE 1 -> {user.AddressLine1 ?? "None"}",
+                    $"• ADDRESS LINE 2 -> {user.AddressLine2 ?? "None"}",
+                    $"• CITY -> {user.City ?? "None"}",
+                    $"• STATE -> {user.State ?? "None"}",
+                    $"• POSTAL CODE -> {user.PostalCode ?? "None"}",
+                    $"• COUNTRY -> {user.Country ?? "None"}",
+                    $"• ACCOUNT STATUS -> {(user.Status == 1 ? "Active" : "Inactive")}",
+                    $"• LICENSE NUMBER -> {doctor.LicenseNumber ?? "None"}",
+                    $"• SPECIALTY ID -> {doctor.SpecialtyId?.ToString() ?? "None"}",
+                    $"• POSITION ID -> {doctor.PositionId?.ToString() ?? "None"}",
+                    $"• DEPARTMENT ID -> {doctor.DepartmentId?.ToString() ?? "None"}",
+                    $"• OFFICE LOCATION ID -> {doctor.OfficeLocationId?.ToString() ?? "None"}",
+                    $"• YEARS OF EXPERIENCE -> {doctor.YearsOfExperience?.ToString() ?? "None"}",
+                    $"• OFFICE PHONE -> {doctor.OfficePhone ?? "None"}",
+                    $"• DATE JOIN -> {doctor.DateJoin?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• DATE LEFT -> {doctor.DateLeft?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• WORK STATUS -> {doctor.Status}",
+                    $"• QUALIFICATIONS -> {doctor.Qualifications ?? "None"}",
+                    $"• BIOGRAPHY -> {doctor.Biography ?? "None"}",
+                    $"• REMARK -> {doctor.Remark ?? "None"}"
+                };
+
+                await _activityLog.LogAsync("Created", $"Created new Doctor Profile & User account with complete information:\n{string.Join("\n", details)}");
                 return Ok(new { message = "Doctor successfully created." }); 
             }
             catch (Exception ex) {
@@ -262,12 +294,97 @@ namespace MedicalSystem.Controllers
                 return NotFound(new { message = "Doctor not found." }); 
 
             var changes = new List<string>(); 
-            if (doctor.User.FullName != input.FullName) changes.Add($"• Full Name -> {doctor.User.FullName} ➔ {input.FullName}"); 
-            if (doctor.User.Email != input.Email) changes.Add($"• Email -> {doctor.User.Email} ➔ {input.Email}"); 
-            if (doctor.User.PhoneNumber != input.Phone) changes.Add($"• Phone -> {doctor.User.PhoneNumber ?? "None"} ➔ {input.Phone ?? "None"}"); 
-            if (doctor.User.GenderId != input.GenderId) changes.Add($"• Gender ID -> {doctor.User.GenderId} ➔ {input.GenderId}"); 
-            if (doctor.User.Status != input.UserStatus) changes.Add($"• User Status -> {(doctor.User.Status == 1 ? "Active" : "Inactive")} ➔ {(input.UserStatus == 1 ? "Active" : "Inactive")}"); 
-            if (doctor.Status != input.DoctorStatus) changes.Add($"• Work Status -> {doctor.Status} ➔ {input.DoctorStatus}");
+
+            // 1. 追踪对比 User 关联表的所有数据变更
+            if (doctor.User.FullName != input.FullName) 
+                changes.Add($"• Full Name -> {doctor.User.FullName} ➔ {input.FullName}"); 
+            
+            if (doctor.User.Email != input.Email) 
+                changes.Add($"• Email -> {doctor.User.Email} ➔ {input.Email}"); 
+            
+            if (doctor.User.PhoneNumber != input.Phone) 
+                changes.Add($"• Phone -> {doctor.User.PhoneNumber ?? "None"} ➔ {input.Phone ?? "None"}"); 
+            
+            if (doctor.User.PhoneNumberAlt != input.PhoneNumberAlt) 
+                changes.Add($"• Alt Phone -> {doctor.User.PhoneNumberAlt ?? "None"} ➔ {input.PhoneNumberAlt ?? "None"}"); 
+            
+            if (doctor.User.GenderId != input.GenderId) 
+                changes.Add($"• Gender ID -> {doctor.User.GenderId} ➔ {input.GenderId}"); 
+            
+            if (doctor.User.Status != input.UserStatus) 
+                changes.Add($"• User Status -> {(doctor.User.Status == 1 ? "Active" : "Inactive")} ➔ {(input.UserStatus == 1 ? "Active" : "Inactive")}"); 
+
+            // 对比通信地址字段变更
+            if (doctor.User.AddressLine1 != input.Address)
+                changes.Add($"• Address Line 1 -> {doctor.User.AddressLine1 ?? "None"} ➔ {input.Address ?? "None"}");
+            
+            if (doctor.User.AddressLine2 != input.AddressLine2)
+                changes.Add($"• Address Line 2 -> {doctor.User.AddressLine2 ?? "None"} ➔ {input.AddressLine2 ?? "None"}");
+            
+            if (doctor.User.City != input.City)
+                changes.Add($"• City -> {doctor.User.City ?? "None"} ➔ {input.City ?? "None"}");
+            
+            if (doctor.User.State != input.State)
+                changes.Add($"• State -> {doctor.User.State ?? "None"} ➔ {input.State ?? "None"}");
+            
+            if (doctor.User.PostalCode != input.PostalCode)
+                changes.Add($"• Postal Code -> {doctor.User.PostalCode ?? "None"} ➔ {input.PostalCode ?? "None"}");
+            
+            if (doctor.User.Country != input.Country)
+                changes.Add($"• Country -> {doctor.User.Country ?? "None"} ➔ {input.Country ?? "None"}");
+
+            // 对比出生日期字段变更
+            var inputDob = string.IsNullOrEmpty(input.DateOfBirth) ? (DateOnly?)null : DateOnly.Parse(input.DateOfBirth);
+            if (doctor.User.DateOfBirth != inputDob)
+                changes.Add($"• Date of Birth -> {doctor.User.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputDob?.ToString("yyyy-MM-dd") ?? "None"}");
+
+            // 2. 追踪对比 Doctor 专属字段的所有数据变更
+            if (doctor.LicenseNumber != input.LicenseNumber) 
+                changes.Add($"• License Number -> {doctor.LicenseNumber ?? "None"} ➔ {input.LicenseNumber ?? "None"}"); 
+            
+            if (doctor.SpecialtyId != input.SpecialtyId) 
+                changes.Add($"• Specialty ID -> {doctor.SpecialtyId?.ToString() ?? "None"} ➔ {input.SpecialtyId?.ToString() ?? "None"}"); 
+            
+            if (doctor.PositionId != input.PositionId) 
+                changes.Add($"• Position ID -> {doctor.PositionId?.ToString() ?? "None"} ➔ {input.PositionId?.ToString() ?? "None"}"); 
+            
+            if (doctor.DepartmentId != input.DepartmentId) 
+                changes.Add($"• Department ID -> {doctor.DepartmentId?.ToString() ?? "None"} ➔ {input.DepartmentId?.ToString() ?? "None"}"); 
+            
+            if (doctor.OfficeLocationId != input.OfficeLocationId) 
+                changes.Add($"• Office Location ID -> {doctor.OfficeLocationId?.ToString() ?? "None"} ➔ {input.OfficeLocationId?.ToString() ?? "None"}"); 
+            
+            if (doctor.YearsOfExperience != input.YearsOfExperience) 
+                changes.Add($"• Years of Experience -> {doctor.YearsOfExperience?.ToString() ?? "None"} ➔ {input.YearsOfExperience?.ToString() ?? "None"}"); 
+            
+            if (doctor.OfficePhone != input.OfficePhone) 
+                changes.Add($"• Office Phone -> {doctor.OfficePhone ?? "None"} ➔ {input.OfficePhone ?? "None"}"); 
+
+            // 对比入职/离职日期变更
+            var inputJoin = string.IsNullOrEmpty(input.DateJoin) ? (DateOnly?)null : DateOnly.Parse(input.DateJoin);
+            if (doctor.DateJoin != inputJoin)
+                changes.Add($"• Date Join -> {doctor.DateJoin?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputJoin?.ToString("yyyy-MM-dd") ?? "None"}");
+
+            var inputLeft = string.IsNullOrEmpty(input.DateLeft) ? (DateOnly?)null : DateOnly.Parse(input.DateLeft);
+            if (doctor.DateLeft != inputLeft)
+                changes.Add($"• Date Left -> {doctor.DateLeft?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputLeft?.ToString("yyyy-MM-dd") ?? "None"}");
+
+            if (doctor.Status != input.DoctorStatus) 
+                changes.Add($"• Work Status -> {doctor.Status} ➔ {input.DoctorStatus}");
+            
+            if (doctor.Qualifications != input.Qualifications)
+                changes.Add($"• Qualifications -> {doctor.Qualifications ?? "None"} ➔ {input.Qualifications ?? "None"}");
+            
+            if (doctor.Biography != input.Biography)
+                changes.Add($"• Biography -> {doctor.Biography ?? "None"} ➔ {input.Biography ?? "None"}");
+            
+            if (doctor.Remark != input.Remark)
+                changes.Add($"• Remark -> {doctor.Remark ?? "None"} ➔ {input.Remark ?? "None"}");
+
+            if (!string.IsNullOrEmpty(input.ProfileImageUrl) && input.ProfileImageUrl != doctor.User.ProfileImageUrl) {
+                changes.Add("• Profile Image -> [Modified]");
+                doctor.User.ProfileImageUrl = SaveBase64Image(input.ProfileImageUrl);
+            }
 
             if (!string.IsNullOrWhiteSpace(input.Email) && input.Email != doctor.User.Email) {
                 var existingUser = await _userManager.FindByEmailAsync(input.Email); 
@@ -279,10 +396,6 @@ namespace MedicalSystem.Controllers
                 }
                 doctor.User.Email = input.Email; 
                 doctor.User.UserName = input.Email; 
-            }
-
-            if (!string.IsNullOrEmpty(input.ProfileImageUrl) && input.ProfileImageUrl != doctor.User.ProfileImageUrl) {
-                doctor.User.ProfileImageUrl = SaveBase64Image(input.ProfileImageUrl);
             }
 
             doctor.User.FullName = input.FullName;
@@ -334,6 +447,7 @@ namespace MedicalSystem.Controllers
 
             await _context.SaveChangesAsync(); 
 
+            // 格式化输出具体更新信息
             string logDetails = changes.Any() 
                 ? $"Updated Doctor profile (ID: {id}):\n{string.Join("\n", changes)}" 
                 : $"Updated Doctor profile (ID: {id}):\n• No fields were modified."; 
@@ -363,7 +477,40 @@ namespace MedicalSystem.Controllers
                 }
 
                 await transaction.CommitAsync();
-                await _activityLog.LogAsync("Deleted", $"Deleted Doctor profile & associated User account:\n• Doctor ID -> {id}");
+
+                // 详细记录删除了什么 (将该医生的所有原有字段信息作为备份，保存在日志中)
+                var deletedDetails = new List<string>
+                {
+                    $"• USER ID -> {user.Id}",
+                    $"• FULL NAME -> {user.FullName}",
+                    $"• EMAIL -> {user.Email}",
+                    $"• DATE OF BIRTH -> {user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• PHONE -> {user.PhoneNumber ?? "None"}",
+                    $"• ALT PHONE -> {user.PhoneNumberAlt ?? "None"}",
+                    $"• GENDER ID -> {user.GenderId?.ToString() ?? "None"}",
+                    $"• ADDRESS LINE 1 -> {user.AddressLine1 ?? "None"}",
+                    $"• ADDRESS LINE 2 -> {user.AddressLine2 ?? "None"}",
+                    $"• CITY -> {user.City ?? "None"}",
+                    $"• STATE -> {user.State ?? "None"}",
+                    $"• POSTAL CODE -> {user.PostalCode ?? "None"}",
+                    $"• COUNTRY -> {user.Country ?? "None"}",
+                    $"• ACCOUNT STATUS -> {(user.Status == 1 ? "Active" : "Inactive")}",
+                    $"• LICENSE NUMBER -> {doctor.LicenseNumber ?? "None"}",
+                    $"• SPECIALTY ID -> {doctor.SpecialtyId?.ToString() ?? "None"}",
+                    $"• POSITION ID -> {doctor.PositionId?.ToString() ?? "None"}",
+                    $"• DEPARTMENT ID -> {doctor.DepartmentId?.ToString() ?? "None"}",
+                    $"• OFFICE LOCATION ID -> {doctor.OfficeLocationId?.ToString() ?? "None"}",
+                    $"• YEARS OF EXPERIENCE -> {doctor.YearsOfExperience?.ToString() ?? "None"}",
+                    $"• OFFICE PHONE -> {doctor.OfficePhone ?? "None"}",
+                    $"• DATE JOIN -> {doctor.DateJoin?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• DATE LEFT -> {doctor.DateLeft?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• WORK STATUS -> {doctor.Status}",
+                    $"• QUALIFICATIONS -> {doctor.Qualifications ?? "None"}",
+                    $"• BIOGRAPHY -> {doctor.Biography ?? "None"}",
+                    $"• REMARK -> {doctor.Remark ?? "None"}"
+                };
+
+                await _activityLog.LogAsync("Deleted", $"Deleted Doctor Profile and associated User account:\n{string.Join("\n", deletedDetails)}");
                 return Ok(new { message = "Doctor record successfully deleted." }); 
             }
             catch (Exception ex) {

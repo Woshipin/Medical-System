@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using MedicalSystem.Models; 
 using MedicalSystem.Data;
 using MedicalSystem.Services; 
-using System.IO; // 引入命名空间
+using System.IO;
 
 namespace MedicalSystem.Controllers 
 {
@@ -28,7 +28,6 @@ namespace MedicalSystem.Controllers
             _activityLog = activityLog; 
         }
 
-        // 新增：安全保存 Base64 编码的患者头像图片至本地 user-image 文件夹
         private string? SaveBase64Image(string? base64Data)
         {
             if (string.IsNullOrEmpty(base64Data)) return null;
@@ -74,7 +73,6 @@ namespace MedicalSystem.Controllers
         [HttpGet] 
         public async Task<IActionResult> GetAll() 
         {
-            // 仅提取 Role 是 Patient (3) 的用户并关联 PatientProfile 档案
             var patients = await _userManager.Users 
                 .Include(u => u.Gender) 
                 .Include(u => u.PatientProfile) 
@@ -112,7 +110,6 @@ namespace MedicalSystem.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 保存患者头像到本地文件夹并写入相对路径
                 var savedImagePath = SaveBase64Image(model.ProfileImageUrl);
 
                 var newPatient = new User 
@@ -120,7 +117,7 @@ namespace MedicalSystem.Controllers
                     UserName = model.Email, 
                     Email = model.Email, 
                     FullName = model.FullName, 
-                    ProfileImageUrl = savedImagePath, // 本地图像相对路径
+                    ProfileImageUrl = savedImagePath, 
                     DateOfBirth = string.IsNullOrEmpty(model.DateOfBirth) ? null : DateOnly.Parse(model.DateOfBirth),
                     PhoneNumber = model.PhoneNumber, 
                     PhoneNumberAlt = model.PhoneNumberAlt,
@@ -163,7 +160,34 @@ namespace MedicalSystem.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                await _activityLog.LogAsync("Created", $"Created new Patient account:\n• ID -> {newPatient.Id}\n• Name -> {newPatient.FullName}");
+                // 记录 Create 的全部 information
+                var details = new List<string>
+                {
+                    $"• USER ID -> {newPatient.Id}",
+                    $"• FULL NAME -> {newPatient.FullName}",
+                    $"• EMAIL -> {newPatient.Email}",
+                    $"• DATE OF BIRTH -> {newPatient.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• PHONE -> {newPatient.PhoneNumber ?? "None"}",
+                    $"• ALT PHONE -> {newPatient.PhoneNumberAlt ?? "None"}",
+                    $"• GENDER ID -> {newPatient.GenderId?.ToString() ?? "None"}",
+                    $"• ADDRESS LINE 1 -> {newPatient.AddressLine1 ?? "None"}",
+                    $"• ADDRESS LINE 2 -> {newPatient.AddressLine2 ?? "None"}",
+                    $"• CITY -> {newPatient.City ?? "None"}",
+                    $"• STATE -> {newPatient.State ?? "None"}",
+                    $"• POSTAL CODE -> {newPatient.PostalCode ?? "None"}",
+                    $"• COUNTRY -> {newPatient.Country ?? "None"}",
+                    $"• ACCOUNT STATUS -> {(newPatient.Status == 1 ? "Active" : "Inactive")}",
+                    $"• IC NUMBER -> {profile.IcNumber ?? "None"}",
+                    $"• BLOOD TYPE -> {profile.BloodType ?? "None"}",
+                    $"• ALLERGIES -> {profile.Allergies ?? "None"}",
+                    $"• CHRONIC DISEASES -> {profile.ChronicDiseases ?? "None"}",
+                    $"• MEDICAL NOTES -> {profile.MedicalNotes ?? "None"}",
+                    $"• EMERGENCY CONTACT NAME -> {profile.EmergencyContactName ?? "None"}",
+                    $"• EMERGENCY CONTACT PHONE -> {profile.EmergencyContactPhone ?? "None"}",
+                    $"• EMERGENCY CONTACT RELATION -> {profile.EmergencyContactRelation ?? "None"}"
+                };
+
+                await _activityLog.LogAsync("Created", $"Created new Patient account and profile with complete information:\n{string.Join("\n", details)}");
                 return Ok(ApiResponse<User>.SuccessResponse(newPatient, "Patient created successfully.")); 
             }
             catch(Exception ex)
@@ -181,9 +205,80 @@ namespace MedicalSystem.Controllers
             if (user == null || user.Role != UserRole.Patient) 
                 return NotFound(ApiResponse<string>.FailureResponse("Patient not found.")); 
 
-            // 如果更新了患者头像，重新保存到本地并替换为路径
+            var changes = new List<string>();
+
+            // 对比并追踪记录全部更改的 information (基本和联系地址更改)
+            if (user.FullName != model.FullName)
+                changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}");
+
+            if (user.Email != model.Email)
+                changes.Add($"• Email -> {user.Email} ➔ {model.Email}");
+
+            var inputDob = string.IsNullOrEmpty(model.DateOfBirth) ? (DateOnly?)null : DateOnly.Parse(model.DateOfBirth);
+            if (user.DateOfBirth != inputDob)
+                changes.Add($"• Date of Birth -> {user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputDob?.ToString("yyyy-MM-dd") ?? "None"}");
+
+            if (user.PhoneNumber != model.PhoneNumber)
+                changes.Add($"• Phone -> {user.PhoneNumber ?? "None"} ➔ {model.PhoneNumber ?? "None"}");
+
+            if (user.PhoneNumberAlt != model.PhoneNumberAlt)
+                changes.Add($"• Alt Phone -> {user.PhoneNumberAlt ?? "None"} ➔ {model.PhoneNumberAlt ?? "None"}");
+
+            if (user.GenderId != model.GenderId)
+                changes.Add($"• Gender ID -> {user.GenderId?.ToString() ?? "None"} ➔ {model.GenderId?.ToString() ?? "None"}");
+
+            if (user.AddressLine1 != model.AddressLine1)
+                changes.Add($"• Address Line 1 -> {user.AddressLine1 ?? "None"} ➔ {model.AddressLine1 ?? "None"}");
+
+            if (user.AddressLine2 != model.AddressLine2)
+                changes.Add($"• Address Line 2 -> {user.AddressLine2 ?? "None"} ➔ {model.AddressLine2 ?? "None"}");
+
+            if (user.City != model.City)
+                changes.Add($"• City -> {user.City ?? "None"} ➔ {model.City ?? "None"}");
+
+            if (user.State != model.State)
+                changes.Add($"• State -> {user.State ?? "None"} ➔ {model.State ?? "None"}");
+
+            if (user.PostalCode != model.PostalCode)
+                changes.Add($"• Postal Code -> {user.PostalCode ?? "None"} ➔ {model.PostalCode ?? "None"}");
+
+            if (user.Country != model.Country)
+                changes.Add($"• Country -> {user.Country ?? "None"} ➔ {model.Country ?? "None"}");
+
+            if (user.Status != model.Status)
+                changes.Add($"• Account Status -> {(user.Status == 1 ? "Active" : "Inactive")} ➔ {(model.Status == 1 ? "Active" : "Inactive")}");
+
+            // 对比并追踪 PatientProfile 的详细健康属性变更
+            if (user.PatientProfile != null)
+            {
+                if (user.PatientProfile.IcNumber != model.IcNumber)
+                    changes.Add($"• IC Number -> {user.PatientProfile.IcNumber ?? "None"} ➔ {model.IcNumber ?? "None"}");
+
+                if (user.PatientProfile.BloodType != model.BloodType)
+                    changes.Add($"• Blood Type -> {user.PatientProfile.BloodType ?? "None"} ➔ {model.BloodType ?? "None"}");
+
+                if (user.PatientProfile.Allergies != model.Allergies)
+                    changes.Add($"• Allergies -> {user.PatientProfile.Allergies ?? "None"} ➔ {model.Allergies ?? "None"}");
+
+                if (user.PatientProfile.ChronicDiseases != model.ChronicDiseases)
+                    changes.Add($"• Chronic Diseases -> {user.PatientProfile.ChronicDiseases ?? "None"} ➔ {model.ChronicDiseases ?? "None"}");
+
+                if (user.PatientProfile.MedicalNotes != model.MedicalNotes)
+                    changes.Add($"• Medical Notes -> {user.PatientProfile.MedicalNotes ?? "None"} ➔ {model.MedicalNotes ?? "None"}");
+
+                if (user.PatientProfile.EmergencyContactName != model.EmergencyContactName)
+                    changes.Add($"• Emergency Contact Name -> {user.PatientProfile.EmergencyContactName ?? "None"} ➔ {model.EmergencyContactName ?? "None"}");
+
+                if (user.PatientProfile.EmergencyContactPhone != model.EmergencyContactPhone)
+                    changes.Add($"• Emergency Contact Phone -> {user.PatientProfile.EmergencyContactPhone ?? "None"} ➔ {model.EmergencyContactPhone ?? "None"}");
+
+                if (user.PatientProfile.EmergencyContactRelation != model.EmergencyContactRelation)
+                    changes.Add($"• Emergency Contact Relation -> {user.PatientProfile.EmergencyContactRelation ?? "None"} ➔ {model.EmergencyContactRelation ?? "None"}");
+            }
+
             if (!string.IsNullOrEmpty(model.ProfileImageUrl) && model.ProfileImageUrl != user.ProfileImageUrl)
             {
+                changes.Add("• Profile Image -> [Modified]");
                 user.ProfileImageUrl = SaveBase64Image(model.ProfileImageUrl);
             }
 
@@ -207,6 +302,7 @@ namespace MedicalSystem.Controllers
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 await _userManager.ResetPasswordAsync(user, token, model.Password);
+                changes.Add("• Password -> [Modified]");
             }
 
             if (user.PatientProfile == null)
@@ -230,7 +326,12 @@ namespace MedicalSystem.Controllers
             user.PatientProfile.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            await _activityLog.LogAsync("Updated", $"Updated Patient details (ID: {id}, Name: {user.FullName})"); 
+
+            string logDetails = changes.Any() 
+                ? $"Updated Patient details (ID: {id}):\n{string.Join("\n", changes)}" 
+                : $"Updated Patient details (ID: {id}):\n• No fields were modified."; 
+
+            await _activityLog.LogAsync("Updated", logDetails); 
 
             return Ok(ApiResponse<string>.SuccessResponse(null, "Patient updated successfully.")); 
         }
@@ -245,7 +346,6 @@ namespace MedicalSystem.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 先主动清理患者关联数据
                 if (user.PatientProfile != null)
                 {
                     _context.PatientProfiles.Remove(user.PatientProfile);
@@ -260,7 +360,39 @@ namespace MedicalSystem.Controllers
                 }
 
                 await transaction.CommitAsync();
-                await _activityLog.LogAsync("Deleted", $"Deleted Patient account & profile:\n• ID -> {user.Id}\n• Name -> {user.FullName}");
+                
+                // 详细记录删除了什么 (将该患者的所有原有字段及关联健康表信息作为备份，保存在日志中)
+                var deletedDetails = new List<string>
+                {
+                    $"• USER ID -> {user.Id}",
+                    $"• FULL NAME -> {user.FullName}",
+                    $"• EMAIL -> {user.Email}",
+                    $"• DATE OF BIRTH -> {user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• PHONE -> {user.PhoneNumber ?? "None"}",
+                    $"• ALT PHONE -> {user.PhoneNumberAlt ?? "None"}",
+                    $"• GENDER ID -> {user.GenderId?.ToString() ?? "None"}",
+                    $"• ADDRESS LINE 1 -> {user.AddressLine1 ?? "None"}",
+                    $"• ADDRESS LINE 2 -> {user.AddressLine2 ?? "None"}",
+                    $"• CITY -> {user.City ?? "None"}",
+                    $"• STATE -> {user.State ?? "None"}",
+                    $"• POSTAL CODE -> {user.PostalCode ?? "None"}",
+                    $"• COUNTRY -> {user.Country ?? "None"}",
+                    $"• ACCOUNT STATUS -> {(user.Status == 1 ? "Active" : "Inactive")}"
+                };
+
+                if (user.PatientProfile != null)
+                {
+                    deletedDetails.Add($"• IC NUMBER -> {user.PatientProfile.IcNumber ?? "None"}");
+                    deletedDetails.Add($"• BLOOD TYPE -> {user.PatientProfile.BloodType ?? "None"}");
+                    deletedDetails.Add($"• ALLERGIES -> {user.PatientProfile.Allergies ?? "None"}");
+                    deletedDetails.Add($"• CHRONIC DISEASES -> {user.PatientProfile.ChronicDiseases ?? "None"}");
+                    deletedDetails.Add($"• MEDICAL NOTES -> {user.PatientProfile.MedicalNotes ?? "None"}");
+                    deletedDetails.Add($"• EMERGENCY CONTACT NAME -> {user.PatientProfile.EmergencyContactName ?? "None"}");
+                    deletedDetails.Add($"• EMERGENCY CONTACT PHONE -> {user.PatientProfile.EmergencyContactPhone ?? "None"}");
+                    deletedDetails.Add($"• EMERGENCY CONTACT RELATION -> {user.PatientProfile.EmergencyContactRelation ?? "None"}");
+                }
+
+                await _activityLog.LogAsync("Deleted", $"Deleted Patient account and associated records:\n{string.Join("\n", deletedDetails)}");
                 return Ok(ApiResponse<string>.SuccessResponse(null, "Patient deleted successfully.")); 
             }
             catch (Exception ex)
@@ -271,7 +403,6 @@ namespace MedicalSystem.Controllers
         }
     }
 
-    // 在此补全 DTO 定义
     public class PatientDto 
     {
         public string FullName { get; set; } = null!; 

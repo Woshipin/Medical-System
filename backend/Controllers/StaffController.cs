@@ -25,12 +25,10 @@ namespace MedicalSystem.Controllers
             _activityLog = activityLog; 
         }
 
-        // 新增：安全保存 Base64 编码的图片至本地 user-image 文件夹的方法
         private string? SaveBase64Image(string? base64Data)
         {
             if (string.IsNullOrEmpty(base64Data)) return null;
 
-            // 检测是否为 Base64 Data URI 格式
             if (base64Data.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
             {
                 try
@@ -38,7 +36,6 @@ namespace MedicalSystem.Controllers
                     var commaIndex = base64Data.IndexOf(',');
                     if (commaIndex == -1) return base64Data;
 
-                    // 提取图片后缀名
                     var header = base64Data.Substring(0, commaIndex);
                     var extension = ".jpg"; 
                     if (header.Contains("png", StringComparison.OrdinalIgnoreCase)) extension = ".png";
@@ -49,24 +46,20 @@ namespace MedicalSystem.Controllers
                     var base64Content = base64Data.Substring(commaIndex + 1);
                     var imageBytes = Convert.FromBase64String(base64Content);
 
-                    // 确定并创建保存目录 "user-image"
                     var targetFolder = Path.Combine(Directory.GetCurrentDirectory(), "user-image");
                     if (!Directory.Exists(targetFolder))
                     {
                         Directory.CreateDirectory(targetFolder);
                     }
 
-                    // 使用唯一标识符 GUID 命名防止冲突
                     var fileName = $"{Guid.NewGuid()}{extension}";
                     var filePath = Path.Combine(targetFolder, fileName);
                     System.IO.File.WriteAllBytes(filePath, imageBytes);
 
-                    // 返回相对路径供前端访问
                     return $"/user-image/{fileName}";
                 }
                 catch
                 {
-                    // 转换失败时降级返回原始数据
                     return base64Data;
                 }
             }
@@ -77,7 +70,6 @@ namespace MedicalSystem.Controllers
         [HttpGet] 
         public async Task<IActionResult> GetAll() 
         {
-            // 仅提取 SuperAdmin (0) 和 Admin (1) 的用户
             var staffs = await _userManager.Users 
                 .Include(u => u.Gender) 
                 .Where(u => u.Role == UserRole.SuperAdmin || u.Role == UserRole.Admin) 
@@ -110,13 +102,11 @@ namespace MedicalSystem.Controllers
             if (existingUser != null) 
                 return BadRequest(ApiResponse<string>.FailureResponse("Email already exists.")); 
 
-            // 限制只能创建 SuperAdmin 和 Admin 角色
             if (model.Role != UserRole.SuperAdmin && model.Role != UserRole.Admin)
             {
                 return BadRequest(ApiResponse<string>.FailureResponse("Unauthorized role type assignment."));
             }
 
-            // 保存本地图片并获取相对路径
             var savedImagePath = SaveBase64Image(model.ProfileImageUrl);
 
             var newStaff = new User 
@@ -124,7 +114,7 @@ namespace MedicalSystem.Controllers
                 UserName = model.Email, 
                 Email = model.Email, 
                 FullName = model.FullName, 
-                ProfileImageUrl = savedImagePath, // 保存本地路径
+                ProfileImageUrl = savedImagePath, 
                 DateOfBirth = string.IsNullOrEmpty(model.DateOfBirth) ? null : DateOnly.Parse(model.DateOfBirth),
                 PhoneNumber = model.PhoneNumber, 
                 PhoneNumberAlt = model.PhoneNumberAlt,
@@ -145,7 +135,27 @@ namespace MedicalSystem.Controllers
 
             if (result.Succeeded) 
             {
-                await _activityLog.LogAsync("Created", $"Created new Staff account:\n• ID -> {newStaff.Id}\n• Name -> {newStaff.FullName}\n• Email -> {newStaff.Email}\n• Role -> {newStaff.Role}");
+                // 记录 Create 的全部 information
+                var details = new List<string>
+                {
+                    $"• USER ID -> {newStaff.Id}",
+                    $"• FULL NAME -> {newStaff.FullName}",
+                    $"• EMAIL -> {newStaff.Email}",
+                    $"• ROLE -> {newStaff.Role}",
+                    $"• DATE OF BIRTH -> {newStaff.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• PHONE -> {newStaff.PhoneNumber ?? "None"}",
+                    $"• ALT PHONE -> {newStaff.PhoneNumberAlt ?? "None"}",
+                    $"• GENDER ID -> {newStaff.GenderId?.ToString() ?? "None"}",
+                    $"• ADDRESS LINE 1 -> {newStaff.AddressLine1 ?? "None"}",
+                    $"• ADDRESS LINE 2 -> {newStaff.AddressLine2 ?? "None"}",
+                    $"• CITY -> {newStaff.City ?? "None"}",
+                    $"• STATE -> {newStaff.State ?? "None"}",
+                    $"• POSTAL CODE -> {newStaff.PostalCode ?? "None"}",
+                    $"• COUNTRY -> {newStaff.Country ?? "None"}",
+                    $"• ACCOUNT STATUS -> {(newStaff.Status == 1 ? "Active" : "Inactive")}"
+                };
+
+                await _activityLog.LogAsync("Created", $"Created new Staff account with complete information:\n{string.Join("\n", details)}");
                 return Ok(ApiResponse<User>.SuccessResponse(newStaff, "Staff created successfully.")); 
             }
 
@@ -159,9 +169,55 @@ namespace MedicalSystem.Controllers
             if (user == null || (user.Role != UserRole.SuperAdmin && user.Role != UserRole.Admin)) 
                 return NotFound(ApiResponse<string>.FailureResponse("Staff not found.")); 
 
-            // 如果上传了新的 Base64 格式图片则重新保存
+            var changes = new List<string>();
+
+            // 对比并追踪记录全部更改的 information
+            if (user.FullName != model.FullName)
+                changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}");
+
+            if (user.Email != model.Email)
+                changes.Add($"• Email -> {user.Email} ➔ {model.Email}");
+
+            var inputDob = string.IsNullOrEmpty(model.DateOfBirth) ? (DateOnly?)null : DateOnly.Parse(model.DateOfBirth);
+            if (user.DateOfBirth != inputDob)
+                changes.Add($"• Date of Birth -> {user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputDob?.ToString("yyyy-MM-dd") ?? "None"}");
+
+            if (user.PhoneNumber != model.PhoneNumber)
+                changes.Add($"• Phone -> {user.PhoneNumber ?? "None"} ➔ {model.PhoneNumber ?? "None"}");
+
+            if (user.PhoneNumberAlt != model.PhoneNumberAlt)
+                changes.Add($"• Alt Phone -> {user.PhoneNumberAlt ?? "None"} ➔ {model.PhoneNumberAlt ?? "None"}");
+
+            if (user.GenderId != model.GenderId)
+                changes.Add($"• Gender ID -> {user.GenderId?.ToString() ?? "None"} ➔ {model.GenderId?.ToString() ?? "None"}");
+
+            if (user.AddressLine1 != model.AddressLine1)
+                changes.Add($"• Address Line 1 -> {user.AddressLine1 ?? "None"} ➔ {model.AddressLine1 ?? "None"}");
+
+            if (user.AddressLine2 != model.AddressLine2)
+                changes.Add($"• Address Line 2 -> {user.AddressLine2 ?? "None"} ➔ {model.AddressLine2 ?? "None"}");
+
+            if (user.City != model.City)
+                changes.Add($"• City -> {user.City ?? "None"} ➔ {model.City ?? "None"}");
+
+            if (user.State != model.State)
+                changes.Add($"• State -> {user.State ?? "None"} ➔ {model.State ?? "None"}");
+
+            if (user.PostalCode != model.PostalCode)
+                changes.Add($"• Postal Code -> {user.PostalCode ?? "None"} ➔ {model.PostalCode ?? "None"}");
+
+            if (user.Country != model.Country)
+                changes.Add($"• Country -> {user.Country ?? "None"} ➔ {model.Country ?? "None"}");
+
+            if (user.Role != model.Role)
+                changes.Add($"• System Role -> {user.Role} ➔ {model.Role}");
+
+            if (user.Status != model.Status)
+                changes.Add($"• Account Status -> {(user.Status == 1 ? "Active" : "Inactive")} ➔ {(model.Status == 1 ? "Active" : "Inactive")}");
+
             if (!string.IsNullOrEmpty(model.ProfileImageUrl) && model.ProfileImageUrl != user.ProfileImageUrl)
             {
+                changes.Add("• Profile Image -> [Modified]");
                 user.ProfileImageUrl = SaveBase64Image(model.ProfileImageUrl);
             }
 
@@ -188,11 +244,16 @@ namespace MedicalSystem.Controllers
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 await _userManager.ResetPasswordAsync(user, token, model.Password);
+                changes.Add("• Password -> [Modified]");
             }
 
             if (result.Succeeded) 
             {
-                await _activityLog.LogAsync("Updated", $"Updated Staff details (ID: {id}, Name: {user.FullName})"); 
+                string logDetails = changes.Any() 
+                    ? $"Updated Staff details (ID: {id}):\n{string.Join("\n", changes)}" 
+                    : $"Updated Staff details (ID: {id}):\n• No fields were modified."; 
+
+                await _activityLog.LogAsync("Updated", logDetails); 
                 return Ok(ApiResponse<string>.SuccessResponse(null, "Staff updated successfully.")); 
             }
             
@@ -209,7 +270,27 @@ namespace MedicalSystem.Controllers
             var result = await _userManager.DeleteAsync(user); 
             if (result.Succeeded) 
             {
-                await _activityLog.LogAsync("Deleted", $"Deleted Staff account:\n• ID -> {user.Id}\n• Name -> {user.FullName}");
+                // 详细记录删除了什么 (将该职员的所有原有字段信息作为备份，保存在日志中)
+                var deletedDetails = new List<string>
+                {
+                    $"• USER ID -> {user.Id}",
+                    $"• FULL NAME -> {user.FullName}",
+                    $"• EMAIL -> {user.Email}",
+                    $"• ROLE -> {user.Role}",
+                    $"• DATE OF BIRTH -> {user.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"}",
+                    $"• PHONE -> {user.PhoneNumber ?? "None"}",
+                    $"• ALT PHONE -> {user.PhoneNumberAlt ?? "None"}",
+                    $"• GENDER ID -> {user.GenderId?.ToString() ?? "None"}",
+                    $"• ADDRESS LINE 1 -> {user.AddressLine1 ?? "None"}",
+                    $"• ADDRESS LINE 2 -> {user.AddressLine2 ?? "None"}",
+                    $"• CITY -> {user.City ?? "None"}",
+                    $"• STATE -> {user.State ?? "None"}",
+                    $"• POSTAL CODE -> {user.PostalCode ?? "None"}",
+                    $"• COUNTRY -> {user.Country ?? "None"}",
+                    $"• STATUS -> {(user.Status == 1 ? "Active" : "Inactive")}"
+                };
+
+                await _activityLog.LogAsync("Deleted", $"Deleted Staff account and associated records:\n{string.Join("\n", deletedDetails)}");
                 return Ok(ApiResponse<string>.SuccessResponse(null, "Staff deleted successfully.")); 
             }
             
