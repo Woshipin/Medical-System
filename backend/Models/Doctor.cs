@@ -21,16 +21,16 @@ namespace MedicalSystem.Models
 
         [Column("license_number")]
         [StringLength(50)]
-        public string? LicenseNumber { get; set; } // 改为可空，支持空值
+        public string? LicenseNumber { get; set; } 
 
         [Column("specialty_id")]
-        public int? SpecialtyId { get; set; } // 改为可空，支持空值
+        public int? SpecialtyId { get; set; } 
 
         [Column("position_id")]
-        public int? PositionId { get; set; } // 改为可空，支持空值
+        public int? PositionId { get; set; } 
 
         [Column("department_id")]
-        public int? DepartmentId { get; set; } // 改为可空，支持空值
+        public int? DepartmentId { get; set; } 
 
         [Column("office_location_id")]
         public int? OfficeLocationId { get; set; }
@@ -44,16 +44,17 @@ namespace MedicalSystem.Models
         public string? Biography { get; set; }
 
         [Column("years_of_experience")]
-        public int? YearsOfExperience { get; set; } // 改为可空，支持空值
+        public int? YearsOfExperience { get; set; } 
 
         [Column("date_join")]
-        public DateOnly? DateJoin { get; set; } // 改为可空，支持空值
+        public DateOnly? DateJoin { get; set; } 
 
         [Column("date_left")]
         public DateOnly? DateLeft { get; set; }
 
-        [Column("date_of_birth")]
-        public DateOnly? DateOfBirth { get; set; } // 改为可空，支持空值
+        // 将数据库列名显式定义为 "work_status"
+        [Column("work_status")]
+        public int? Status { get; set; } // 医生工作状态 (Work Status): 0 - Active / Working, 1 - Suspended, 2 - On Leave, 3 - Terminated
 
         [Column("remark")]
         [StringLength(1000)]

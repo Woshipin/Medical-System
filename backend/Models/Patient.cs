@@ -1,5 +1,7 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization; // 用于忽略序列化
 
 namespace MedicalSystem.Models
 {
@@ -11,7 +13,8 @@ namespace MedicalSystem.Models
         [Column("user_id")]
         public int UserId { get; set; }
 
-        [ForeignKey(nameof(UserId))] // 修复此处，指向 C# 属性名
+        [ForeignKey(nameof(UserId))]
+        [JsonIgnore] // 仅使用系统自带的序列化忽略标记，无需依赖 Newtonsoft
         public User? User { get; set; }
 
         [Column("ic_number")]

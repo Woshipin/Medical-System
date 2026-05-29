@@ -4,6 +4,7 @@ using MedicalSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260529084821_UpdateDoctorModel")]
+    partial class UpdateDoctorModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -230,7 +233,7 @@ namespace backend.Migrations
 
                     b.Property<int?>("Status")
                         .HasColumnType("int")
-                        .HasColumnName("work_status");
+                        .HasColumnName("status");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
@@ -693,7 +696,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "PIN@GMAIL.COM",
                             NormalizedUserName = "PIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOgiNqeA1J0+BrRLHYguouX+F5SrVe/V2QzFM2z596sVKrqYxAV+RP+lMcz2tDSJHQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEDGOl9LTVGZoUoGzoCz1REbJH5ILZ5G+B+lcHOFa2bqX/13YqUEVVJpVbITOfhEWuQ==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 3,
@@ -716,7 +719,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "SUPERADMIN@GMAIL.COM",
                             NormalizedUserName = "SUPERADMIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEG7kmyx/RwpvU6IYj/97dBXUkugJ/75uwj4EOo8QZ1ccWAGWLpObq2k7L5p0d5QdxQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAENFvbbPv0ErdQLa7Seo//pzKl+c8io+6sgJN0zCQ/SU0xmBoNn8qXGb0MNEycIs9Xg==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 0,
@@ -739,7 +742,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAECLvzEmYvU7Bl9TIpJK8pZjXCsV3unVsseHWRUwco8Z+GYMdGtk6a/tHtxbg/Bc4uA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJfFN+a0HyLaDtz7FSaQCln++KEA8a1ogSdq47qveopIK5C3EC3POQBljQNONNcQzw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 1,
@@ -762,7 +765,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "DOCTOR@GMAIL.COM",
                             NormalizedUserName = "DOCTOR@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEIdMJN0W6sYrXDWmuLS21ZjBpVXxIQ1YqSU9HKeMd3aWdtqd29CI8adp4IxHxZgvUg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAECKBntNc0fMu9kyqCrob3H0Ca2QN9kJiiIUxzClJwxbsw1BD5oSC9NPVhAp5l0ndZw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 2,
@@ -785,7 +788,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "PATIENT@GMAIL.COM",
                             NormalizedUserName = "PATIENT@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEGiJLfGKTLrqJieD1nv6HYHrP60j0hmPaKcQel3HIN+UdywlLjBPg0y0U4nDQyJ0pw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOg+cnziLqmqwT4pN/uUD9eKTRqsgms7EIaZ41304Xe2DhtB0SZACCCa/XZVKYYsbQ==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 3,
