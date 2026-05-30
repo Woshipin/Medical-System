@@ -1,40 +1,6 @@
-[2026-05-30 18:05:57] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:05:57] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:05:59] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:05:59] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:06:04] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:06:04] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:07:02] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:07:02] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:07:25] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:07:25] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:07:30] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:07:30] [AdminController.CheckAuth] Success: Token validated for Admin jk@gmail.com
-[2026-05-30 18:09:11] [AdminController.Logout] Success: Admin logged out state synchronized.
-[2026-05-30 18:09:14] [AdminController.Login] Success: Admin doctor-12345@gmail.com (Doctor) logged in successfully.
-[2026-05-30 18:09:15] [AdminController.CheckAuth] Success: Token validated for Admin doctor-12345@gmail.com
-[2026-05-30 18:09:15] [AdminController.CheckAuth] Success: Token validated for Admin doctor-12345@gmail.com
-[2026-05-30 18:09:19] [AdminController.CheckAuth] Success: Token validated for Admin doctor-12345@gmail.com
-[2026-05-30 18:09:19] [AdminController.CheckAuth] Success: Token validated for Admin doctor-12345@gmail.com
-[2026-05-30 18:14:11] [AdminController.CheckAuth] Success: Token validated for Admin doctor-12345@gmail.com
-[2026-05-30 18:14:11] [AdminController.CheckAuth] Success: Token validated for Admin doctor-12345@gmail.com
-[2026-05-30 18:15:06] [AdminController.Logout] Success: Admin logged out state synchronized.
-[2026-05-30 18:15:13] [AdminController.Login] Success: Admin superadmin@gmail.com (SuperAdmin) logged in successfully.
-[2026-05-30 18:15:14] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
-[2026-05-30 18:15:14] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
-[2026-05-30 18:15:16] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
-[2026-05-30 18:15:16] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
-[2026-05-30 18:15:30] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
-[2026-05-30 18:15:30] [AdminController.CheckAuth] Success: Token validated for Admin superadmin@gmail.com
-[2026-05-30 18:22:50] [AdminController.CheckAuth] Success: Token validated for Admin superadmin-12345@gmail.com
-[2026-05-30 18:22:50] [AdminController.CheckAuth] Success: Token validated for Admin superadmin-12345@gmail.com
-[2026-05-30 18:24:57] [AdminController.Logout] Success: Admin logged out state synchronized.
-[2026-05-30 18:25:03] [AdminController.Login] Success: Admin kkk-12345@gmail.com (Doctor) logged in successfully.
-[2026-05-30 18:25:03] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:03] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:06] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:06] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:08] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:08] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:09] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
-[2026-05-30 18:25:09] [AdminController.CheckAuth] Success: Token validated for Admin kkk-12345@gmail.com
+[2026-05-30 18:52:05] [AuthController.CheckAuth] Success: Token validated for Patient patient@gmail.com
+[2026-05-30 18:53:26] [AuthController.Logout] Success: Patient logged out and tokens cleared.
+[2026-05-30 18:53:31] [AuthController.Login] Failed: Invalid credentials for patient wwwww@gmail.com
+[2026-05-30 18:53:48] [AuthController.Login] Success: Patient ok1@gmail.com logged in successfully
+[2026-05-30 18:53:52] [AuthController.CheckAuth] Success: Token validated for Patient ok1@gmail.com
+[2026-05-30 18:53:54] [AuthController.CheckAuth] Success: Token validated for Patient ok1@gmail.com

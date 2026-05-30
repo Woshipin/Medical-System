@@ -73,7 +73,7 @@ namespace MedicalSystem.Controllers
         [HttpGet] 
         public async Task<IActionResult> GetAll() 
         {
-            var patients = await _userManager.Users 
+            var patients = await _context.Users 
                 .Include(u => u.Gender) 
                 .Include(u => u.PatientProfile) 
                 .Where(u => u.Role == UserRole.Patient) 
@@ -86,7 +86,7 @@ namespace MedicalSystem.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var patient = await _userManager.Users
+            var patient = await _context.Users
                 .Include(u => u.Gender)
                 .Include(u => u.PatientProfile)
                 .FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient);
@@ -160,7 +160,6 @@ namespace MedicalSystem.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // 记录 Create 的全部 information
                 var details = new List<string>
                 {
                     $"• USER ID -> {newPatient.Id}",
@@ -200,14 +199,27 @@ namespace MedicalSystem.Controllers
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] PatientDto model) 
         {
-            var user = await _userManager.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id);
+            // === 核心安全机制：全程通过 _context 加载并追踪已有实体 ===
+            var user = await _context.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient);
             
-            if (user == null || user.Role != UserRole.Patient) 
+            if (user == null) 
                 return NotFound(ApiResponse<string>.FailureResponse("Patient not found.")); 
+
+            // 邮箱防冲突保护
+            if (!string.IsNullOrWhiteSpace(model.Email) && model.Email != user.Email) {
+                var existingUser = await _userManager.FindByEmailAsync(model.Email); 
+                if (existingUser != null && existingUser.Id != user.Id) {
+                    return BadRequest(ApiResponse<string>.FailureResponse("This email address is already taken by another user."));
+                }
+                user.Email = model.Email; 
+                user.UserName = model.Email;
+                user.NormalizedEmail = model.Email.ToUpperInvariant();
+                user.NormalizedUserName = model.Email.ToUpperInvariant();
+            }
 
             var changes = new List<string>();
 
-            // 对比并追踪记录全部更改的 information (基本和联系地址更改)
+            // 对比基本和联系地址更改
             if (user.FullName != model.FullName)
                 changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}");
 
@@ -282,9 +294,8 @@ namespace MedicalSystem.Controllers
                 user.ProfileImageUrl = SaveBase64Image(model.ProfileImageUrl);
             }
 
+            // 更新 User 属性
             user.FullName = model.FullName; 
-            user.Email = model.Email; 
-            user.UserName = model.Email; 
             user.DateOfBirth = string.IsNullOrEmpty(model.DateOfBirth) ? null : DateOnly.Parse(model.DateOfBirth);
             user.PhoneNumber = model.PhoneNumber; 
             user.PhoneNumberAlt = model.PhoneNumberAlt;
@@ -301,20 +312,18 @@ namespace MedicalSystem.Controllers
             if (!string.IsNullOrEmpty(model.Password))
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                await _userManager.ResetPasswordAsync(user, token, model.Password);
+                var pwdResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
+                if (!pwdResult.Succeeded) return BadRequest(ApiResponse<string>.FailureResponse("Failed to update password."));
                 changes.Add("• Password -> [Modified]");
             }
 
+            // === 核心业务修正：Update 仅负责对已有数据执行修改。不进行任何 Add 临时主键逻辑 ===
             if (user.PatientProfile == null)
             {
-                user.PatientProfile = new PatientProfile 
-                { 
-                    UserId = user.Id, 
-                    CreatedAt = DateTime.UtcNow 
-                };
-                _context.PatientProfiles.Add(user.PatientProfile);
+                return BadRequest(ApiResponse<string>.FailureResponse("Security Error: Linked Patient profile record does not exist. Update aborted."));
             }
 
+            // 写入健康与紧急联系人属性
             user.PatientProfile.IcNumber = model.IcNumber;
             user.PatientProfile.BloodType = model.BloodType;
             user.PatientProfile.Allergies = model.Allergies;
@@ -325,6 +334,7 @@ namespace MedicalSystem.Controllers
             user.PatientProfile.EmergencyContactRelation = model.EmergencyContactRelation;
             user.PatientProfile.UpdatedAt = DateTime.UtcNow;
 
+            // 原子化一键保存
             await _context.SaveChangesAsync();
 
             string logDetails = changes.Any() 
@@ -339,8 +349,8 @@ namespace MedicalSystem.Controllers
         [HttpDelete("{id}")] 
         public async Task<IActionResult> Delete(int id) 
         {
-            var user = await _userManager.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id); 
-            if (user == null || user.Role != UserRole.Patient) 
+            var user = await _context.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient); 
+            if (user == null) 
                 return NotFound(ApiResponse<string>.FailureResponse("Patient not found.")); 
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -361,7 +371,6 @@ namespace MedicalSystem.Controllers
 
                 await transaction.CommitAsync();
                 
-                // 详细记录删除了什么 (将该患者的所有原有字段及关联健康表信息作为备份，保存在日志中)
                 var deletedDetails = new List<string>
                 {
                     $"• USER ID -> {user.Id}",
