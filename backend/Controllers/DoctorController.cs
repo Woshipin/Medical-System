@@ -1,4 +1,4 @@
-﻿using System; 
+using System; 
 using System.Collections.Generic; 
 using System.Linq; 
 using System.Threading.Tasks; 
@@ -115,7 +115,7 @@ namespace MedicalSystem.Controllers
                     d.User.Role,
                     d.User.Status, // 用户账户的启用/停用状态
                     Gender = d.User.Gender != null ? new { d.User.Gender.id, d.User.Gender.name } : null,
-                    ProfileImageUrl = d.User.ProfileImageUrl // 补全映射：修复前端无法获取头像图片的问题
+                    ProfileImageUrl = d.User.ProfileImageUrl 
                 } : null
             });
 
@@ -170,7 +170,7 @@ namespace MedicalSystem.Controllers
                     d.User.Role,
                     d.User.Status,
                     Gender = d.User.Gender != null ? new { d.User.Gender.id, d.User.Gender.name } : null,
-                    ProfileImageUrl = d.User.ProfileImageUrl // 补全映射：修复前端无法获取头像图片的问题
+                    ProfileImageUrl = d.User.ProfileImageUrl 
                 } : null
             };
 
@@ -246,7 +246,6 @@ namespace MedicalSystem.Controllers
                 await _context.SaveChangesAsync(); 
                 await transaction.CommitAsync();
 
-                // 记录 Create 的全部 information
                 var details = new List<string>
                 {
                     $"• USER ID -> {user.Id}",
@@ -289,9 +288,56 @@ namespace MedicalSystem.Controllers
 
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] DoctorCreateUpdateDto input) {
-            var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id); 
-            if (doctor == null || doctor.User == null || doctor.User.Role != UserRole.Doctor) 
-                return NotFound(new { message = "Doctor not found." }); 
+            
+            // Auto-Healing Logic: The 'id' coming from frontend could be Doctor.Id OR User.Id
+            var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id || d.UserId == id); 
+            
+            // If doctor record is completely missing from DB, we try to create it (Auto-Heal)
+            if (doctor == null) 
+            {
+                // === 核心修复：直接通过 _context.Users 加载，确保被当前 DbContext 追踪，杜绝重复创建新 User 的 Bug ===
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Doctor);
+                if (user != null)
+                {
+                    doctor = new Doctor
+                    {
+                        UserId = user.Id,
+                        Status = 0,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.Doctors.Add(doctor);
+                    await _context.SaveChangesAsync(); // 保存生成 Doctor.Id
+                    
+                    // 重新以跟踪状态加载，确保链路完美干净
+                    doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == doctor.Id);
+                }
+                else 
+                {
+                    return NotFound(new { message = "Doctor or User not found." }); 
+                }
+            }
+
+            // === Safe Null Guard Check ===
+            if (doctor.User == null)
+            {
+                return BadRequest(new { message = "Associated user data is missing from the database." });
+            }
+
+            // === Email Duplication Guard ===
+            if (!string.IsNullOrWhiteSpace(input.Email) && input.Email != doctor.User.Email) {
+                var existingUser = await _userManager.FindByEmailAsync(input.Email); 
+                if (existingUser != null && existingUser.Id != doctor.UserId) {
+                    return BadRequest(new { 
+                        message = "Validation failed.", 
+                        errors = new { email = new[] { "This email address is already taken by another user." } } 
+                    });
+                }
+                doctor.User.Email = input.Email; 
+                doctor.User.UserName = input.Email; 
+                doctor.User.NormalizedEmail = input.Email.ToUpperInvariant();
+                doctor.User.NormalizedUserName = input.Email.ToUpperInvariant();
+            }
 
             var changes = new List<string>(); 
 
@@ -337,6 +383,31 @@ namespace MedicalSystem.Controllers
             var inputDob = string.IsNullOrEmpty(input.DateOfBirth) ? (DateOnly?)null : DateOnly.Parse(input.DateOfBirth);
             if (doctor.User.DateOfBirth != inputDob)
                 changes.Add($"• Date of Birth -> {doctor.User.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputDob?.ToString("yyyy-MM-dd") ?? "None"}");
+
+            // 赋值属性
+            doctor.User.FullName = input.FullName;
+            doctor.User.DateOfBirth = string.IsNullOrEmpty(input.DateOfBirth) ? null : DateOnly.Parse(input.DateOfBirth);
+            doctor.User.PhoneNumber = input.Phone;
+            doctor.User.PhoneNumberAlt = input.PhoneNumberAlt;
+            doctor.User.GenderId = input.GenderId;
+            doctor.User.AddressLine1 = input.Address; 
+            doctor.User.AddressLine2 = input.AddressLine2;
+            doctor.User.City = input.City;
+            doctor.User.State = input.State;
+            doctor.User.PostalCode = input.PostalCode; 
+            doctor.User.Country = input.Country;
+            doctor.User.Status = input.UserStatus; 
+            doctor.User.UpdatedAt = DateTime.UtcNow;
+
+            // 标记状态为 Modified 以便 SaveChanges 统一更新该 ID 的已有数据
+            _context.Entry(doctor.User).State = EntityState.Modified;
+
+            if (!string.IsNullOrWhiteSpace(input.Password)) {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(doctor.User); 
+                var pwdResult = await _userManager.ResetPasswordAsync(doctor.User, token, input.Password); 
+                if (!pwdResult.Succeeded) return BadRequest(new { message = "Failed to update password." }); 
+                changes.Add("• Password -> [Modified]"); 
+            }
 
             // 2. 追踪对比 Doctor 专属字段的所有数据变更
             if (doctor.LicenseNumber != input.LicenseNumber) 
@@ -386,41 +457,6 @@ namespace MedicalSystem.Controllers
                 doctor.User.ProfileImageUrl = SaveBase64Image(input.ProfileImageUrl);
             }
 
-            if (!string.IsNullOrWhiteSpace(input.Email) && input.Email != doctor.User.Email) {
-                var existingUser = await _userManager.FindByEmailAsync(input.Email); 
-                if (existingUser != null && existingUser.Id != doctor.UserId) {
-                    return BadRequest(new { 
-                        message = "Validation failed.", 
-                        errors = new { email = new[] { "This email address is already taken by another user." } } 
-                    });
-                }
-                doctor.User.Email = input.Email; 
-                doctor.User.UserName = input.Email; 
-            }
-
-            doctor.User.FullName = input.FullName;
-            doctor.User.DateOfBirth = string.IsNullOrEmpty(input.DateOfBirth) ? null : DateOnly.Parse(input.DateOfBirth);
-            doctor.User.PhoneNumber = input.Phone;
-            doctor.User.PhoneNumberAlt = input.PhoneNumberAlt;
-            doctor.User.GenderId = input.GenderId;
-            doctor.User.AddressLine1 = input.Address; 
-            doctor.User.AddressLine2 = input.AddressLine2;
-            doctor.User.City = input.City;
-            doctor.User.State = input.State;
-            doctor.User.PostalCode = input.PostalCode; 
-            doctor.User.Country = input.Country;
-            doctor.User.Status = input.UserStatus; // 账号启用状态 
-
-            var updateResult = await _userManager.UpdateAsync(doctor.User); 
-            if (!updateResult.Succeeded) return BadRequest(new { message = "Failed to update user." }); 
-
-            if (!string.IsNullOrWhiteSpace(input.Password)) {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(doctor.User); 
-                var pwdResult = await _userManager.ResetPasswordAsync(doctor.User, token, input.Password); 
-                if (!pwdResult.Succeeded) return BadRequest(new { message = "Failed to update password." }); 
-                changes.Add("• Password -> [Modified]"); 
-            }
-
             doctor.LicenseNumber = input.LicenseNumber;
             doctor.SpecialtyId = input.SpecialtyId;
             doctor.PositionId = input.PositionId; 
@@ -428,23 +464,15 @@ namespace MedicalSystem.Controllers
             doctor.OfficeLocationId = input.OfficeLocationId;
             doctor.YearsOfExperience = input.YearsOfExperience;
             doctor.OfficePhone = input.OfficePhone;
-
-            if (!string.IsNullOrEmpty(input.DateJoin))
-                doctor.DateJoin = DateOnly.Parse(input.DateJoin);
-            else
-                doctor.DateJoin = null;
-
-            if (!string.IsNullOrEmpty(input.DateLeft))
-                doctor.DateLeft = DateOnly.Parse(input.DateLeft);
-            else
-                doctor.DateLeft = null;
-
-            doctor.Status = input.DoctorStatus; // 医生工作状态
+            doctor.DateJoin = inputJoin;
+            doctor.DateLeft = inputLeft;
+            doctor.Status = input.DoctorStatus; 
             doctor.Remark = input.Remark;
             doctor.Qualifications = input.Qualifications; 
             doctor.Biography = input.Biography; 
             doctor.UpdatedAt = DateTime.UtcNow; 
 
+            // 完美保存变更，决不产生重复记录！
             await _context.SaveChangesAsync(); 
 
             // 格式化输出具体更新信息
@@ -478,7 +506,6 @@ namespace MedicalSystem.Controllers
 
                 await transaction.CommitAsync();
 
-                // 详细记录删除了什么 (将该医生的所有原有字段信息作为备份，保存在日志中)
                 var deletedDetails = new List<string>
                 {
                     $"• USER ID -> {user.Id}",
