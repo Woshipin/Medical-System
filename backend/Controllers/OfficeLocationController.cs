@@ -37,11 +37,11 @@ namespace MedicalSystem.Controllers
             _logger = logger;
         }
 
-        // 銆愭牳蹇冧慨澶嶃€戯細涓洪槻姝㈢紪璇戣鍛?CS8619锛屽湪姝ゅ鏄惧紡瀹氫箟瀹夊叏鐨勫瓧绗︿覆榛樿鍊间互鍖归厤 (int?, string, string) 鐨勭鍚?
+        // 修复：返回 int? id 以匹配 LogExplicitAsync 签名
         private async Task<(int? id, string name, string role)> GetCurrentOperatorAsync()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            if (!string.IsNullOrEmpty(userIdStr))
+            if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out int userId))
             {
                 var user = await _userManager.FindByIdAsync(userIdStr);
                 if (user != null)
@@ -52,33 +52,42 @@ namespace MedicalSystem.Controllers
             return (null, "System/Unknown", "Visitor");
         }
 
+        private async Task LogBothAsync(string actionName, string status, string message)
+        {
+            var op = await GetCurrentOperatorAsync();
+            _logger.LogInformation("[OfficeLocationController.{ActionName}] {Status}: {Message}", actionName, status, message);
+            await _activityLog.LogExplicitAsync(op.id, op.name, op.role, actionName, $"[{status}] {message}");
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            _logger.LogInformation("执行请求");
             var list = await _context.OfficeLocations.OrderByDescending(o => o.id).ToListAsync();
-            return Ok(ApiResponse<IEnumerable<OfficeLocation>>.SuccessResponse(list, "璇婂鍒楄〃鎻愬彇鎴愬姛"));
+            await LogBothAsync("Read", "Success", $"Retrieved {list.Count} office locations.");
+            return Ok(ApiResponse<IEnumerable<OfficeLocation>>.SuccessResponse(list, "Office locations retrieved successfully."));
         }
 
         [HttpGet("active")]
         [AllowAnonymous]
         public async Task<IActionResult> GetActiveList()
         {
-            _logger.LogInformation("执行请求");
             var list = await _context.OfficeLocations.Where(o => o.status == 1).OrderBy(o => o.name).ToListAsync();
-            return Ok(ApiResponse<IEnumerable<OfficeLocation>>.SuccessResponse(list, "鍙敤璇婂浣嶇疆鍒楄〃鍔犺浇鎴愬姛"));
+            await LogBothAsync("Read", "Success", $"Retrieved {list.Count} active office locations.");
+            return Ok(ApiResponse<IEnumerable<OfficeLocation>>.SuccessResponse(list, "Active office locations retrieved successfully."));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            _logger.LogInformation("鎷夊彇璇婂浣嶇疆璇︽儏锛孖D 缂栧彿: {Id}", id);
             var location = await _context.OfficeLocations.FindAsync(id);
             if (location == null)
             {
-                return NotFound(ApiResponse<object>.FailureResponse("操作失败"));
+                await LogBothAsync("Read", "Failed", $"Office location not found for ID: {id}");
+                return NotFound(ApiResponse<string>.FailureResponse("Office location not found."));
             }
-            return Ok(ApiResponse<OfficeLocation>.SuccessResponse(location, "璇婂浣嶇疆淇℃伅鎻愬彇鎴愬姛"));
+
+            await LogBothAsync("Read", "Success", $"Retrieved office location ID: {id}");
+            return Ok(ApiResponse<OfficeLocation>.SuccessResponse(location, "Office location retrieved successfully."));
         }
 
         [HttpPost]
@@ -87,13 +96,15 @@ namespace MedicalSystem.Controllers
             if (!ModelState.IsValid)
             {
                 var validationErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<object>.FailureResponse("鏁版嵁杈撳叆鏍煎紡鏈夎", validationErrors));
+                await LogBothAsync("Create", "Failed", "Data format error.");
+                return BadRequest(ApiResponse<List<string>>.FailureResponse("Data format error.", validationErrors));
             }
 
             var exists = await _context.OfficeLocations.AnyAsync(o => o.name == model.name.Trim());
             if (exists)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("宸插瓨鍦ㄧ浉鍚岀殑鐗╃悊闂ㄧ墝/璇婂鐧昏璁板綍"));
+                await LogBothAsync("Create", "Failed", $"Name conflict: Office location '{model.name}' already exists.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Name conflict: Office location already exists."));
             }
 
             var location = new OfficeLocation
@@ -106,18 +117,14 @@ namespace MedicalSystem.Controllers
 
             _context.OfficeLocations.Add(location);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("璇婂鐧昏瀹屾垚锛岀敓鎴愪富閿? {Id}", location.id);
 
-            var op = await GetCurrentOperatorAsync();
-            await _activityLog.LogExplicitAsync(
-                op.id, 
-                op.name, 
-                op.role, 
-                "CreateOfficeLocation", 
-                $"娣诲姞浜嗘柊鐨勮瘖瀹や綅缃?\n鈥?ID -> {location.id}\n鈥?浣嶇疆鍚嶇О -> {location.name}\n鈥?鍒濆鐘舵€?-> {(location.status == 1 ? "鍚敤" : "鍋滅敤")}"
+            await LogBothAsync(
+                "Create", 
+                "Success", 
+                $"Created new office location:\n• ID -> {location.id}\n• Location Name -> {location.name}\n• Initial Status -> {(location.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return Ok(ApiResponse<OfficeLocation>.SuccessResponse(location, "璇婂璁板綍娣诲姞鎴愬姛"));
+            return Ok(ApiResponse<OfficeLocation>.SuccessResponse(location, "Office location created successfully."));
         }
 
         [HttpPut("{id}")]
@@ -125,25 +132,29 @@ namespace MedicalSystem.Controllers
         {
             if (id != model.id)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("操作失败"));
+                await LogBothAsync("Update", "Failed", "ID mismatch in request.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Invalid request."));
             }
 
             if (!ModelState.IsValid)
             {
                 var validationErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<object>.FailureResponse("淇℃伅鏁版嵁绾︽潫鏈€氳繃", validationErrors));
+                await LogBothAsync("Update", "Failed", "Data validation failed.");
+                return BadRequest(ApiResponse<List<string>>.FailureResponse("Data validation failed.", validationErrors));
             }
 
             var location = await _context.OfficeLocations.FindAsync(id);
             if (location == null)
             {
-                return NotFound(ApiResponse<object>.FailureResponse("操作失败"));
+                await LogBothAsync("Update", "Failed", $"Office location not found for ID: {id}");
+                return NotFound(ApiResponse<string>.FailureResponse("Office location not found."));
             }
 
             var exists = await _context.OfficeLocations.AnyAsync(o => o.name == model.name.Trim() && o.id != id);
             if (exists)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("鍛藉悕鍐茬獊锛氭柊褰曞叆鐨勭┖闂村湴鍧€宸茶鍗犵敤"));
+                await LogBothAsync("Update", "Failed", $"Name conflict: The location name '{model.name}' is already taken.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Name conflict: Office location name is already taken."));
             }
 
             string oldName = location.name;
@@ -154,18 +165,14 @@ namespace MedicalSystem.Controllers
             location.updated_at = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("璇婂璁板綍淇敼鎴愬姛銆侷D: {Id}", id);
 
-            var op = await GetCurrentOperatorAsync();
-            await _activityLog.LogExplicitAsync(
-                op.id, 
-                op.name, 
-                op.role, 
-                "UpdateOfficeLocation", 
-                $"鏇存柊浜嗚瘖瀹や俊鎭?(ID: {id}):\n鈥?鍘熶綅缃? {oldName} -> 鏂颁綅缃? {location.name}\n鈥?鍘熺姸鎬? {(oldStatus == 1 ? "鍚敤" : "鍋滅敤")} -> 鏂扮姸鎬? {(location.status == 1 ? "鍚敤" : "鍋滅敤")}"
+            await LogBothAsync(
+                "Update", 
+                "Success", 
+                $"Updated office location (ID: {id}):\n• Location Name: {oldName} ➔ {location.name}\n• Status: {(oldStatus == 1 ? "Active" : "Inactive")} ➔ {(location.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return Ok(ApiResponse<OfficeLocation>.SuccessResponse(location, "操作成功"));
+            return Ok(ApiResponse<OfficeLocation>.SuccessResponse(location, "Office location updated successfully."));
         }
 
         [HttpDelete("{id}")]
@@ -174,32 +181,27 @@ namespace MedicalSystem.Controllers
             var location = await _context.OfficeLocations.FindAsync(id);
             if (location == null)
             {
-                return NotFound(ApiResponse<object>.FailureResponse("鍑嗗鍒犻櫎鐨勮瘖瀹ゅ彲鑳芥棭宸茶绉诲幓"));
+                await LogBothAsync("Delete", "Failed", $"Office location not found for ID: {id}");
+                return NotFound(ApiResponse<string>.FailureResponse("Office location not found."));
             }
 
             var hasDoctors = await _context.Doctors.AnyAsync(d => d.OfficeLocationId == id);
             if (hasDoctors)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("操作失败"));
+                await LogBothAsync("Delete", "Failed", $"Cannot delete location ID: {id}. It is currently assigned to doctors.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Cannot delete: Office location is currently assigned to doctors."));
             }
 
             _context.OfficeLocations.Remove(location);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("鐗╃悊鍒犻櫎绌洪棿鍦板潃瀹屾垚锛孖D 涓? {Id}", id);
 
-            var op = await GetCurrentOperatorAsync();
-            await _activityLog.LogExplicitAsync(
-                op.id, 
-                op.name, 
-                op.role, 
-                "DeleteOfficeLocation", 
-                $"娓呴櫎浜嗚瘖瀹や綅缃」:\n鈥?ID -> {location.id}\n鈥?浣嶇疆鍚嶇О -> {location.name}"
+            await LogBothAsync(
+                "Delete", 
+                "Success", 
+                $"Deleted office location:\n• ID -> {location.id}\n• Location Name -> {location.name}"
             );
 
-            return Ok(ApiResponse<object>.SuccessResponse(null, "鎴愬姛鍒犻櫎璇婂浣嶇疆璁板綍"));
+            return Ok(ApiResponse<string>.SuccessResponse(null, "Office location deleted successfully."));
         }
     }
 }
-
-
-

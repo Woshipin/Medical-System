@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateTitleToPosition : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -155,14 +155,20 @@ namespace backend.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     full_name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    gender_id = table.Column<int>(type: "int", nullable: true),
-                    date_of_birth = table.Column<DateOnly>(type: "date", nullable: true),
+                    email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    password = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    profile_image_url = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     phone_number = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     phone_number_alt = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    profile_image_url = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    gender_id = table.Column<int>(type: "int", nullable: true),
+                    role = table.Column<int>(type: "int", nullable: false),
+                    status = table.Column<int>(type: "int", nullable: false),
+                    date_of_birth = table.Column<DateOnly>(type: "date", nullable: true),
                     address_line_1 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     address_line_2 = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true)
@@ -175,21 +181,15 @@ namespace backend.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     country = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    role = table.Column<int>(type: "int", nullable: false),
-                    status = table.Column<int>(type: "int", nullable: false),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    NormalizedEmail = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     UserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NormalizedUserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    email = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    NormalizedEmail = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     EmailConfirmed = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    password = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     SecurityStamp = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ConcurrencyStamp = table.Column<string>(type: "longtext", nullable: true)
@@ -244,20 +244,20 @@ namespace backend.Migrations
                     user_id = table.Column<int>(type: "int", nullable: false),
                     office_phone = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    license_number = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                    license_number = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    specialty_id = table.Column<int>(type: "int", nullable: false),
-                    position_id = table.Column<int>(type: "int", nullable: false),
-                    department_id = table.Column<int>(type: "int", nullable: false),
+                    specialty_id = table.Column<int>(type: "int", nullable: true),
+                    position_id = table.Column<int>(type: "int", nullable: true),
+                    department_id = table.Column<int>(type: "int", nullable: true),
                     office_location_id = table.Column<int>(type: "int", nullable: true),
                     qualifications = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     biography = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    years_of_experience = table.Column<int>(type: "int", nullable: false),
-                    date_join = table.Column<DateOnly>(type: "date", nullable: false),
+                    years_of_experience = table.Column<int>(type: "int", nullable: true),
+                    date_join = table.Column<DateOnly>(type: "date", nullable: true),
                     date_left = table.Column<DateOnly>(type: "date", nullable: true),
-                    date_of_birth = table.Column<DateOnly>(type: "date", nullable: false),
+                    work_status = table.Column<int>(type: "int", nullable: true),
                     remark = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -497,11 +497,26 @@ namespace backend.Migrations
                 columns: new[] { "id", "AccessFailedCount", "address_line_1", "address_line_2", "city", "ConcurrencyStamp", "country", "created_at", "date_of_birth", "email", "EmailConfirmed", "full_name", "gender_id", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "password", "phone_number", "phone_number_alt", "PhoneNumberConfirmed", "postal_code", "profile_image_url", "role", "SecurityStamp", "state", "status", "TwoFactorEnabled", "updated_at", "UserName" },
                 values: new object[,]
                 {
-                    { 1, 0, null, null, null, "a72b83c1-0c5a-4e67-8fa6-fb2a6cf124de", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "pin@gmail.com", false, "pin", 1, false, null, "PIN@GMAIL.COM", "PIN@GMAIL.COM", "AQAAAAIAAYagAAAAEOboQ32iViL9T4ceuhv1xiX6rgSfuyYjKfRdnYr28jV3GO1u6jwrsxVeblJAeUz/jw==", "88888888", null, false, null, null, 3, "f4c9c7d1-e6df-46b0-9b62-fa583db13d5a", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "pin@gmail.com" },
-                    { 2, 0, null, null, null, "b84f93c1-cd2c-47ea-bcbf-11fc2cf00de8", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "superadmin@gmail.com", false, "superadmin", 1, false, null, "SUPERADMIN@GMAIL.COM", "SUPERADMIN@GMAIL.COM", "AQAAAAIAAYagAAAAEN6HpcsfzsjFat4l2SUYi3c5ArAYNDQtCB7LUK5Mdtxd8GSZg1xZvE2/bMCUDCOZrw==", "88888888", null, false, null, null, 0, "c95e1e0a-bf6b-4df2-823a-fcf723fbfa4b", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "superadmin@gmail.com" },
-                    { 3, 0, null, null, null, "d85fbc2a-1c3c-41ca-a2bf-23fc3df11de9", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@gmail.com", false, "admin", 1, false, null, "ADMIN@GMAIL.COM", "ADMIN@GMAIL.COM", "AQAAAAIAAYagAAAAEMXmW/Jy9PKa2iBLj9ubvytmijK6rf7zDwVzie5Oiny26Qp7gV+xEFw0LyPgQWAFhA==", "88888888", null, false, null, null, 1, "e74c83fa-da13-4cb2-83b6-9df2cfd1e3ca", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com" },
-                    { 4, 0, null, null, null, "f42fbc1a-5c2c-48ca-9dbf-34fc4df22de7", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "doctor@gmail.com", false, "doctor", 1, false, null, "DOCTOR@GMAIL.COM", "DOCTOR@GMAIL.COM", "AQAAAAIAAYagAAAAEHTz4FQsP03SZBdYEAQuS6gHfVwJ0tki7zQJXeuVuCy2EgciaErRRKefzPYIxu1eqw==", "88888888", null, false, null, null, 2, "a18d9bc1-df8a-4412-bd7c-2ef3cfb1c19b", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "doctor@gmail.com" },
-                    { 5, 0, null, null, null, "e95abc2d-0f9c-4df6-8fb2-14ac7df38de4", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "patient@gmail.com", false, "patient", 1, false, null, "PATIENT@GMAIL.COM", "PATIENT@GMAIL.COM", "AQAAAAIAAYagAAAAEBc+oyC0JxfiEoi0poUUp0haexznvhR+Am9T+nwGTt5SNcGPQUEY7ZiWF59+bzZwAQ==", "88888888", null, false, null, null, 3, "94fcbc12-d61a-4c91-9cb6-1ef2cfc3a5de", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "patient@gmail.com" }
+                    { 1, 0, null, null, null, "a72b83c1-0c5a-4e67-8fa6-fb2a6cf124de", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "pin@gmail.com", false, "pin", 1, false, null, "PIN@GMAIL.COM", "PIN@GMAIL.COM", "AQAAAAIAAYagAAAAEOe8NAqyxN4vCf1MZLcGgT+omQ6mfOSnHwCHXmX+AgwiIX3ffy07l/myXIi8Je7j7w==", "88888888", null, false, null, null, 3, "f4c9c7d1-e6df-46b0-9b62-fa583db13d5a", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "pin@gmail.com" },
+                    { 2, 0, null, null, null, "b84f93c1-cd2c-47ea-bcbf-11fc2cf00de8", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "superadmin@gmail.com", false, "superadmin", 1, false, null, "SUPERADMIN@GMAIL.COM", "SUPERADMIN@GMAIL.COM", "AQAAAAIAAYagAAAAEAOP/uZO4N+9NzjMqSYl9vetIt3q28CEB8+a7iXTRH4ZFb9VAFlfNE5hpqJ4QFCWlQ==", "88888888", null, false, null, null, 0, "c95e1e0a-bf6b-4df2-823a-fcf723fbfa4b", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "superadmin@gmail.com" },
+                    { 3, 0, null, null, null, "d85fbc2a-1c3c-41ca-a2bf-23fc3df11de9", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "admin@gmail.com", false, "admin", 1, false, null, "ADMIN@GMAIL.COM", "ADMIN@GMAIL.COM", "AQAAAAIAAYagAAAAEJJpN0AG7fMzFAXbyZLnOq4zKhNG0VEH/DeNJ4L2YMI34xHUIDeUv3UI9r2SUBktxw==", "88888888", null, false, null, null, 1, "e74c83fa-da13-4cb2-83b6-9df2cfd1e3ca", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com" },
+                    { 4, 0, null, null, null, "f42fbc1a-5c2c-48ca-9dbf-34fc4df22de7", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "doctor@gmail.com", false, "doctor", 1, false, null, "DOCTOR@GMAIL.COM", "DOCTOR@GMAIL.COM", "AQAAAAIAAYagAAAAEAzdxwumOga4x22LLEx9qm0wN9KrMTfkeQWhHT0TbZXK4vAKftWtRXng1GKvTgGB9A==", "88888888", null, false, null, null, 2, "a18d9bc1-df8a-4412-bd7c-2ef3cfb1c19b", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "doctor@gmail.com" },
+                    { 5, 0, null, null, null, "e95abc2d-0f9c-4df6-8fb2-14ac7df38de4", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "patient@gmail.com", false, "patient", 1, false, null, "PATIENT@GMAIL.COM", "PATIENT@GMAIL.COM", "AQAAAAIAAYagAAAAEJco+QMuQPfaOOQpQD9jnbUlPABHT9W1hrrewOhBgqwLlDxx1K18DS3+7DKtGZnWfw==", "88888888", null, false, null, null, 3, "94fcbc12-d61a-4c91-9cb6-1ef2cfc3a5de", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "patient@gmail.com" },
+                    { 6, 0, null, null, null, "e36e8b41-db4a-4a2a-b73a-44d5cf3011ca", null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, "ahpin7762@gmail.com", false, "ahpin", 1, false, null, "AHPIN7762@GMAIL.COM", "AHPIN7762@GMAIL.COM", "AQAAAAIAAYagAAAAEFcHuMPpoEBoGceIOcG2IgVc2XrOI097dzkug/ChUKD9kTwv6eXxQIBOY5N4o754MA==", "88888888", null, false, null, null, 0, "782b3d2b-6c41-432d-948f-287d3a8fc4b1", null, 1, false, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), "ahpin7762@gmail.com" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Doctors",
+                columns: new[] { "Id", "biography", "created_at", "date_join", "date_left", "department_id", "license_number", "office_location_id", "office_phone", "position_id", "qualifications", "remark", "specialty_id", "work_status", "updated_at", "user_id", "years_of_experience" },
+                values: new object[] { 1, null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, null, null, null, null, null, null, null, 0, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), 4, null });
+
+            migrationBuilder.InsertData(
+                table: "PatientProfiles",
+                columns: new[] { "Id", "allergies", "blood_type", "chronic_diseases", "created_at", "emergency_contact_name", "emergency_contact_phone", "emergency_contact_relation", "ic_number", "medical_notes", "updated_at", "user_id" },
+                values: new object[,]
+                {
+                    { 1, null, null, null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, null, null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), 1 },
+                    { 2, null, null, null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, null, null, new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc), 5 }
                 });
 
             migrationBuilder.CreateIndex(

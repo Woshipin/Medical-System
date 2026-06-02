@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using MedicalSystem.Models; 
 using MedicalSystem.Services; 
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace MedicalSystem.Controllers 
 {
@@ -18,11 +19,22 @@ namespace MedicalSystem.Controllers
     {
         private readonly UserManager<User> _userManager; 
         private readonly IActivityLogService _activityLog; 
+        private readonly ILogger<StaffController> _logger;
 
-        public StaffController(UserManager<User> userManager, IActivityLogService activityLog) 
+        public StaffController(
+            UserManager<User> userManager, 
+            IActivityLogService activityLog,
+            ILogger<StaffController> logger) 
         {
             _userManager = userManager; 
             _activityLog = activityLog; 
+            _logger = logger;
+        }
+
+        private async Task LogBothAsync(string actionName, string status, string message)
+        {
+            _logger.LogInformation("[StaffController.{ActionName}] {Status}: {Message}", actionName, status, message);
+            await _activityLog.LogAsync(actionName, $"[{status}] {message}");
         }
 
         private string? SaveBase64Image(string? base64Data)
@@ -76,6 +88,7 @@ namespace MedicalSystem.Controllers
                 .OrderByDescending(u => u.CreatedAt) 
                 .ToListAsync(); 
 
+            await LogBothAsync("Read", "Success", $"Retrieved {staffs.Count} staff members data.");
             return Ok(ApiResponse<IEnumerable<User>>.SuccessResponse(staffs, "Staff list retrieved successfully.")); 
         }
 
@@ -87,8 +100,12 @@ namespace MedicalSystem.Controllers
                 .FirstOrDefaultAsync(u => u.Id == id && (u.Role == UserRole.SuperAdmin || u.Role == UserRole.Admin));
             
             if (staff == null) 
+            {
+                await LogBothAsync("Read", "Failed", $"Staff not found for ID: {id}");
                 return NotFound(ApiResponse<string>.FailureResponse("Staff not found."));
+            }
 
+            await LogBothAsync("Read", "Success", $"Retrieved staff ID: {id}");
             return Ok(ApiResponse<User>.SuccessResponse(staff, "Staff details retrieved successfully."));
         }
 
@@ -96,14 +113,21 @@ namespace MedicalSystem.Controllers
         public async Task<IActionResult> Create([FromBody] StaffDto model) 
         {
             if (!ModelState.IsValid) 
+            {
+                await LogBothAsync("Create", "Failed", "Invalid data provided in payload.");
                 return BadRequest(ApiResponse<string>.FailureResponse("Invalid data provided.")); 
+            }
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email); 
             if (existingUser != null) 
+            {
+                await LogBothAsync("Create", "Failed", $"Email already exists: {model.Email}");
                 return BadRequest(ApiResponse<string>.FailureResponse("Email already exists.")); 
+            }
 
             if (model.Role != UserRole.SuperAdmin && model.Role != UserRole.Admin)
             {
+                await LogBothAsync("Create", "Failed", $"Unauthorized role type assignment: {model.Role}");
                 return BadRequest(ApiResponse<string>.FailureResponse("Unauthorized role type assignment."));
             }
 
@@ -135,7 +159,6 @@ namespace MedicalSystem.Controllers
 
             if (result.Succeeded) 
             {
-                // 记录 Create 的全部 information
                 var details = new List<string>
                 {
                     $"• USER ID -> {newStaff.Id}",
@@ -155,10 +178,11 @@ namespace MedicalSystem.Controllers
                     $"• ACCOUNT STATUS -> {(newStaff.Status == 1 ? "Active" : "Inactive")}"
                 };
 
-                await _activityLog.LogAsync("Created", $"Created new Staff account with complete information:\n{string.Join("\n", details)}");
+                await LogBothAsync("Create", "Success", $"Created new Staff account with complete information:\n{string.Join("\n", details)}");
                 return Ok(ApiResponse<User>.SuccessResponse(newStaff, "Staff created successfully.")); 
             }
 
+            await LogBothAsync("Create", "Failed", $"Account creation failed for {model.Email}");
             return BadRequest(ApiResponse<string>.FailureResponse(string.Join(", ", result.Errors.Select(e => e.Description)))); 
         }
 
@@ -167,11 +191,13 @@ namespace MedicalSystem.Controllers
         {
             var user = await _userManager.FindByIdAsync(id.ToString()); 
             if (user == null || (user.Role != UserRole.SuperAdmin && user.Role != UserRole.Admin)) 
+            {
+                await LogBothAsync("Update", "Failed", $"Staff not found for ID: {id}");
                 return NotFound(ApiResponse<string>.FailureResponse("Staff not found.")); 
+            }
 
             var changes = new List<string>();
 
-            // 对比并追踪记录全部更改的 information
             if (user.FullName != model.FullName)
                 changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}");
 
@@ -253,10 +279,11 @@ namespace MedicalSystem.Controllers
                     ? $"Updated Staff details (ID: {id}):\n{string.Join("\n", changes)}" 
                     : $"Updated Staff details (ID: {id}):\n• No fields were modified."; 
 
-                await _activityLog.LogAsync("Updated", logDetails); 
+                await LogBothAsync("Update", "Success", logDetails); 
                 return Ok(ApiResponse<string>.SuccessResponse(null, "Staff updated successfully.")); 
             }
             
+            await LogBothAsync("Update", "Failed", $"Update failed for staff ID: {id}");
             return BadRequest(ApiResponse<string>.FailureResponse("Update failed.")); 
         }
 
@@ -265,12 +292,14 @@ namespace MedicalSystem.Controllers
         {
             var user = await _userManager.FindByIdAsync(id.ToString()); 
             if (user == null || (user.Role != UserRole.SuperAdmin && user.Role != UserRole.Admin)) 
+            {
+                await LogBothAsync("Delete", "Failed", $"Staff not found for ID: {id}");
                 return NotFound(ApiResponse<string>.FailureResponse("Staff not found.")); 
+            }
 
             var result = await _userManager.DeleteAsync(user); 
             if (result.Succeeded) 
             {
-                // 详细记录删除了什么 (将该职员的所有原有字段信息作为备份，保存在日志中)
                 var deletedDetails = new List<string>
                 {
                     $"• USER ID -> {user.Id}",
@@ -290,10 +319,11 @@ namespace MedicalSystem.Controllers
                     $"• STATUS -> {(user.Status == 1 ? "Active" : "Inactive")}"
                 };
 
-                await _activityLog.LogAsync("Deleted", $"Deleted Staff account and associated records:\n{string.Join("\n", deletedDetails)}");
+                await LogBothAsync("Delete", "Success", $"Deleted Staff account and associated records:\n{string.Join("\n", deletedDetails)}");
                 return Ok(ApiResponse<string>.SuccessResponse(null, "Staff deleted successfully.")); 
             }
             
+            await LogBothAsync("Delete", "Failed", $"Failed to delete staff ID: {id}");
             return BadRequest(ApiResponse<string>.FailureResponse("Delete failed.")); 
         }
     }

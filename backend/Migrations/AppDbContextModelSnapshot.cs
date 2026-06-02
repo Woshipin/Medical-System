@@ -250,6 +250,16 @@ namespace backend.Migrations
                         .IsUnique();
 
                     b.ToTable("Doctors");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            UpdatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 4
+                        });
                 });
 
             modelBuilder.Entity("MedicalSystem.Models.Gender", b =>
@@ -398,6 +408,22 @@ namespace backend.Migrations
                         .IsUnique();
 
                     b.ToTable("PatientProfiles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 5
+                        });
                 });
 
             modelBuilder.Entity("MedicalSystem.Models.Position", b =>
@@ -524,19 +550,19 @@ namespace backend.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("address_line_1")
-                        .HasColumnOrder(8);
+                        .HasColumnOrder(12);
 
                     b.Property<string>("AddressLine2")
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("address_line_2")
-                        .HasColumnOrder(9);
+                        .HasColumnOrder(13);
 
                     b.Property<string>("City")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("city")
-                        .HasColumnOrder(10);
+                        .HasColumnOrder(14);
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -547,27 +573,27 @@ namespace backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("country")
-                        .HasColumnOrder(13);
+                        .HasColumnOrder(17);
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at")
-                        .HasColumnOrder(16);
+                        .HasColumnOrder(18);
 
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date")
                         .HasColumnName("date_of_birth")
-                        .HasColumnOrder(4);
+                        .HasColumnOrder(11);
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
                         .HasColumnName("email")
-                        .HasColumnOrder(20);
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("tinyint(1)")
-                        .HasColumnOrder(22);
+                        .HasColumnOrder(23);
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -579,7 +605,7 @@ namespace backend.Migrations
                     b.Property<int?>("GenderId")
                         .HasColumnType("int")
                         .HasColumnName("gender_id")
-                        .HasColumnOrder(3);
+                        .HasColumnOrder(8);
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("tinyint(1)")
@@ -592,29 +618,29 @@ namespace backend.Migrations
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(21);
+                        .HasColumnOrder(20);
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(19);
+                        .HasColumnOrder(22);
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("longtext")
                         .HasColumnName("password")
-                        .HasColumnOrder(23);
+                        .HasColumnOrder(4);
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("phone_number")
-                        .HasColumnOrder(5);
+                        .HasColumnOrder(6);
 
                     b.Property<string>("PhoneNumberAlt")
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("phone_number_alt")
-                        .HasColumnOrder(6);
+                        .HasColumnOrder(7);
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("tinyint(1)")
@@ -624,18 +650,18 @@ namespace backend.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("postal_code")
-                        .HasColumnOrder(12);
+                        .HasColumnOrder(16);
 
                     b.Property<string>("ProfileImageUrl")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
                         .HasColumnName("profile_image_url")
-                        .HasColumnOrder(7);
+                        .HasColumnOrder(5);
 
                     b.Property<int>("Role")
                         .HasColumnType("int")
                         .HasColumnName("role")
-                        .HasColumnOrder(14);
+                        .HasColumnOrder(9);
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("longtext")
@@ -645,12 +671,12 @@ namespace backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("state")
-                        .HasColumnOrder(11);
+                        .HasColumnOrder(15);
 
                     b.Property<int>("Status")
                         .HasColumnType("int")
                         .HasColumnName("status")
-                        .HasColumnOrder(15);
+                        .HasColumnOrder(10);
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("tinyint(1)")
@@ -659,12 +685,12 @@ namespace backend.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at")
-                        .HasColumnOrder(17);
+                        .HasColumnOrder(19);
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)")
-                        .HasColumnOrder(18);
+                        .HasColumnOrder(21);
 
                     b.HasKey("Id");
 
@@ -693,7 +719,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "PIN@GMAIL.COM",
                             NormalizedUserName = "PIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOgiNqeA1J0+BrRLHYguouX+F5SrVe/V2QzFM2z596sVKrqYxAV+RP+lMcz2tDSJHQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOe8NAqyxN4vCf1MZLcGgT+omQ6mfOSnHwCHXmX+AgwiIX3ffy07l/myXIi8Je7j7w==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 3,
@@ -716,7 +742,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "SUPERADMIN@GMAIL.COM",
                             NormalizedUserName = "SUPERADMIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEG7kmyx/RwpvU6IYj/97dBXUkugJ/75uwj4EOo8QZ1ccWAGWLpObq2k7L5p0d5QdxQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEAOP/uZO4N+9NzjMqSYl9vetIt3q28CEB8+a7iXTRH4ZFb9VAFlfNE5hpqJ4QFCWlQ==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 0,
@@ -739,7 +765,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAECLvzEmYvU7Bl9TIpJK8pZjXCsV3unVsseHWRUwco8Z+GYMdGtk6a/tHtxbg/Bc4uA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJJpN0AG7fMzFAXbyZLnOq4zKhNG0VEH/DeNJ4L2YMI34xHUIDeUv3UI9r2SUBktxw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 1,
@@ -762,7 +788,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "DOCTOR@GMAIL.COM",
                             NormalizedUserName = "DOCTOR@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEIdMJN0W6sYrXDWmuLS21ZjBpVXxIQ1YqSU9HKeMd3aWdtqd29CI8adp4IxHxZgvUg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEAzdxwumOga4x22LLEx9qm0wN9KrMTfkeQWhHT0TbZXK4vAKftWtRXng1GKvTgGB9A==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 2,
@@ -785,7 +811,7 @@ namespace backend.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "PATIENT@GMAIL.COM",
                             NormalizedUserName = "PATIENT@GMAIL.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEGiJLfGKTLrqJieD1nv6HYHrP60j0hmPaKcQel3HIN+UdywlLjBPg0y0U4nDQyJ0pw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJco+QMuQPfaOOQpQD9jnbUlPABHT9W1hrrewOhBgqwLlDxx1K18DS3+7DKtGZnWfw==",
                             PhoneNumber = "88888888",
                             PhoneNumberConfirmed = false,
                             Role = 3,
@@ -794,6 +820,29 @@ namespace backend.Migrations
                             TwoFactorEnabled = false,
                             UpdatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserName = "patient@gmail.com"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "e36e8b41-db4a-4a2a-b73a-44d5cf3011ca",
+                            CreatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "ahpin7762@gmail.com",
+                            EmailConfirmed = false,
+                            FullName = "ahpin",
+                            GenderId = 1,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "AHPIN7762@GMAIL.COM",
+                            NormalizedUserName = "AHPIN7762@GMAIL.COM",
+                            PasswordHash = "AQAAAAIAAYagAAAAEFcHuMPpoEBoGceIOcG2IgVc2XrOI097dzkug/ChUKD9kTwv6eXxQIBOY5N4o754MA==",
+                            PhoneNumber = "88888888",
+                            PhoneNumberConfirmed = false,
+                            Role = 0,
+                            SecurityStamp = "782b3d2b-6c41-432d-948f-287d3a8fc4b1",
+                            Status = 1,
+                            TwoFactorEnabled = false,
+                            UpdatedAt = new DateTime(2026, 5, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserName = "ahpin7762@gmail.com"
                         });
                 });
 

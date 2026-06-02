@@ -37,10 +37,11 @@ namespace MedicalSystem.Controllers
             _logger = logger;
         }
 
+        // 修复：返回 int? id 以匹配 LogExplicitAsync 签名
         private async Task<(int? id, string name, string role)> GetCurrentOperatorAsync()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            if (!string.IsNullOrEmpty(userIdStr))
+            if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out int userId))
             {
                 var user = await _userManager.FindByIdAsync(userIdStr);
                 if (user != null)
@@ -51,33 +52,42 @@ namespace MedicalSystem.Controllers
             return (null, "System/Unknown", "Visitor");
         }
 
+        private async Task LogBothAsync(string actionName, string status, string message)
+        {
+            var op = await GetCurrentOperatorAsync();
+            _logger.LogInformation("[PositionController.{ActionName}] {Status}: {Message}", actionName, status, message);
+            await _activityLog.LogExplicitAsync(op.id, op.name, op.role, actionName, $"[{status}] {message}");
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            _logger.LogInformation("执行获取全部职位请求");
             var list = await _context.Positions.OrderByDescending(p => p.id).ToListAsync();
-            return Ok(ApiResponse<IEnumerable<Position>>.SuccessResponse(list, "职位列表获取成功"));
+            await LogBothAsync("Read", "Success", $"Retrieved {list.Count} positions.");
+            return Ok(ApiResponse<IEnumerable<Position>>.SuccessResponse(list, "Positions retrieved successfully."));
         }
 
         [HttpGet("active")]
         [AllowAnonymous]
         public async Task<IActionResult> GetActiveList()
         {
-            _logger.LogInformation("执行获取启用职位请求");
             var list = await _context.Positions.Where(p => p.status == 1).OrderBy(p => p.id).ToListAsync();
-            return Ok(ApiResponse<IEnumerable<Position>>.SuccessResponse(list, "可用职位列表获取成功"));
+            await LogBothAsync("Read", "Success", $"Retrieved {list.Count} active positions.");
+            return Ok(ApiResponse<IEnumerable<Position>>.SuccessResponse(list, "Active positions retrieved successfully."));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            _logger.LogInformation("读取特定职位数据，ID 为: {Id}", id);
             var position = await _context.Positions.FindAsync(id);
             if (position == null)
             {
-                return NotFound(ApiResponse<object>.FailureResponse("职位信息未检索到"));
+                await LogBothAsync("Read", "Failed", $"Position not found for ID: {id}");
+                return NotFound(ApiResponse<string>.FailureResponse("Position not found."));
             }
-            return Ok(ApiResponse<Position>.SuccessResponse(position, "职位数据获取成功"));
+
+            await LogBothAsync("Read", "Success", $"Retrieved position ID: {id}");
+            return Ok(ApiResponse<Position>.SuccessResponse(position, "Position retrieved successfully."));
         }
 
         [HttpPost]
@@ -86,13 +96,15 @@ namespace MedicalSystem.Controllers
             if (!ModelState.IsValid)
             {
                 var validationErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<object>.FailureResponse("请求格式校验失败", validationErrors));
+                await LogBothAsync("Create", "Failed", "Data format error.");
+                return BadRequest(ApiResponse<List<string>>.FailureResponse("Data format error.", validationErrors));
             }
 
             var exists = await _context.Positions.AnyAsync(p => p.name == model.name.Trim());
             if (exists)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("该职位名称已设定过，不能重复创建"));
+                await LogBothAsync("Create", "Failed", $"Name conflict: Position '{model.name}' already exists.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Position name already exists."));
             }
 
             var position = new Position
@@ -105,45 +117,44 @@ namespace MedicalSystem.Controllers
 
             _context.Positions.Add(position);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("写入职位成功，实体名称: {Name}, 自动绑定 ID: {Id}", position.name, position.id);
 
-            var op = await GetCurrentOperatorAsync();
-            await _activityLog.LogExplicitAsync(
-                op.id, 
-                op.name, 
-                op.role, 
-                "CreatePosition", 
-                $"创建了新职位:\n• ID -> {position.id}\n• 职位名称 -> {position.name}\n• 初始状态 -> {(position.status == 1 ? "启用" : "停用")}"
+            await LogBothAsync(
+                "Create", 
+                "Success", 
+                $"Created new position:\n• ID -> {position.id}\n• Position Name -> {position.name}\n• Initial Status -> {(position.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return Ok(ApiResponse<Position>.SuccessResponse(position, "职位创建成功"));
+            return Ok(ApiResponse<Position>.SuccessResponse(position, "Position created successfully."));
         }
 
-        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] Position model)
         {
             if (id != model.id)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("传入的资源主键标识不契合"));
+                await LogBothAsync("Update", "Failed", "ID mismatch in request.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Invalid request."));
             }
 
             if (!ModelState.IsValid)
             {
                 var validationErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(ApiResponse<object>.FailureResponse("请求实体参数异常", validationErrors));
+                await LogBothAsync("Update", "Failed", "Data validation failed.");
+                return BadRequest(ApiResponse<List<string>>.FailureResponse("Data validation failed.", validationErrors));
             }
 
             var position = await _context.Positions.FindAsync(id);
             if (position == null)
             {
-                return NotFound(ApiResponse<object>.FailureResponse("操作失败"));
+                await LogBothAsync("Update", "Failed", $"Position not found for ID: {id}");
+                return NotFound(ApiResponse<string>.FailureResponse("Position not found."));
             }
 
             var exists = await _context.Positions.AnyAsync(p => p.name == model.name.Trim() && p.id != id);
             if (exists)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("系统内已有重名的职位配置项目"));
+                await LogBothAsync("Update", "Failed", $"Name conflict: The position name '{model.name}' is already taken.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Position name is already taken."));
             }
 
             string oldName = position.name;
@@ -154,18 +165,14 @@ namespace MedicalSystem.Controllers
             position.updated_at = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("更新职位操作成功。标识 ID: {Id}", id);
 
-            var op = await GetCurrentOperatorAsync();
-            await _activityLog.LogExplicitAsync(
-                op.id, 
-                op.name, 
-                op.role, 
-                "UpdatePosition", 
-                $"更新了职位信息 (ID: {id}):\n• 原职位: {oldName} -> 新职位: {position.name}\n• 原状态: {(oldStatus == 1 ? "启用" : "停用")} -> 新状态: {(position.status == 1 ? "启用" : "停用")}"
+            await LogBothAsync(
+                "Update", 
+                "Success", 
+                $"Updated position (ID: {id}):\n• Position Name: {oldName} ➔ {position.name}\n• Status: {(oldStatus == 1 ? "Active" : "Inactive")} ➔ {(position.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return Ok(ApiResponse<Position>.SuccessResponse(position, "职位数据修改成功"));
+            return Ok(ApiResponse<Position>.SuccessResponse(position, "Position updated successfully."));
         }
 
         [HttpDelete("{id}")]
@@ -174,30 +181,27 @@ namespace MedicalSystem.Controllers
             var position = await _context.Positions.FindAsync(id);
             if (position == null)
             {
-                return NotFound(ApiResponse<object>.FailureResponse("操作失败"));
+                await LogBothAsync("Delete", "Failed", $"Position not found for ID: {id}");
+                return NotFound(ApiResponse<string>.FailureResponse("Position not found."));
             }
 
-            // 联动检查：在 Doctor 数据表中将 `TitleId` 替换为了 `PositionId`
             var hasDoctors = await _context.Doctors.AnyAsync(d => d.PositionId == id);
             if (hasDoctors)
             {
-                return BadRequest(ApiResponse<object>.FailureResponse("操作失败，当前职位正在被医生账号使用"));
+                await LogBothAsync("Delete", "Failed", $"Cannot delete position ID: {id}. It is currently assigned to doctors.");
+                return BadRequest(ApiResponse<string>.FailureResponse("Cannot delete: Position is currently assigned to doctors."));
             }
 
             _context.Positions.Remove(position);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("物理移除职位成功，目标 ID: {Id}", id);
 
-            var op = await GetCurrentOperatorAsync();
-            await _activityLog.LogExplicitAsync(
-                op.id, 
-                op.name, 
-                op.role, 
-                "DeletePosition", 
-                $"删除了职位项:\n• ID -> {position.id}\n• 名称 -> {position.name}"
+            await LogBothAsync(
+                "Delete", 
+                "Success", 
+                $"Deleted position:\n• ID -> {position.id}\n• Position Name -> {position.name}"
             );
 
-            return Ok(ApiResponse<object>.SuccessResponse(null, "职位删除成功"));
+            return Ok(ApiResponse<string>.SuccessResponse(null, "Position deleted successfully."));
         }
     }
 }

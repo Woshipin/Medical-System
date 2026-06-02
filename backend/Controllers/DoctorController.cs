@@ -9,6 +9,7 @@ using MedicalSystem.Models;
 using Microsoft.AspNetCore.Identity; 
 using MedicalSystem.Services; 
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace MedicalSystem.Controllers 
 {
@@ -19,12 +20,24 @@ namespace MedicalSystem.Controllers
         private readonly AppDbContext _context; 
         private readonly UserManager<User> _userManager; 
         private readonly IActivityLogService _activityLog; 
+        private readonly ILogger<DoctorsController> _logger; 
 
-        public DoctorsController(AppDbContext context, UserManager<User> userManager, IActivityLogService activityLog) 
+        public DoctorsController(
+            AppDbContext context, 
+            UserManager<User> userManager, 
+            IActivityLogService activityLog,
+            ILogger<DoctorsController> logger) 
         {
             _context = context; 
             _userManager = userManager; 
             _activityLog = activityLog; 
+            _logger = logger;
+        }
+
+        private async Task LogBothAsync(string actionName, string status, string message)
+        {
+            _logger.LogInformation("[DoctorsController.{ActionName}] {Status}: {Message}", actionName, status, message);
+            await _activityLog.LogAsync(actionName, $"[{status}] {message}");
         }
 
         private string? SaveBase64Image(string? base64Data)
@@ -100,7 +113,7 @@ namespace MedicalSystem.Controllers
                 officePhone = d.OfficePhone,
                 dateJoin = d.DateJoin?.ToString("yyyy-MM-dd"), 
                 dateLeft = d.DateLeft?.ToString("yyyy-MM-dd"),
-                status = d.Status, // 对应医生的工作状态
+                status = d.Status, 
                 d.Remark,
                 d.Qualifications, 
                 d.Biography, 
@@ -113,12 +126,13 @@ namespace MedicalSystem.Controllers
                     PhoneNumberAlt = d.User.PhoneNumberAlt,
                     GenderId = d.User.GenderId, 
                     d.User.Role,
-                    d.User.Status, // 用户账户的启用/停用状态
+                    d.User.Status, 
                     Gender = d.User.Gender != null ? new { d.User.Gender.id, d.User.Gender.name } : null,
                     ProfileImageUrl = d.User.ProfileImageUrl 
                 } : null
             });
 
+            await LogBothAsync("Read", "Success", $"Retrieved {result.Count()} doctors data.");
             return Ok(new { data = result, message = "Success" }); 
         }
 
@@ -131,7 +145,10 @@ namespace MedicalSystem.Controllers
                 .FirstOrDefaultAsync(d => d.Id == id && d.User != null && d.User.Role == UserRole.Doctor);
             
             if (d == null) 
+            {
+                await LogBothAsync("Read", "Failed", $"Doctor not found for ID: {id}");
                 return NotFound(new { message = "Doctor not found." });
+            }
 
             var result = new 
             {
@@ -155,7 +172,7 @@ namespace MedicalSystem.Controllers
                 officePhone = d.OfficePhone,
                 dateJoin = d.DateJoin?.ToString("yyyy-MM-dd"), 
                 dateLeft = d.DateLeft?.ToString("yyyy-MM-dd"),
-                status = d.Status, // 对应医生的工作状态
+                status = d.Status, 
                 d.Remark,
                 d.Qualifications, 
                 d.Biography, 
@@ -174,6 +191,7 @@ namespace MedicalSystem.Controllers
                 } : null
             };
 
+            await LogBothAsync("Read", "Success", $"Retrieved doctor ID: {id}");
             return Ok(new { data = result, message = "Success" });
         }
 
@@ -181,6 +199,7 @@ namespace MedicalSystem.Controllers
         public async Task<IActionResult> Create([FromBody] DoctorCreateUpdateDto input) {
             var existingUser = await _userManager.FindByEmailAsync(input.Email); 
             if (existingUser != null) {
+                await LogBothAsync("Create", "Failed", $"Email address already registered: {input.Email}");
                 return BadRequest(new { 
                     message = "Validation failed.", 
                     errors = new { email = new[] { "This email address is already registered." } } 
@@ -200,7 +219,7 @@ namespace MedicalSystem.Controllers
                     PhoneNumberAlt = input.PhoneNumberAlt,
                     GenderId = input.GenderId,
                     Role = UserRole.Doctor, 
-                    Status = input.UserStatus, // 账号启用状态
+                    Status = input.UserStatus, 
                     AddressLine1 = input.Address, 
                     AddressLine2 = input.AddressLine2,
                     City = input.City,
@@ -220,6 +239,7 @@ namespace MedicalSystem.Controllers
                         else if (err.Code.Contains("Email")) errorDict["email"] = new[] { err.Description };
                         else errorDict["general"] = new[] { err.Description };
                     }
+                    await LogBothAsync("Create", "Failed", $"Failed to create doctor account for {input.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                     return BadRequest(new { message = "Failed to create user.", errors = errorDict });
                 }
 
@@ -234,7 +254,7 @@ namespace MedicalSystem.Controllers
                     OfficePhone = input.OfficePhone,
                     DateJoin = string.IsNullOrEmpty(input.DateJoin) ? null : DateOnly.Parse(input.DateJoin),
                     DateLeft = string.IsNullOrEmpty(input.DateLeft) ? null : DateOnly.Parse(input.DateLeft),
-                    Status = input.DoctorStatus ?? 0, // 医生具体工作状态
+                    Status = input.DoctorStatus ?? 0, 
                     Remark = input.Remark,
                     Qualifications = input.Qualifications, 
                     Biography = input.Biography, 
@@ -277,11 +297,12 @@ namespace MedicalSystem.Controllers
                     $"• REMARK -> {doctor.Remark ?? "None"}"
                 };
 
-                await _activityLog.LogAsync("Created", $"Created new Doctor Profile & User account with complete information:\n{string.Join("\n", details)}");
+                await LogBothAsync("Create", "Success", $"Created new Doctor Profile & User account:\n{string.Join("\n", details)}");
                 return Ok(new { message = "Doctor successfully created." }); 
             }
             catch (Exception ex) {
                 await transaction.RollbackAsync();
+                await LogBothAsync("Create", "Error", $"Failed to create doctor: {ex.Message}");
                 return BadRequest(new { message = "Failed to create doctor: " + ex.Message });
             }
         }
@@ -289,45 +310,18 @@ namespace MedicalSystem.Controllers
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] DoctorCreateUpdateDto input) {
             
-            // Auto-Healing Logic: The 'id' coming from frontend could be Doctor.Id OR User.Id
             var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id || d.UserId == id); 
             
-            // If doctor record is completely missing from DB, we try to create it (Auto-Heal)
-            if (doctor == null) 
+            if (doctor == null || doctor.User == null) 
             {
-                // === 核心修复：直接通过 _context.Users 加载，确保被当前 DbContext 追踪，杜绝重复创建新 User 的 Bug ===
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Doctor);
-                if (user != null)
-                {
-                    doctor = new Doctor
-                    {
-                        UserId = user.Id,
-                        Status = 0,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                    _context.Doctors.Add(doctor);
-                    await _context.SaveChangesAsync(); // 保存生成 Doctor.Id
-                    
-                    // 重新以跟踪状态加载，确保链路完美干净
-                    doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == doctor.Id);
-                }
-                else 
-                {
-                    return NotFound(new { message = "Doctor or User not found." }); 
-                }
+                await LogBothAsync("Update", "Failed", $"Doctor or User not found for ID: {id}");
+                return NotFound(new { message = "Doctor or User not found." }); 
             }
 
-            // === Safe Null Guard Check ===
-            if (doctor.User == null)
-            {
-                return BadRequest(new { message = "Associated user data is missing from the database." });
-            }
-
-            // === Email Duplication Guard ===
             if (!string.IsNullOrWhiteSpace(input.Email) && input.Email != doctor.User.Email) {
                 var existingUser = await _userManager.FindByEmailAsync(input.Email); 
                 if (existingUser != null && existingUser.Id != doctor.UserId) {
+                    await LogBothAsync("Update", "Failed", $"Email address already taken by another user: {input.Email}");
                     return BadRequest(new { 
                         message = "Validation failed.", 
                         errors = new { email = new[] { "This email address is already taken by another user." } } 
@@ -341,7 +335,6 @@ namespace MedicalSystem.Controllers
 
             var changes = new List<string>(); 
 
-            // 1. 追踪对比 User 关联表的所有数据变更
             if (doctor.User.FullName != input.FullName) 
                 changes.Add($"• Full Name -> {doctor.User.FullName} ➔ {input.FullName}"); 
             
@@ -360,7 +353,6 @@ namespace MedicalSystem.Controllers
             if (doctor.User.Status != input.UserStatus) 
                 changes.Add($"• User Status -> {(doctor.User.Status == 1 ? "Active" : "Inactive")} ➔ {(input.UserStatus == 1 ? "Active" : "Inactive")}"); 
 
-            // 对比通信地址字段变更
             if (doctor.User.AddressLine1 != input.Address)
                 changes.Add($"• Address Line 1 -> {doctor.User.AddressLine1 ?? "None"} ➔ {input.Address ?? "None"}");
             
@@ -379,12 +371,10 @@ namespace MedicalSystem.Controllers
             if (doctor.User.Country != input.Country)
                 changes.Add($"• Country -> {doctor.User.Country ?? "None"} ➔ {input.Country ?? "None"}");
 
-            // 对比出生日期字段变更
             var inputDob = string.IsNullOrEmpty(input.DateOfBirth) ? (DateOnly?)null : DateOnly.Parse(input.DateOfBirth);
             if (doctor.User.DateOfBirth != inputDob)
                 changes.Add($"• Date of Birth -> {doctor.User.DateOfBirth?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputDob?.ToString("yyyy-MM-dd") ?? "None"}");
 
-            // 赋值属性
             doctor.User.FullName = input.FullName;
             doctor.User.DateOfBirth = string.IsNullOrEmpty(input.DateOfBirth) ? null : DateOnly.Parse(input.DateOfBirth);
             doctor.User.PhoneNumber = input.Phone;
@@ -399,17 +389,18 @@ namespace MedicalSystem.Controllers
             doctor.User.Status = input.UserStatus; 
             doctor.User.UpdatedAt = DateTime.UtcNow;
 
-            // 标记状态为 Modified 以便 SaveChanges 统一更新该 ID 的已有数据
             _context.Entry(doctor.User).State = EntityState.Modified;
 
             if (!string.IsNullOrWhiteSpace(input.Password)) {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(doctor.User); 
                 var pwdResult = await _userManager.ResetPasswordAsync(doctor.User, token, input.Password); 
-                if (!pwdResult.Succeeded) return BadRequest(new { message = "Failed to update password." }); 
+                if (!pwdResult.Succeeded) {
+                    await LogBothAsync("Update", "Failed", $"Failed to update password for doctor ID: {id}");
+                    return BadRequest(new { message = "Failed to update password." }); 
+                }
                 changes.Add("• Password -> [Modified]"); 
             }
 
-            // 2. 追踪对比 Doctor 专属字段的所有数据变更
             if (doctor.LicenseNumber != input.LicenseNumber) 
                 changes.Add($"• License Number -> {doctor.LicenseNumber ?? "None"} ➔ {input.LicenseNumber ?? "None"}"); 
             
@@ -431,7 +422,6 @@ namespace MedicalSystem.Controllers
             if (doctor.OfficePhone != input.OfficePhone) 
                 changes.Add($"• Office Phone -> {doctor.OfficePhone ?? "None"} ➔ {input.OfficePhone ?? "None"}"); 
 
-            // 对比入职/离职日期变更
             var inputJoin = string.IsNullOrEmpty(input.DateJoin) ? (DateOnly?)null : DateOnly.Parse(input.DateJoin);
             if (doctor.DateJoin != inputJoin)
                 changes.Add($"• Date Join -> {doctor.DateJoin?.ToString("yyyy-MM-dd") ?? "None"} ➔ {inputJoin?.ToString("yyyy-MM-dd") ?? "None"}");
@@ -466,21 +456,19 @@ namespace MedicalSystem.Controllers
             doctor.OfficePhone = input.OfficePhone;
             doctor.DateJoin = inputJoin;
             doctor.DateLeft = inputLeft;
-            doctor.Status = input.DoctorStatus; 
+            doctor.Status = input.DoctorStatus ?? 0; 
             doctor.Remark = input.Remark;
             doctor.Qualifications = input.Qualifications; 
             doctor.Biography = input.Biography; 
             doctor.UpdatedAt = DateTime.UtcNow; 
 
-            // 完美保存变更，决不产生重复记录！
             await _context.SaveChangesAsync(); 
 
-            // 格式化输出具体更新信息
             string logDetails = changes.Any() 
                 ? $"Updated Doctor profile (ID: {id}):\n{string.Join("\n", changes)}" 
                 : $"Updated Doctor profile (ID: {id}):\n• No fields were modified."; 
             
-            await _activityLog.LogAsync("Updated", logDetails); 
+            await LogBothAsync("Update", "Success", logDetails); 
 
             return Ok(new { message = "Doctor information updated." }); 
         }
@@ -489,7 +477,10 @@ namespace MedicalSystem.Controllers
         public async Task<IActionResult> Delete(int id) {
             var doctor = await _context.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id); 
             if (doctor == null || doctor.User == null || doctor.User.Role != UserRole.Doctor) 
+            {
+                await LogBothAsync("Delete", "Failed", $"Doctor not found for ID: {id}");
                 return NotFound(new { message = "Doctor not found." }); 
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try {
@@ -501,6 +492,7 @@ namespace MedicalSystem.Controllers
                 var result = await _userManager.DeleteAsync(user); 
                 if (!result.Succeeded) {
                     await transaction.RollbackAsync();
+                    await LogBothAsync("Delete", "Failed", $"Failed to delete doctor ID: {id}. Errors: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                     return BadRequest(new { message = "Failed to delete user: " + string.Join(", ", result.Errors.Select(e => e.Description)) });
                 }
 
@@ -537,11 +529,12 @@ namespace MedicalSystem.Controllers
                     $"• REMARK -> {doctor.Remark ?? "None"}"
                 };
 
-                await _activityLog.LogAsync("Deleted", $"Deleted Doctor Profile and associated User account:\n{string.Join("\n", deletedDetails)}");
+                await LogBothAsync("Delete", "Success", $"Deleted Doctor Profile and associated User account:\n{string.Join("\n", deletedDetails)}");
                 return Ok(new { message = "Doctor record successfully deleted." }); 
             }
             catch (Exception ex) {
                 await transaction.RollbackAsync();
+                await LogBothAsync("Delete", "Error", $"Delete failed for doctor ID: {id} - {ex.Message}");
                 return BadRequest(new { message = "Delete failed: " + ex.Message });
             }
         }
@@ -562,7 +555,6 @@ namespace MedicalSystem.Controllers
         public string? State { get; set; }
         public string? PostalCode { get; set; }
         public string? Country { get; set; }
-
         public string? LicenseNumber { get; set; } 
         public int? SpecialtyId { get; set; } 
         public int? PositionId { get; set; } 

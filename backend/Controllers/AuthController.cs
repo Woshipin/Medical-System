@@ -8,10 +8,9 @@ using MedicalSystem.Models;
 using System.Security.Claims; 
 using Microsoft.AspNetCore.Authorization; 
 using MedicalSystem.Services; 
-using Microsoft.AspNetCore.Http; 
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO; 
+using Microsoft.Extensions.Logging;
 
 namespace MedicalSystem.Controllers 
 {
@@ -23,35 +22,45 @@ namespace MedicalSystem.Controllers
         private readonly IActivityLogService _activityLog; 
         private readonly Data.AppDbContext _context; 
         private readonly ITokenService _tokenService;
+        private readonly ILogger<AuthController> _logger; 
 
         public AuthController(
             UserManager<User> userManager, 
             IActivityLogService activityLog, 
             Data.AppDbContext context,
-            ITokenService tokenService) 
+            ITokenService tokenService,
+            ILogger<AuthController> logger) 
         {
             _userManager = userManager; 
             _activityLog = activityLog; 
             _context = context; 
             _tokenService = tokenService;
+            _logger = logger;
         }
 
-        private void LogToFile(string functionName, string message)
+        // 修复：将 string? userId 改成了 int? userId
+        private async Task LogBothAsync(string functionName, string status, string message, int? userId = null, string userName = "Anonymous", string role = "System")
         {
-            try
-            {
-                string logPath = Path.Combine(Directory.GetCurrentDirectory(), "backend.log");
-                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [AuthController.{functionName}] {message}{Environment.NewLine}";
-                System.IO.File.AppendAllText(logPath, logEntry);
-            }
-            catch { }
+            _logger.LogInformation("[AuthController.{FunctionName}] {Status}: {Message}", functionName, status, message);
+
+            await _activityLog.LogExplicitAsync(
+                userId, 
+                userName, 
+                role, 
+                functionName, 
+                $"[{status}] {message}"
+            );
         }
 
         [HttpPost("register")] 
         public async Task<IActionResult> Register([FromBody] FrontendRegisterDto model) 
         {
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null) return BadRequest(ApiResponse<string>.FailureResponse("Email already registered."));
+            if (existingUser != null)
+            {
+                await LogBothAsync("Register", "Failed", $"Email already registered: {model.Email}");
+                return BadRequest(ApiResponse<string>.FailureResponse("Email already registered."));
+            }
 
             var user = new User 
             {
@@ -66,15 +75,17 @@ namespace MedicalSystem.Controllers
                 UpdatedAt = DateTime.UtcNow 
             };
 
-            var result = await _userManager.CreateAsync(user, model.Password); 
-            if (!result.Succeeded)
-            {
-                LogToFile("Register", $"Failed: Errors -> {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                return BadRequest(ApiResponse<List<string>>.FailureResponse("Registration failed.", result.Errors.Select(e => e.Description).ToList()));
-            }
-
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var result = await _userManager.CreateAsync(user, model.Password); 
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    await LogBothAsync("Register", "Failed", $"Errors -> {errors}");
+                    return BadRequest(ApiResponse<List<string>>.FailureResponse("Registration failed.", result.Errors.Select(e => e.Description).ToList()));
+                }
+
                 var profile = new PatientProfile
                 {
                     UserId = user.Id,
@@ -83,27 +94,30 @@ namespace MedicalSystem.Controllers
                 };
                 _context.PatientProfiles.Add(profile);
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                var genderName = await _context.Genders
+                    .Where(g => g.id == model.GenderId)
+                    .Select(g => g.name)
+                    .FirstOrDefaultAsync() ?? "Unknown";
+
+                await LogBothAsync(
+                    "Register", 
+                    "Success", 
+                    $"Registered a new patient account - Email: {user.Email}, Gender: {genderName}",
+                    user.Id,
+                    user.FullName,
+                    "Patient"
+                );
+
+                return Ok(ApiResponse<string>.SuccessResponse(null, "Registration successful")); 
             }
             catch (Exception ex)
             {
-                LogToFile("Register", $"Warning: User created but profile failed to initialize: {ex.Message}");
+                await transaction.RollbackAsync();
+                await LogBothAsync("Register", "Error", $"User created but profile failed to initialize: {ex.Message}");
+                return StatusCode(500, ApiResponse<string>.FailureResponse("An error occurred during registration."));
             }
-
-            var genderName = await _context.Genders
-                .Where(g => g.id == model.GenderId)
-                .Select(g => g.name)
-                .FirstOrDefaultAsync() ?? "Unknown";
-
-            await _activityLog.LogExplicitAsync(
-                user.Id, 
-                user.FullName, 
-                "Patient", 
-                "Register", 
-                $"Registered a new patient account:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Phone -> {user.PhoneNumber ?? "None"}\n• Gender -> {genderName}\n• Role -> Patient\n• Status -> Active"
-            );
-
-            LogToFile("Register", $"Success: Patient account & Profile initialized for {user.Email}");
-            return Ok(ApiResponse<string>.SuccessResponse(null, "Registration successful")); 
         }
 
         [HttpPost("login")] 
@@ -112,15 +126,20 @@ namespace MedicalSystem.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email); 
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) 
             {
-                await _activityLog.LogExplicitAsync(null, "Anonymous", "Visitor", "LoginFail", $"Failed login attempt - Details: [AttemptedEmail: '{model.Email}']");
-                LogToFile("Login", $"Failed: Invalid credentials for patient {model.Email}");
+                await LogBothAsync("Login", "Failed", $"Failed login attempt - AttemptedEmail: '{model.Email}'");
                 return Unauthorized(ApiResponse<string>.FailureResponse("Invalid email or password.")); 
             }
 
             if (user.Role != UserRole.Patient) 
             {
-                await _activityLog.LogExplicitAsync(user.Id, user.FullName, user.Role.ToString(), "LoginFail", $"Blocked attempt to access patient portal - Details: [Email: '{user.Email}', ActualRole: '{user.Role}']");
-                LogToFile("Login", $"Failed: Admin/Doctor account {model.Email} attempted to access Patient portal");
+                await LogBothAsync(
+                    "Login", 
+                    "Failed", 
+                    $"Blocked attempt to access patient portal - Email: '{user.Email}', ActualRole: '{user.Role}'", 
+                    user.Id, 
+                    user.FullName, 
+                    user.Role.ToString()
+                );
                 return Unauthorized(ApiResponse<string>.FailureResponse("Please use the admin system entrance.")); 
             }
 
@@ -129,15 +148,14 @@ namespace MedicalSystem.Controllers
 
             _tokenService.SetTokenCookies(HttpContext, accessToken, refreshToken);
             
-            await _activityLog.LogExplicitAsync(
-                user.Id, 
-                user.FullName, 
-                "Patient", 
+            await LogBothAsync(
                 "Login", 
-                $"Logged into the patient portal:\n• User ID -> {user.Id}\n• Full Name -> {user.FullName}\n• Email -> {user.Email}\n• Role -> Patient"
+                "Success", 
+                $"Patient {user.Email} logged in successfully",
+                user.Id,
+                user.FullName,
+                "Patient"
             );
-
-            LogToFile("Login", $"Success: Patient {user.Email} logged in successfully");
 
             return Ok(ApiResponse<object>.SuccessResponse(new { 
                 user = new { 
@@ -154,7 +172,7 @@ namespace MedicalSystem.Controllers
         {
             if (!Request.Cookies.TryGetValue("RefreshToken", out var oldRefreshTokenString) || string.IsNullOrEmpty(oldRefreshTokenString))
             {
-                LogToFile("Refresh", "Failed: RefreshToken cookie missing");
+                await LogBothAsync("Refresh", "Failed", "RefreshToken cookie missing");
                 return Unauthorized(ApiResponse<string>.FailureResponse("Session credentials missing, please re-login."));
             }
 
@@ -164,7 +182,7 @@ namespace MedicalSystem.Controllers
 
             if (savedToken == null || savedToken.ExpiresAt < DateTime.UtcNow || savedToken.User.Status != 1)
             {
-                LogToFile("Refresh", "Failed: RefreshToken expired, invalid or user disabled");
+                await LogBothAsync("Refresh", "Failed", "RefreshToken expired, invalid or user disabled");
                 return Unauthorized(ApiResponse<string>.FailureResponse("Session credentials expired or invalid, please re-login."));
             }
 
@@ -176,7 +194,15 @@ namespace MedicalSystem.Controllers
 
             _tokenService.SetTokenCookies(HttpContext, newAccessToken, newRefreshTokenString);
 
-            LogToFile("Refresh", $"Success: Tokens refreshed for user {savedToken.User.Email}");
+            await LogBothAsync(
+                "Refresh", 
+                "Success", 
+                $"Tokens refreshed for user {savedToken.User.Email}",
+                savedToken.User.Id,
+                savedToken.User.FullName,
+                savedToken.User.Role.ToString()
+            );
+
             return Ok(ApiResponse<string>.SuccessResponse(null, "Token refreshed successfully"));
         }
 
@@ -184,16 +210,24 @@ namespace MedicalSystem.Controllers
         [Authorize] 
         public async Task<IActionResult> CheckAuth()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            var user = await _userManager.FindByIdAsync(userId!);
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _userManager.FindByIdAsync(userIdStr!);
             
             if (user == null || user.Status != 1 || user.Role != UserRole.Patient) 
             {
-                LogToFile("CheckAuth", $"Failed: Unauthorized access or wrong role (Expected Patient). UserID: {userId}");
+                await LogBothAsync("CheckAuth", "Failed", $"Unauthorized access or wrong role (Expected Patient). UserID: {userIdStr}");
                 return Unauthorized(ApiResponse<string>.FailureResponse("Session invalid or incorrect privileges."));
             }
 
-            LogToFile("CheckAuth", $"Success: Token validated for Patient {user.Email}");
+            await LogBothAsync(
+                "CheckAuth", 
+                "Success", 
+                $"Token validated for Patient {user.Email}",
+                user.Id,
+                user.FullName,
+                "Patient"
+            );
+
             return Ok(ApiResponse<object>.SuccessResponse(new {
                 user = new {
                     id = user.Id,
@@ -201,18 +235,28 @@ namespace MedicalSystem.Controllers
                     email = user.Email,
                     roleValue = (int)user.Role
                 }
-            }, "认证有效"));
+            }, "Authentication valid."));
         }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
+            int? userId = null;
+            string userName = "Anonymous";
+            string userRole = "Patient";
+
             if (Request.Cookies.TryGetValue("RefreshToken", out var refreshTokenString))
             {
                 var tokenInDb = await _context.UserRefreshTokens
+                    .Include(rt => rt.User)
                     .FirstOrDefaultAsync(rt => rt.Token == refreshTokenString);
+
                 if (tokenInDb != null)
                 {
+                    userId = tokenInDb.UserId;
+                    userName = tokenInDb.User.FullName;
+                    userRole = tokenInDb.User.Role.ToString();
+
                     tokenInDb.IsRevoked = true;
                     _context.UserRefreshTokens.Update(tokenInDb);
                     await _context.SaveChangesAsync();
@@ -220,7 +264,16 @@ namespace MedicalSystem.Controllers
             }
 
             _tokenService.ClearTokenCookies(HttpContext);
-            LogToFile("Logout", "Success: Patient logged out and tokens cleared.");
+
+            await LogBothAsync(
+                "Logout", 
+                "Success", 
+                "Patient logged out and tokens cleared.",
+                userId,
+                userName,
+                userRole
+            );
+
             return Ok(ApiResponse<string>.SuccessResponse(null, "Patient logged out successfully"));
         }
     }

@@ -10,6 +10,7 @@ using MedicalSystem.Models;
 using MedicalSystem.Data;
 using MedicalSystem.Services; 
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace MedicalSystem.Controllers 
 {
@@ -20,12 +21,24 @@ namespace MedicalSystem.Controllers
         private readonly UserManager<User> _userManager; 
         private readonly AppDbContext _context;
         private readonly IActivityLogService _activityLog; 
+        private readonly ILogger<PatientController> _logger;
 
-        public PatientController(UserManager<User> userManager, AppDbContext context, IActivityLogService activityLog) 
+        public PatientController(
+            UserManager<User> userManager, 
+            AppDbContext context, 
+            IActivityLogService activityLog,
+            ILogger<PatientController> logger) 
         {
             _userManager = userManager; 
             _context = context;
             _activityLog = activityLog; 
+            _logger = logger;
+        }
+
+        private async Task LogBothAsync(string actionName, string status, string message)
+        {
+            _logger.LogInformation("[PatientController.{ActionName}] {Status}: {Message}", actionName, status, message);
+            await _activityLog.LogAsync(actionName, $"[{status}] {message}");
         }
 
         private string? SaveBase64Image(string? base64Data)
@@ -66,7 +79,6 @@ namespace MedicalSystem.Controllers
                     return base64Data;
                 }
             }
-
             return base64Data; 
         }
 
@@ -80,6 +92,7 @@ namespace MedicalSystem.Controllers
                 .OrderByDescending(u => u.CreatedAt) 
                 .ToListAsync(); 
 
+            await LogBothAsync("Read", "Success", $"Retrieved {patients.Count} patients data.");
             return Ok(ApiResponse<IEnumerable<User>>.SuccessResponse(patients, "Patient list retrieved successfully.")); 
         }
 
@@ -92,8 +105,12 @@ namespace MedicalSystem.Controllers
                 .FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient);
             
             if (patient == null) 
+            {
+                await LogBothAsync("Read", "Failed", $"Patient not found for ID: {id}");
                 return NotFound(ApiResponse<string>.FailureResponse("Patient not found."));
+            }
 
+            await LogBothAsync("Read", "Success", $"Retrieved patient ID: {id}");
             return Ok(ApiResponse<User>.SuccessResponse(patient, "Patient details retrieved successfully."));
         }
 
@@ -101,11 +118,17 @@ namespace MedicalSystem.Controllers
         public async Task<IActionResult> Create([FromBody] PatientDto model) 
         {
             if (!ModelState.IsValid) 
+            {
+                await LogBothAsync("Create", "Failed", "Invalid data provided in payload.");
                 return BadRequest(ApiResponse<string>.FailureResponse("Invalid data provided.")); 
+            }
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email); 
             if (existingUser != null) 
+            {
+                await LogBothAsync("Create", "Failed", $"Email already exists: {model.Email}");
                 return BadRequest(ApiResponse<string>.FailureResponse("Email already exists.")); 
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -138,6 +161,7 @@ namespace MedicalSystem.Controllers
 
                 if (!result.Succeeded)
                 {
+                    await LogBothAsync("Create", "Failed", $"Failed to create patient account for {model.Email}");
                     return BadRequest(ApiResponse<string>.FailureResponse(string.Join(", ", result.Errors.Select(e => e.Description)))); 
                 }
 
@@ -186,12 +210,13 @@ namespace MedicalSystem.Controllers
                     $"• EMERGENCY CONTACT RELATION -> {profile.EmergencyContactRelation ?? "None"}"
                 };
 
-                await _activityLog.LogAsync("Created", $"Created new Patient account and profile with complete information:\n{string.Join("\n", details)}");
+                await LogBothAsync("Create", "Success", $"Created new Patient account and profile with complete information:\n{string.Join("\n", details)}");
                 return Ok(ApiResponse<User>.SuccessResponse(newPatient, "Patient created successfully.")); 
             }
             catch(Exception ex)
             {
                 await transaction.RollbackAsync();
+                await LogBothAsync("Create", "Error", $"Failed to create patient: {ex.Message}");
                 return BadRequest(ApiResponse<string>.FailureResponse("Failed to create patient: " + ex.Message));
             }
         }
@@ -199,16 +224,18 @@ namespace MedicalSystem.Controllers
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] PatientDto model) 
         {
-            // === 核心安全机制：全程通过 _context 加载并追踪已有实体 ===
             var user = await _context.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient);
             
             if (user == null) 
+            {
+                await LogBothAsync("Update", "Failed", $"Patient not found for ID: {id}");
                 return NotFound(ApiResponse<string>.FailureResponse("Patient not found.")); 
+            }
 
-            // 邮箱防冲突保护
             if (!string.IsNullOrWhiteSpace(model.Email) && model.Email != user.Email) {
                 var existingUser = await _userManager.FindByEmailAsync(model.Email); 
                 if (existingUser != null && existingUser.Id != user.Id) {
+                    await LogBothAsync("Update", "Failed", $"Email address already taken: {model.Email}");
                     return BadRequest(ApiResponse<string>.FailureResponse("This email address is already taken by another user."));
                 }
                 user.Email = model.Email; 
@@ -219,7 +246,6 @@ namespace MedicalSystem.Controllers
 
             var changes = new List<string>();
 
-            // 对比基本和联系地址更改
             if (user.FullName != model.FullName)
                 changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}");
 
@@ -260,7 +286,6 @@ namespace MedicalSystem.Controllers
             if (user.Status != model.Status)
                 changes.Add($"• Account Status -> {(user.Status == 1 ? "Active" : "Inactive")} ➔ {(model.Status == 1 ? "Active" : "Inactive")}");
 
-            // 对比并追踪 PatientProfile 的详细健康属性变更
             if (user.PatientProfile != null)
             {
                 if (user.PatientProfile.IcNumber != model.IcNumber)
@@ -294,7 +319,6 @@ namespace MedicalSystem.Controllers
                 user.ProfileImageUrl = SaveBase64Image(model.ProfileImageUrl);
             }
 
-            // 更新 User 属性
             user.FullName = model.FullName; 
             user.DateOfBirth = string.IsNullOrEmpty(model.DateOfBirth) ? null : DateOnly.Parse(model.DateOfBirth);
             user.PhoneNumber = model.PhoneNumber; 
@@ -313,17 +337,20 @@ namespace MedicalSystem.Controllers
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var pwdResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
-                if (!pwdResult.Succeeded) return BadRequest(ApiResponse<string>.FailureResponse("Failed to update password."));
+                if (!pwdResult.Succeeded) 
+                {
+                    await LogBothAsync("Update", "Failed", $"Failed to update password for patient ID: {id}");
+                    return BadRequest(ApiResponse<string>.FailureResponse("Failed to update password."));
+                }
                 changes.Add("• Password -> [Modified]");
             }
 
-            // === 核心业务修正：Update 仅负责对已有数据执行修改。不进行任何 Add 临时主键逻辑 ===
             if (user.PatientProfile == null)
             {
+                await LogBothAsync("Update", "Failed", $"Security Error: Linked Patient profile missing for ID: {id}");
                 return BadRequest(ApiResponse<string>.FailureResponse("Security Error: Linked Patient profile record does not exist. Update aborted."));
             }
 
-            // 写入健康与紧急联系人属性
             user.PatientProfile.IcNumber = model.IcNumber;
             user.PatientProfile.BloodType = model.BloodType;
             user.PatientProfile.Allergies = model.Allergies;
@@ -334,14 +361,13 @@ namespace MedicalSystem.Controllers
             user.PatientProfile.EmergencyContactRelation = model.EmergencyContactRelation;
             user.PatientProfile.UpdatedAt = DateTime.UtcNow;
 
-            // 原子化一键保存
             await _context.SaveChangesAsync();
 
             string logDetails = changes.Any() 
                 ? $"Updated Patient details (ID: {id}):\n{string.Join("\n", changes)}" 
                 : $"Updated Patient details (ID: {id}):\n• No fields were modified."; 
 
-            await _activityLog.LogAsync("Updated", logDetails); 
+            await LogBothAsync("Update", "Success", logDetails); 
 
             return Ok(ApiResponse<string>.SuccessResponse(null, "Patient updated successfully.")); 
         }
@@ -351,7 +377,10 @@ namespace MedicalSystem.Controllers
         {
             var user = await _context.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient); 
             if (user == null) 
+            {
+                await LogBothAsync("Delete", "Failed", $"Patient not found for ID: {id}");
                 return NotFound(ApiResponse<string>.FailureResponse("Patient not found.")); 
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -366,6 +395,7 @@ namespace MedicalSystem.Controllers
                 if (!result.Succeeded)
                 {
                     await transaction.RollbackAsync();
+                    await LogBothAsync("Delete", "Failed", $"Failed to delete patient ID: {id}");
                     return BadRequest(ApiResponse<string>.FailureResponse(string.Join(", ", result.Errors.Select(e => e.Description))));
                 }
 
@@ -401,12 +431,13 @@ namespace MedicalSystem.Controllers
                     deletedDetails.Add($"• EMERGENCY CONTACT RELATION -> {user.PatientProfile.EmergencyContactRelation ?? "None"}");
                 }
 
-                await _activityLog.LogAsync("Deleted", $"Deleted Patient account and associated records:\n{string.Join("\n", deletedDetails)}");
+                await LogBothAsync("Delete", "Success", $"Deleted Patient account and associated records:\n{string.Join("\n", deletedDetails)}");
                 return Ok(ApiResponse<string>.SuccessResponse(null, "Patient deleted successfully.")); 
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                await LogBothAsync("Delete", "Error", $"Delete failed for patient ID: {id} - {ex.Message}");
                 return BadRequest(ApiResponse<string>.FailureResponse("Delete failed: " + ex.Message));
             }
         }

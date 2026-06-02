@@ -20,7 +20,7 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
         
         // ==================== 基础字典与组织架构实体 ====================
         public DbSet<Specialty> Specialties { get; set; } = null!; // 定义并注册 Specialties（专科表）数据集映射
-        public DbSet<Position> Positions { get; set; } = null!; // 已将旧的 Titles 变更为 Positions（职称/职位表）数据集映射
+        public DbSet<Position> Positions { get; set; } = null!; // 注册 Positions（职称/职位表）数据集映射
         public DbSet<OfficeLocation> OfficeLocations { get; set; } = null!; // 定义并注册 OfficeLocations（诊室位置表）数据集映射
 
         // ==================== 新增注册双 Token 实体集 ====================
@@ -50,32 +50,32 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
             {
                 entity.ToTable("Users"); // 映射当前 User 实体到 MySQL 中的物理表名为 "Users"
 
-                // ==================== 1. 自定义扩展业务字段（排在表结构最前面 1 - 17 列） ====================
+                // ==================== 1. 自定义扩展业务字段（按要求精准重排顺序） ====================
                 entity.Property(u => u.Id).HasColumnName("id").HasColumnOrder(1); 
                 entity.Property(u => u.FullName).HasColumnName("full_name").HasColumnOrder(2); 
-                entity.Property(u => u.GenderId).HasColumnName("gender_id").HasColumnOrder(3); 
-                entity.Property(u => u.DateOfBirth).HasColumnName("date_of_birth").HasColumnOrder(4); 
-                entity.Property(u => u.PhoneNumber).HasColumnName("phone_number").HasColumnOrder(5); // 主要联系电话
-                entity.Property(u => u.PhoneNumberAlt).HasColumnName("phone_number_alt").HasColumnOrder(6); // 备用电话
-                entity.Property(u => u.ProfileImageUrl).HasColumnName("profile_image_url").HasColumnOrder(7); 
-                entity.Property(u => u.AddressLine1).HasColumnName("address_line_1").HasColumnOrder(8); 
-                entity.Property(u => u.AddressLine2).HasColumnName("address_line_2").HasColumnOrder(9); 
-                entity.Property(u => u.City).HasColumnName("city").HasColumnOrder(10); 
-                entity.Property(u => u.State).HasColumnName("state").HasColumnOrder(11); 
-                entity.Property(u => u.PostalCode).HasColumnName("postal_code").HasColumnOrder(12); 
-                entity.Property(u => u.Country).HasColumnName("country").HasColumnOrder(13); 
-                entity.Property(u => u.Role).HasColumnName("role").HasColumnOrder(14); 
-                entity.Property(u => u.Status).HasColumnName("status").HasColumnOrder(15); 
-                entity.Property(u => u.CreatedAt).HasColumnName("created_at").HasColumnOrder(16); 
-                entity.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasColumnOrder(17);
+                entity.Property(u => u.Email).HasColumnName("email").HasColumnOrder(3); 
+                entity.Property(u => u.PasswordHash).HasColumnName("password").HasColumnOrder(4); 
+                entity.Property(u => u.ProfileImageUrl).HasColumnName("profile_image_url").HasColumnOrder(5); 
+                entity.Property(u => u.PhoneNumber).HasColumnName("phone_number").HasColumnOrder(6); 
+                entity.Property(u => u.PhoneNumberAlt).HasColumnName("phone_number_alt").HasColumnOrder(7); 
+                entity.Property(u => u.GenderId).HasColumnName("gender_id").HasColumnOrder(8); 
+                entity.Property(u => u.Role).HasColumnName("role").HasColumnOrder(9); 
+                entity.Property(u => u.Status).HasColumnName("status").HasColumnOrder(10); 
+                entity.Property(u => u.DateOfBirth).HasColumnName("date_of_birth").HasColumnOrder(11); 
+                entity.Property(u => u.AddressLine1).HasColumnName("address_line_1").HasColumnOrder(12); 
+                entity.Property(u => u.AddressLine2).HasColumnName("address_line_2").HasColumnOrder(13); 
+                entity.Property(u => u.City).HasColumnName("city").HasColumnOrder(14); 
+                entity.Property(u => u.State).HasColumnName("state").HasColumnOrder(15); 
+                entity.Property(u => u.PostalCode).HasColumnName("postal_code").HasColumnOrder(16); 
+                entity.Property(u => u.Country).HasColumnName("country").HasColumnOrder(17); 
+                entity.Property(u => u.CreatedAt).HasColumnName("created_at").HasColumnOrder(18); 
+                entity.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasColumnOrder(19);
 
-                // ==================== 2. Identity 框架底层内置系统字段（排在表结构最后面 18 - 30 列） ====================
-                entity.Property(u => u.UserName).HasColumnOrder(18); 
-                entity.Property(u => u.NormalizedUserName).HasColumnOrder(19); 
-                entity.Property(u => u.Email).HasColumnName("email").HasColumnOrder(20); 
-                entity.Property(u => u.NormalizedEmail).HasColumnOrder(21); 
-                entity.Property(u => u.EmailConfirmed).HasColumnOrder(22); 
-                entity.Property(u => u.PasswordHash).HasColumnName("password").HasColumnOrder(23); 
+                // ==================== 2. Identity 框架底层内置系统附加字段 ====================
+                entity.Property(u => u.NormalizedEmail).HasColumnOrder(20); 
+                entity.Property(u => u.UserName).HasColumnOrder(21); 
+                entity.Property(u => u.NormalizedUserName).HasColumnOrder(22); 
+                entity.Property(u => u.EmailConfirmed).HasColumnOrder(23); 
                 entity.Property(u => u.SecurityStamp).HasColumnOrder(24); 
                 entity.Property(u => u.ConcurrencyStamp).HasColumnOrder(25); 
                 entity.Property(u => u.PhoneNumberConfirmed).HasColumnOrder(26); 
@@ -130,7 +130,6 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
                 new Specialty { id = 3, name = "Pediatrics Care", status = 1, created_at = seedDate, updated_at = seedDate }
             );
 
-            // 修改点：此处已完全采用新的 Position 实体类进行初始种子数据构造
             builder.Entity<Position>().HasData(
                 new Position { id = 1, name = "Chief Physician", status = 1, created_at = seedDate, updated_at = seedDate },
                 new Position { id = 2, name = "Associate Chief Physician", status = 1, created_at = seedDate, updated_at = seedDate },
@@ -142,7 +141,7 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
                 new OfficeLocation { id = 2, name = "Consultation Room 302 (Block B, Level 3)", status = 1, created_at = seedDate, updated_at = seedDate }
             );
 
-            // ==================== 初始种子用户注入（修正字段命名） ====================
+            // ==================== 初始种子用户注入 ====================
 
             var userPin = new User
             {
@@ -239,7 +238,41 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
             };
             userPatient.PasswordHash = hasher.HashPassword(userPatient, "Pin@776253");
 
-            builder.Entity<User>().HasData(userPin, userSuperAdmin, userAdmin, userDoctor, userPatient); // 向 Users 物理表注册默认初始种子用户
+            // ==================== 增加新的 SuperAdmin 用户 (ahpin) ====================
+            var userAhpin = new User
+            {
+                Id = 6,
+                FullName = "ahpin",
+                Email = "ahpin7762@gmail.com",
+                NormalizedEmail = "AHPIN7762@GMAIL.COM",
+                UserName = "ahpin7762@gmail.com",
+                NormalizedUserName = "AHPIN7762@GMAIL.COM",
+                PhoneNumber = "88888888",
+                GenderId = 1, // Male
+                Role = UserRole.SuperAdmin,
+                Status = 1,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate,
+                SecurityStamp = "782b3d2b-6c41-432d-948f-287d3a8fc4b1",
+                ConcurrencyStamp = "e36e8b41-db4a-4a2a-b73a-44d5cf3011ca"
+            };
+            userAhpin.PasswordHash = hasher.HashPassword(userAhpin, "Pin@776253");
+
+            // 注入所有种子用户
+            builder.Entity<User>().HasData(userPin, userSuperAdmin, userAdmin, userDoctor, userPatient, userAhpin);
+
+            // ==================== 针对特定角色，向对应的业务数据表补充外键初始化记录 ====================
+            
+            // 针对 Patient 角色（ID 1 和 5），补充 PatientProfiles 初始记录
+            builder.Entity<PatientProfile>().HasData(
+                new PatientProfile { Id = 1, UserId = 1, CreatedAt = seedDate, UpdatedAt = seedDate },
+                new PatientProfile { Id = 2, UserId = 5, CreatedAt = seedDate, UpdatedAt = seedDate }
+            );
+
+            // 针对 Doctor 角色（ID 4），补充 Doctors 初始记录 (默认工作状态 Status = 0 Active)
+            builder.Entity<Doctor>().HasData(
+                new Doctor { Id = 1, UserId = 4, Status = 0, CreatedAt = seedDate, UpdatedAt = seedDate }
+            );
         }
     }
 }
