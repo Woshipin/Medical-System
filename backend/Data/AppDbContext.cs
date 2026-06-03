@@ -22,6 +22,7 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
         public DbSet<Specialty> Specialties { get; set; } = null!; // 定义并注册 Specialties（专科表）数据集映射
         public DbSet<Position> Positions { get; set; } = null!; // 注册 Positions（职称/职位表）数据集映射
         public DbSet<OfficeLocation> OfficeLocations { get; set; } = null!; // 定义并注册 OfficeLocations（诊室位置表）数据集映射
+        public DbSet<Service> Services { get; set; } = null!; // 新增注册 Services（医疗服务）数据集映射
 
         // ==================== 新增注册双 Token 实体集 ====================
         public DbSet<UserRefreshToken> UserRefreshTokens { get; set; } = null!; // 注册用于安全认证校验的 Refresh Token 存储集
@@ -46,7 +47,7 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
         {
             base.OnModelCreating(builder); // 必须首先调用基类方法以确保 Identity 安全框架的内置约束关系能被正确加载
 
-            builder.Entity<User>(entity => // 对核心 User 实体进行数据库底层表结构和列顺序的精细化 Fluent API 设置
+            builder.Entity<User>(entity => // 对核心 User 实体进行数据库底层表结构 and 列顺序的精细化 Fluent API 设置
             {
                 entity.ToTable("Users"); // 映射当前 User 实体到 MySQL 中的物理表名为 "Users"
 
@@ -139,6 +140,16 @@ namespace MedicalSystem.Data // 声明数据访问层所在的命名空间
             builder.Entity<OfficeLocation>().HasData(
                 new OfficeLocation { id = 1, name = "Consultation Room 101 (Block A, Level 1)", status = 1, created_at = seedDate, updated_at = seedDate },
                 new OfficeLocation { id = 2, name = "Consultation Room 302 (Block B, Level 3)", status = 1, created_at = seedDate, updated_at = seedDate }
+            );
+
+            // ==================== 新增 Service 静态基础数据注入（种子数据） ====================
+            builder.Entity<Service>().HasData(
+                new Service { id = 1, name = "General Consultation (全科门诊)", status = 1 },
+                new Service { id = 2, name = "Cardiology (心脏专科)", status = 1 },
+                new Service { id = 3, name = "Dental Care (牙科门诊)", status = 1 },
+                new Service { id = 4, name = "Pediatrics (儿科门诊)", status = 1 },
+                new Service { id = 5, name = "Neurology (神经内科)", status = 0 },
+                new Service { id = 6, name = "Physiotherapy (康复理疗)", status = 1 }
             );
 
             // ==================== 初始种子用户注入 ====================
