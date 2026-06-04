@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic; 
 using System.Linq; 
 using System.Threading.Tasks; 
+using System.ComponentModel.DataAnnotations;
 using MedicalSystem.Data;     
 using MedicalSystem.Models;   
 using Microsoft.AspNetCore.Mvc; 
@@ -17,7 +18,7 @@ namespace MedicalSystem.Controllers
     {
         private readonly AppDbContext _context; 
         private readonly IActivityLogService _activityLog; 
-        private readonly ILogger<DepartmentController> _logger; // 引入 Logger 
+        private readonly ILogger<DepartmentController> _logger; 
 
         public DepartmentController(
             AppDbContext context, 
@@ -37,16 +38,37 @@ namespace MedicalSystem.Controllers
         }
 
         [HttpGet] 
-        public async Task<ActionResult<IEnumerable<Department>>> GetDepartments() 
+        public async Task<IActionResult> GetDepartments() 
         {
             var data = await _context.Departments.ToListAsync(); 
             await LogBothAsync("Read", "Success", $"Retrieved {data.Count} departments.");
-            return data;
+            return Ok(data); // 保持原列表返回结构，或采用 ApiResponse，根据前端消费情况定
         }
 
         [HttpPost] 
-        public async Task<ActionResult<Department>> PostDepartment(Department department) 
+        public async Task<IActionResult> PostDepartment([FromBody] DepartmentDto model) 
         {
+            // ModelState Data Annotations Validation Gate
+            if (!ModelState.IsValid) 
+            {
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value!.Errors.First().ErrorMessage
+                    );
+
+                await LogBothAsync("Create", "Failed", "Model validation failed.");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
+            }
+
+            var department = new Department
+            {
+                name = model.Name,
+                location = model.Location,
+                status = model.Status
+            };
+
             _context.Departments.Add(department); 
             await _context.SaveChangesAsync(); 
 
@@ -56,31 +78,40 @@ namespace MedicalSystem.Controllers
                 $"Created new Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return CreatedAtAction(nameof(GetDepartments), new { id = department.id }, department); 
+            return Ok(new { success = true, message = "Department created successfully.", data = department }); 
         }
 
         [HttpPut("{id}")] 
-        public async Task<IActionResult> PutDepartment(int id, Department department) 
+        public async Task<IActionResult> PutDepartment(int id, [FromBody] DepartmentDto model) 
         {
-            if (id != department.id) 
+            if (!ModelState.IsValid) 
             {
-                await LogBothAsync("Update", "Failed", "ID mismatch in request.");
-                return BadRequest(); 
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value!.Errors.First().ErrorMessage
+                    );
+
+                await LogBothAsync("Update", "Failed", $"Model validation failed for department ID: {id}");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
             }
 
-            var existing = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.id == id); 
+            var existing = await _context.Departments.FirstOrDefaultAsync(d => d.id == id); 
             if (existing == null) 
             {
                 await LogBothAsync("Update", "Failed", $"Department not found for ID: {id}");
-                return NotFound(); 
+                return NotFound(new { success = false, message = "Department not found." }); 
             }
 
             var changes = new List<string>(); 
-            if (existing.name != department.name) changes.Add($"• Department Name -> {existing.name} ➔ {department.name}"); 
-            if (existing.location != department.location) changes.Add($"• Location -> {existing.location} ➔ {department.location}"); 
-            if (existing.status != department.status) changes.Add($"• Status -> {(existing.status == 1 ? "Active" : "Inactive")} ➔ {(department.status == 1 ? "Active" : "Inactive")}"); 
+            if (existing.name != model.Name) changes.Add($"• Department Name -> {existing.name} ➔ {model.Name}"); 
+            if (existing.location != model.Location) changes.Add($"• Location -> {existing.location} ➔ {model.Location}"); 
+            if (existing.status != model.Status) changes.Add($"• Status -> {(existing.status == 1 ? "Active" : "Inactive")} ➔ {(model.Status == 1 ? "Active" : "Inactive")}"); 
 
-            _context.Entry(department).State = EntityState.Modified; 
+            existing.name = model.Name;
+            existing.location = model.Location;
+            existing.status = model.Status;
 
             try 
             { 
@@ -97,11 +128,12 @@ namespace MedicalSystem.Controllers
                 if (!_context.Departments.Any(e => e.id == id)) 
                 {
                     await LogBothAsync("Update", "Failed", $"Concurrency error: Department {id} not found.");
-                    return NotFound(); 
+                    return NotFound(new { success = false, message = "Concurrency error. Department not found." }); 
                 }
                 else throw; 
             }
-            return NoContent(); 
+
+            return Ok(new { success = true, message = "Department updated successfully." }); 
         }
 
         [HttpDelete("{id}")] 
@@ -111,7 +143,7 @@ namespace MedicalSystem.Controllers
             if (department == null) 
             {
                 await LogBothAsync("Delete", "Failed", $"Department not found for ID: {id}");
-                return NotFound(); 
+                return NotFound(new { success = false, message = "Department not found." }); 
             }
 
             _context.Departments.Remove(department); 
@@ -123,7 +155,21 @@ namespace MedicalSystem.Controllers
                 $"Deleted Department:\n• Department ID -> {department.id}\n• Department Name -> {department.name}\n• Location -> {department.location}\n• Status -> {(department.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return NoContent(); 
+            return Ok(new { success = true, message = "Department deleted successfully." }); 
         }
+    }
+
+    public class DepartmentDto
+    {
+        [Required(ErrorMessage = "Department name is required.")]
+        [StringLength(100, ErrorMessage = "Department name cannot exceed 100 characters.")]
+        public string Name { get; set; } = null!;
+
+        [Required(ErrorMessage = "Location is required.")]
+        [StringLength(200, ErrorMessage = "Location cannot exceed 200 characters.")]
+        public string Location { get; set; } = null!;
+
+        [Required(ErrorMessage = "Operational status is required.")]
+        public int Status { get; set; } = 1;
     }
 }

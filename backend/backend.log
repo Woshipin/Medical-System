@@ -1,174 +1,159 @@
-[2026-05-30 18:52:05] [AuthController.CheckAuth] Success: Token validated for Patient patient@gmail.com
-[2026-05-30 18:53:26] [AuthController.Logout] Success: Patient logged out and tokens cleared.
-[2026-05-30 18:53:31] [AuthController.Login] Failed: Invalid credentials for patient wwwww@gmail.com
-[2026-05-30 18:53:48] [AuthController.Login] Success: Patient ok1@gmail.com logged in successfully
-[2026-05-30 18:53:52] [AuthController.CheckAuth] Success: Token validated for Patient ok1@gmail.com
-[2026-05-30 18:53:54] [AuthController.CheckAuth] Success: Token validated for Patient ok1@gmail.com
-[2026-06-02 20:40:50] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:41:01] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:41:06] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:41:11] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:44:43] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:44:51] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:45:41] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-02 20:45:49] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-03 17:46:05] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
-[2026-06-03 17:47:27] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin@gmail.com'
-[2026-06-03 17:47:45] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
-[2026-06-03 17:48:55] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
-[2026-06-03 17:49:44] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
-[2026-06-03 17:58:10] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
-[2026-06-03 17:58:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 17:58:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:03:02] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:03:02] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:03:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:03:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:03:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:03:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:53:03] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-03 18:53:11] Host terminated unexpectedly
-Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
-   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
-   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
-   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
-   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
-   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
-   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
-   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
-[2026-06-03 18:53:20] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
-[2026-06-03 18:54:40] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:54:40] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 18:54:40] [DepartmentController.Read] Success: Retrieved 12 departments.
-[2026-06-03 18:54:40] [DepartmentController.Read] Success: Retrieved 12 departments.
-[2026-06-03 19:02:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 19:02:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 19:02:49] [DepartmentController.Read] Success: Retrieved 12 departments.
-[2026-06-03 19:02:49] [DepartmentController.Read] Success: Retrieved 12 departments.
-[2026-06-03 19:02:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 19:02:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 19:02:51] [ServiceController.Read] Success: Retrieved 6 services.
-[2026-06-03 19:02:51] [ServiceController.Read] Success: Retrieved 6 services.
-[2026-06-03 19:03:01] [ServiceController.Create] Success: Created new Service:
-• Service ID -> 7
+[2026-06-04 17:04:16] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-04 17:04:22] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:04:22] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:04:22] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-04 17:04:22] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-04 17:04:30] [DepartmentController.Create] Success: Created new Department:
+• Department ID -> 13
+• Department Name -> aaa
+• Location -> bbb
+• Status -> Active
+[2026-06-04 17:04:30] [DepartmentController.Read] Success: Retrieved 13 departments.
+[2026-06-04 17:04:38] [DepartmentController.Update] Success: Updated department (ID: 13):
+• No fields were modified.
+[2026-06-04 17:04:38] [DepartmentController.Read] Success: Retrieved 13 departments.
+[2026-06-04 17:04:41] [DepartmentController.Delete] Success: Deleted Department:
+• Department ID -> 13
+• Department Name -> aaa
+• Location -> bbb
+• Status -> Active
+[2026-06-04 17:04:41] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-04 17:10:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:10:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:10:56] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:10:56] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:10:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:10:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:10:58] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-04 17:10:58] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-04 17:10:59] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:10:59] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:11:23] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:11:41] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:11:41] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:20:57] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-04 17:21:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:55] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:21:55] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:21:55] [PatientController.Read] Success: Retrieved 1 patients data.
+[2026-06-04 17:21:55] [PatientController.Read] Success: Retrieved 1 patients data.
+[2026-06-04 17:21:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:56] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:21:56] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:21:56] [StaffController.Read] Success: Retrieved 7 staff members data.
+[2026-06-04 17:21:56] [StaffController.Read] Success: Retrieved 7 staff members data.
+[2026-06-04 17:21:59] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:59] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:21:59] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-04 17:21:59] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-04 17:22:04] [ServiceController.Create] Success: Created new Service:
+• Service ID -> 8
 • Service Name -> aaa
 • Status -> Active
-[2026-06-03 19:03:01] [ServiceController.Read] Success: Retrieved 7 services.
-[2026-06-03 19:03:08] [ServiceController.Update] Success: Updated service (ID: 7):
-• Service Name -> aaa ➔ bbb
-• Status -> Active ➔ Inactive
-[2026-06-03 19:03:08] [ServiceController.Read] Success: Retrieved 7 services.
-[2026-06-03 19:03:14] [ServiceController.Delete] Success: Deleted Service:
-• Service ID -> 7
-• Service Name -> bbb
-• Status -> Inactive
-[2026-06-03 19:03:14] [ServiceController.Read] Success: Retrieved 6 services.
-[2026-06-03 19:03:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 19:03:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-03 19:03:21] [GendersController.Read] Success: Retrieved 2 gender options.
-[2026-06-03 19:03:21] [GendersController.Read] Success: Retrieved 2 gender options.
-[2026-06-03 19:03:21] [PatientController.Read] Success: Retrieved 2 patients data.
-[2026-06-03 19:03:21] [PatientController.Read] Success: Retrieved 2 patients data.
-[2026-06-04 14:22:10] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
-[2026-06-04 14:23:06] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:23:06] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:23:09] [AdminController.Logout] Success: Admin logged out state synchronized.
-[2026-06-04 14:31:41] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin7762@gmail.com'
-[2026-06-04 14:31:49] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
-[2026-06-04 14:31:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:31:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:31:52] [AdminController.Logout] Success: Admin logged out state synchronized.
-[2026-06-04 14:43:20] [AdminController.Register] Success: Created new staff account - User ID: 7, Full Name: eee, Email: eee@gmail.com, Role: Admin
-[2026-06-04 14:43:31] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin77@gmail.com'
-[2026-06-04 14:43:56] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
-[2026-06-04 14:43:57] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:43:57] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:44:00] [AdminController.Logout] Success: Admin logged out state synchronized.
-[2026-06-04 14:44:25] [AdminController.Register] Success: Created new staff account - User ID: 8, Full Name: rrr, Email: rrr@gmail.com, Role: Doctor
-[2026-06-04 14:50:58] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin7762s@gmail.com'
-[2026-06-04 14:51:10] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
-[2026-06-04 14:51:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:51:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
-[2026-06-04 14:51:13] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-06-04 17:22:04] [ServiceController.Read] Success: Retrieved 7 services.
+[2026-06-04 17:22:08] [ServiceController.Update] Success: Updated service (ID: 8):
+• No fields were modified.
+[2026-06-04 17:22:08] [ServiceController.Read] Success: Retrieved 7 services.
+[2026-06-04 17:22:10] [ServiceController.Delete] Success: Deleted Service:
+• Service ID -> 8
+• Service Name -> aaa
+• Status -> Active
+[2026-06-04 17:22:10] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-04 17:22:14] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:14] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:14] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-04 17:22:14] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-04 17:22:16] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:16] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:16] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:22:16] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:22:22] [GendersController.Create] Success: Created new Gender option:
+• Gender ID -> 3
+• Gender Name -> zzz
+• Status -> Active
+[2026-06-04 17:22:22] [GendersController.Read] Success: Retrieved 3 gender options.
+[2026-06-04 17:22:24] [GendersController.Update] Success: Updated Gender details (ID: 3):
+• No fields were modified.
+[2026-06-04 17:22:24] [GendersController.Read] Success: Retrieved 3 gender options.
+[2026-06-04 17:22:26] [GendersController.Delete] Success: Deleted Gender option:
+• Gender ID -> 3
+• Gender Name -> zzz
+• Status -> Active
+[2026-06-04 17:22:26] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:22:30] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:30] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:30] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:22:30] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:22:33] [OfficeLocationController.Create] Success: Created new office location:
+• ID -> 3
+• Location Name -> aaa
+• Initial Status -> Active
+[2026-06-04 17:22:33] [OfficeLocationController.Read] Success: Retrieved 3 office locations.
+[2026-06-04 17:22:35] [OfficeLocationController.Delete] Success: Deleted office location:
+• ID -> 1
+• Location Name -> Consultation Room 101 (Block A, Level 1)
+[2026-06-04 17:22:35] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:22:38] [OfficeLocationController.Update] Success: Updated office location (ID: 2):
+• Location Name: Consultation Room 302 (Block B, Level 3) ➔ Consultation Room 302 (Block B, Level 3)
+• Status: Active ➔ Active
+[2026-06-04 17:22:38] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:22:42] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:42] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:42] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-04 17:22:42] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-04 17:22:46] [SpecialtyController.Create] Success: Created new specialty:
+• ID -> 4
+• Specialty Name -> aaa
+• Initial Status -> Active
+[2026-06-04 17:22:46] [SpecialtyController.Read] Success: Retrieved 4 specialties.
+[2026-06-04 17:22:49] [SpecialtyController.Update] Success: Updated specialty (ID: 4):
+• Specialty Name: aaa ➔ aaa
+• Status: Active ➔ Active
+[2026-06-04 17:22:49] [SpecialtyController.Read] Success: Retrieved 4 specialties.
+[2026-06-04 17:22:51] [SpecialtyController.Delete] Success: Deleted specialty:
+• ID -> 4
+• Specialty Name -> aaa
+[2026-06-04 17:22:51] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-04 17:22:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:22:54] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-04 17:22:54] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-04 17:22:56] [PositionController.Create] Success: Created new position:
+• ID -> 4
+• Position Name -> aaa
+• Initial Status -> Active
+[2026-06-04 17:22:56] [PositionController.Read] Success: Retrieved 4 positions.
+[2026-06-04 17:23:00] [PositionController.Update] Success: Updated position (ID: 4):
+• Position Name: aaa ➔ aaa
+• Status: Active ➔ Inactive
+[2026-06-04 17:23:00] [PositionController.Read] Success: Retrieved 4 positions.
+[2026-06-04 17:23:06] [PositionController.Delete] Success: Deleted position:
+• ID -> 4
+• Position Name -> aaa
+[2026-06-04 17:23:06] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-04 17:23:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:07] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:23:07] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:23:09] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:09] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:10] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:23:10] [OfficeLocationController.Read] Success: Retrieved 2 office locations.
+[2026-06-04 17:23:12] [OfficeLocationController.Delete] Success: Deleted office location:
+• ID -> 3
+• Location Name -> aaa
+[2026-06-04 17:23:12] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-04 17:23:17] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:17] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:17] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:23:17] [PatientController.Read] Success: Retrieved 1 patients data.
+[2026-06-04 17:23:17] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-04 17:23:17] [PatientController.Read] Success: Retrieved 1 patients data.
+[2026-06-04 17:23:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 17:23:18] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-04 17:23:18] [ServiceController.Read] Success: Retrieved 6 services.

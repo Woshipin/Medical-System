@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks; 
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc; 
 using Microsoft.EntityFrameworkCore; 
 using MedicalSystem.Data; 
@@ -17,7 +18,7 @@ namespace MedicalSystem.Controllers
     {
         private readonly AppDbContext _context; 
         private readonly IActivityLogService _activityLog; 
-        private readonly ILogger<GendersController> _logger; // 引入 Logger
+        private readonly ILogger<GendersController> _logger; 
 
         public GendersController(
             AppDbContext context, 
@@ -29,23 +30,20 @@ namespace MedicalSystem.Controllers
             _logger = logger;
         } 
 
-        // 统一双写日志方法 (File + ActivityLog)
         private async Task LogBothAsync(string actionName, string status, string message)
         {
             _logger.LogInformation("[GendersController.{ActionName}] {Status}: {Message}", actionName, status, message);
             await _activityLog.LogAsync(actionName, $"[{status}] {message}");
         }
 
-        // 1. 获取所有性别列表
         [HttpGet] 
         public async Task<IActionResult> GetAll() 
         {
             var data = await _context.Genders.ToListAsync(); 
             await LogBothAsync("Read", "Success", $"Retrieved {data.Count} gender options.");
-            return Ok(ApiResponse<IEnumerable<Gender>>.SuccessResponse(data)); 
+            return Ok(data); 
         }
 
-        // 2. 根据 ID 获取性别详情
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -53,22 +51,37 @@ namespace MedicalSystem.Controllers
             if (gender == null) 
             {
                 await LogBothAsync("Read", "Failed", $"Gender not found for ID: {id}");
-                return NotFound(ApiResponse<string>.FailureResponse("Gender not found."));
+                return NotFound(new { success = false, message = "Gender not found." });
             }
             
             await LogBothAsync("Read", "Success", $"Retrieved gender ID: {id}");
-            return Ok(ApiResponse<Gender>.SuccessResponse(gender, "Gender retrieved successfully."));
+            return Ok(new { success = true, message = "Gender retrieved successfully.", data = gender });
         }
 
-        // 3. 创建性别
         [HttpPost] 
-        public async Task<IActionResult> Create(Gender gender) 
+        public async Task<IActionResult> Create([FromBody] GenderDto model) 
         {
-            if (await _context.Genders.AnyAsync(g => g.name == gender.name)) 
+            if (!ModelState.IsValid) 
             {
-                await LogBothAsync("Create", "Failed", $"Gender name already exists: {gender.name}");
-                return BadRequest(ApiResponse<string>.FailureResponse("Gender name already exists.")); 
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(x => x.Key, x => x.Value!.Errors.First().ErrorMessage);
+
+                await LogBothAsync("Create", "Failed", "Model validation failed.");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
             }
+
+            if (await _context.Genders.AnyAsync(g => g.name == model.Name.Trim())) 
+            {
+                await LogBothAsync("Create", "Failed", $"Gender name already exists: {model.Name}");
+                return BadRequest(new { success = false, message = "Gender name already exists.", errors = new Dictionary<string, string> { { "name", "This gender name is already taken." } } }); 
+            }
+
+            var gender = new Gender
+            {
+                name = model.Name.Trim(),
+                status = model.Status
+            };
 
             _context.Genders.Add(gender); 
             await _context.SaveChangesAsync(); 
@@ -79,31 +92,41 @@ namespace MedicalSystem.Controllers
                 $"Created new Gender option:\n• Gender ID -> {gender.id}\n• Gender Name -> {gender.name}\n• Status -> {(gender.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return Ok(ApiResponse<Gender>.SuccessResponse(gender, "Gender created successfully.")); 
+            return Ok(new { success = true, message = "Gender created successfully.", data = gender }); 
         }
 
-        // 4. 更新性别
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Gender gender)
+        public async Task<IActionResult> Update(int id, [FromBody] GenderDto model)
         {
-            if (id != gender.id) 
+            if (!ModelState.IsValid) 
             {
-                await LogBothAsync("Update", "Failed", "ID mismatch in request.");
-                return BadRequest(ApiResponse<string>.FailureResponse("Invalid request."));
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(x => x.Key, x => x.Value!.Errors.First().ErrorMessage);
+
+                await LogBothAsync("Update", "Failed", $"Model validation failed for gender ID: {id}");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
             }
 
-            var existing = await _context.Genders.AsNoTracking().FirstOrDefaultAsync(g => g.id == id);
+            var existing = await _context.Genders.FirstOrDefaultAsync(g => g.id == id);
             if (existing == null) 
             {
                 await LogBothAsync("Update", "Failed", $"Gender not found for ID: {id}");
-                return NotFound(ApiResponse<string>.FailureResponse("Gender not found."));
+                return NotFound(new { success = false, message = "Gender not found." });
+            }
+
+            if (await _context.Genders.AnyAsync(g => g.name == model.Name.Trim() && g.id != id)) 
+            {
+                await LogBothAsync("Update", "Failed", $"Gender name conflict: {model.Name}");
+                return BadRequest(new { success = false, message = "Gender name already exists.", errors = new Dictionary<string, string> { { "name", "This gender name is already taken by another record." } } }); 
             }
 
             var changes = new List<string>();
-            if (existing.name != gender.name) changes.Add($"• Gender Name -> {existing.name} ➔ {gender.name}");
-            if (existing.status != gender.status) changes.Add($"• Status -> {(existing.status == 1 ? "Active" : "Inactive")} ➔ {(gender.status == 1 ? "Active" : "Inactive")}");
+            if (existing.name != model.Name.Trim()) changes.Add($"• Gender Name -> {existing.name} ➔ {model.Name.Trim()}");
+            if (existing.status != model.Status) changes.Add($"• Status -> {(existing.status == 1 ? "Active" : "Inactive")} ➔ {(model.Status == 1 ? "Active" : "Inactive")}");
 
-            _context.Entry(gender).State = EntityState.Modified;
+            existing.name = model.Name.Trim();
+            existing.status = model.Status;
 
             try
             {
@@ -120,15 +143,14 @@ namespace MedicalSystem.Controllers
                 if (!_context.Genders.Any(e => e.id == id)) 
                 {
                     await LogBothAsync("Update", "Failed", $"Concurrency error: Gender {id} not found.");
-                    return NotFound(ApiResponse<string>.FailureResponse("Gender not found."));
+                    return NotFound(new { success = false, message = "Concurrency error. Gender not found." });
                 }
                 else throw;
             }
 
-            return Ok(ApiResponse<Gender>.SuccessResponse(gender, "Gender updated successfully."));
+            return Ok(new { success = true, message = "Gender updated successfully." });
         }
 
-        // 5. 删除性别
         [HttpDelete("{id}")] 
         public async Task<IActionResult> Delete(int id) 
         {
@@ -136,14 +158,14 @@ namespace MedicalSystem.Controllers
             if (gender == null) 
             {
                 await LogBothAsync("Delete", "Failed", $"Gender not found for ID: {id}");
-                return NotFound(ApiResponse<string>.FailureResponse("Gender not found.")); 
+                return NotFound(new { success = false, message = "Gender not found." }); 
             }
 
             bool isInUse = await _context.Users.AnyAsync(u => u.GenderId == id); 
             if (isInUse) 
             {
                 await LogBothAsync("Delete", "Failed", $"Cannot delete gender ID: {id}. It is currently in use.");
-                return BadRequest(ApiResponse<string>.FailureResponse("Cannot delete: Gender is currently assigned to users.")); 
+                return BadRequest(new { success = false, message = "Cannot delete: Gender is currently assigned to users." }); 
             }
 
             _context.Genders.Remove(gender); 
@@ -155,7 +177,17 @@ namespace MedicalSystem.Controllers
                 $"Deleted Gender option:\n• Gender ID -> {gender.id}\n• Gender Name -> {gender.name}\n• Status -> {(gender.status == 1 ? "Active" : "Inactive")}"
             );
 
-            return Ok(ApiResponse<string>.SuccessResponse(null, "Gender deleted successfully.")); 
+            return Ok(new { success = true, message = "Gender deleted successfully." }); 
         }
+    }
+
+    public class GenderDto
+    {
+        [Required(ErrorMessage = "Gender name is required.")]
+        [StringLength(50, ErrorMessage = "Gender name cannot exceed 50 characters.")]
+        public string Name { get; set; } = null!;
+
+        [Required(ErrorMessage = "Operational status is required.")]
+        public int Status { get; set; } = 1;
     }
 }

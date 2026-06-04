@@ -12,24 +12,38 @@ import {
   CheckCircle2,
   ChevronDown,
   Activity,
-  Stethoscope
+  Stethoscope,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 
-// ==========================================
-// Environment Variables & Constants
-// ==========================================
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api';
 
 export interface Service {
   id?: number;
   name: string;
-  status: number; // 0 = 停用 (Inactive), 1 = 启用 (Active)
+  status: number;
 }
 
-// -----------------
-// UI Helper Component (Badge)
-// -----------------
+const getBackendMessage = (result: any): string | null => {
+  if (!result) return null;
+  const msg = result.message ?? result.Message;
+  if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  return null;
+};
+
+const getFieldErrors = (result: any): Record<string, string> => {
+  const map: Record<string, string> = {};
+  const errors = result?.errors ?? result?.Errors;
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return map;
+  for (const [key, val] of Object.entries(errors)) {
+    map[key.toLowerCase().replace(/\s/g, '')] =
+      Array.isArray(val) ? String((val as any[])[0]) : String(val);
+  }
+  return map;
+};
+
 const Badge = ({
   children,
   variant,
@@ -51,47 +65,45 @@ const Badge = ({
   );
 };
 
-// -----------------
-// Toast Notification Component
-// -----------------
-const Toast = ({ show, message, type, onClose }: { show: boolean, message: string, type: 'success' | 'error', onClose: () => void }) => {
+const Toast: React.FC<{
+  show: boolean;
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}> = ({ show, message, type, onClose }) => {
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none p-4">
-      <div className={`pointer-events-auto w-[90%] md:w-[50%] flex items-center justify-between gap-3 px-6 py-4 rounded-xl shadow-2xl border animate-in zoom-in-95 fade-in duration-300 ${type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-        <div className="flex items-center gap-3">
-          {type === 'success' ? <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" /> : <AlertTriangle className="w-6 h-6 text-red-500 shrink-0" />}
-          <span className="font-semibold text-base flex-1 leading-snug">{message}</span>
-        </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 shrink-0 p-1"><X className="w-5 h-5" /></button>
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/95 backdrop-blur-xl px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-auto font-sans border-l-4 ${
+      type === "success" ? "border-emerald-500" : "border-red-500"
+    }`}>
+      {type === "success" ? (
+        <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={17} />
+      ) : (
+        <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
+      )}
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-xs font-bold ${type === "success" ? "text-emerald-700" : "text-red-700"}`}>
+          {type === "success" ? "Operation Successful" : "Notification"}
+        </p>
+        <p className="text-xs text-slate-600 mt-0.5 break-words">{message}</p>
       </div>
+      <button onClick={onClose} className="text-slate-400 hover:text-slate-600 shrink-0 self-center"><X size={15} /></button>
     </div>
   );
 };
 
 export default function ServicesPage() {
-  // Data states
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-
-  // Form and validation states
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Delete and notification states
   const [viewData, setViewData] = useState<Service | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [svcToDelete, setSvcToDelete] = useState<number | null>(null);
@@ -103,116 +115,94 @@ export default function ServicesPage() {
   };
 
   const getHeaders = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : "";
     return { 
         "Content-Type": "application/json", 
         ...(token ? { Authorization: `Bearer ${token}` } : {}) 
     };
   };
 
-  // Fetch Data
   const fetchData = async () => {
     try {
       setIsLoading(true);
       const res = await fetch(`${API_BASE_URL}/Service`, { headers: getHeaders() });
       if (res.ok) {
-        const data = await res.json();
-        setServices(data);
+        const json = await res.json();
+        setServices(json.data || json || []);
       } else {
         throw new Error("Failed to fetch services");
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      showToast("error", "Failed to load medical services database.");
+      showToast("error", "Failed to load medical services.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
-
-  // Filtering Logic
   const filteredServices = useMemo(() => {
     return services.filter((svc) => {
-      // 匹配服务名称（属性字段皆为小写 id, name, status）
       const matchSearch = svc.name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = statusFilter === "all" || svc.status?.toString() === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [services, searchTerm, statusFilter]);
 
-  // Pagination Logic
   const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
   const paginatedServices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredServices.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredServices, currentPage, itemsPerPage]);
 
-  // ---------------
-  // Modal Handlers
-  // ---------------
   const openCreateModal = () => {
     setModalMode("create");
     setErrors({});
-    setFormData({ name: "", status: 1 }); // 配合后端定义，状态初始化为整型 1
+    setFormData({ name: "", status: 1 });
     setIsModalOpen(true);
   };
 
   const openEditModal = (svc: Service) => {
     setModalMode("edit");
     setErrors({});
-    setFormData({ id: svc.id, name: svc.name, status: svc.status ?? 1 }); // 配合后端数据结构
+    setFormData({ id: svc.id, name: svc.name, status: svc.status ?? 1 });
     setIsModalOpen(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" })); // 键入时清除对应错误提示
+    const errKey = name.toLowerCase();
+    if (errors[errKey]) setErrors(prev => ({ ...prev, [errKey]: "" }));
   };
 
-  // Create / Update Save Handler
   const handleSave = async () => {
-    // 1. 前端表单验证
-    const newErrors: Record<string, string> = {};
-    if (!formData.name?.trim()) newErrors.name = "Please enter medical service name.";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
+    setErrors({});
     try {
-      // 安全转化 status 为整型：1 为 Active 启用，0 为 Inactive 停用
       const targetStatusValue = (formData.status === "1" || formData.status === 1 || formData.status === "true" || formData.status === true) ? 1 : 0;
-
-      const payload: Service = {
-        name: formData.name,
-        status: targetStatusValue, // 传递小写的属性名 status 整数值给后端
-      };
-
-      if (formData.id) {
-        payload.id = formData.id; // 小写的 id 属性
-      }
+      const payload: Service = { name: formData.name, status: targetStatusValue };
+      if (formData.id) payload.id = formData.id;
 
       const url = modalMode === "create" ? `${API_BASE_URL}/Service` : `${API_BASE_URL}/Service/${formData.id}`;
       const method = modalMode === "create" ? "POST" : "PUT";
 
       const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) });
+      const result = await res.json();
+      
+      const isSuccess = res.ok && (result?.success === true || result?.id !== undefined);
 
-      if (res.ok) {
+      if (isSuccess) {
         setIsModalOpen(false);
-        showToast("success", modalMode === "create" ? "Service registered successfully!" : "Service updated successfully!");
+        showToast("success", getBackendMessage(result) || (modalMode === "create" ? "Service registered successfully!" : "Service updated successfully!"));
         fetchData();
       } else {
-        showToast("error", "Failed to save medical service data.");
+        const fields = getFieldErrors(result);
+        if (Object.keys(fields).length > 0) {
+          setErrors(fields);
+        }
+        showToast("error", getBackendMessage(result) || "Operation failed. Please correct the fields below.");
       }
     } catch (err) {
       console.error(err);
@@ -220,16 +210,19 @@ export default function ServicesPage() {
     }
   };
 
-  // Delete Handler
   const confirmDelete = async () => {
     if (!svcToDelete) return;
     try {
       const res = await fetch(`${API_BASE_URL}/Service/${svcToDelete}`, { method: "DELETE", headers: getHeaders() });
+      let result = null;
+      if (res.headers.get("content-type")?.includes("application/json")) {
+        result = await res.json();
+      }
       if (res.ok) {
-        showToast("success", "Medical service deleted successfully.");
+        showToast("success", getBackendMessage(result) || "Medical service deleted successfully.");
         fetchData();
       } else {
-        showToast("error", "Failed to delete medical service.");
+        showToast("error", getBackendMessage(result) || "Failed to delete medical service.");
       }
     } catch (err) {
       console.error(err);
@@ -241,38 +234,28 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="space-y-5 max-w-[1400px] xl:max-w-full xl:px-4 2xl:px-6 mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative">
+    <div className="space-y-5 max-w-[1400px] xl:max-w-full xl:px-4 2xl:px-6 mx-auto pb-10 px-4 sm:px-6 lg:px-8 relative font-sans antialiased text-slate-900">
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Medical Services</h1>
-          <p className="text-slate-600 mt-1 text-sm font-medium">Manage clinical services and diagnostic items.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Medical Services</h1>
+          <p className="text-slate-500 mt-1 text-sm font-medium">Manage clinical services and diagnostic items.</p>
         </div>
-        <button onClick={openCreateModal} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center justify-center gap-2">
-          <Plus className="w-4 h-4" /> Add Service
+        <button onClick={openCreateModal} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-md transition-all flex items-center justify-center gap-2">
+          <Plus className="w-4.5 h-4.5" /> Add Service
         </button>
       </div>
 
-      {/* Search and Filters */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-4 items-center justify-between">
         <div className="relative w-full lg:w-[50%]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <input
-            type="text"
-            className="block w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium transition-colors"
-            placeholder="Search by medical service name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input type="text" className="block w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium transition-colors" placeholder="Search by medical service name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           <div className="hidden sm:flex items-center text-sm font-semibold text-slate-800"><Filter className="w-4 h-4 mr-1.5" /> Filters:</div>
-
           <div className="relative flex-1 sm:flex-none">
-            <select className="w-full sm:w-48 appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="w-full sm:w-48 appearance-none pr-8 pl-3 py-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500 outline-none hover:bg-white transition cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">All Status</option>
               <option value="1">Active</option>
               <option value="0">Inactive</option>
@@ -282,10 +265,9 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* Data Table */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
         {isLoading ? (
-          <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading services database...</div>
+          <div className="p-10 text-center text-slate-600 font-medium text-sm">Loading services...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full whitespace-nowrap text-left border-collapse min-w-[600px]">
@@ -298,8 +280,8 @@ export default function ServicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredServices.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-slate-600 font-medium text-sm">No medical services found.</td></tr>
+                {paginatedServices.length === 0 ? (
+                  <tr><td colSpan={4} className="p-8 text-center text-slate-600 font-medium text-sm">No services found.</td></tr>
                 ) : (
                   paginatedServices.map((svc) => (
                     <tr key={svc.id} className="hover:bg-slate-50 transition-colors">
@@ -324,22 +306,11 @@ export default function ServicesPage() {
             </table>
           </div>
         )}
-
-        {/* Pagination Controls */}
         {!isLoading && filteredServices.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredServices.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredServices.length} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
         )}
       </div>
 
-      {/* ========================================= */}
-      {/* Create / Edit Modal                       */}
-      {/* ========================================= */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
@@ -379,9 +350,6 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* ========================================= */}
-      {/* View Modal                                */}
-      {/* ========================================= */}
       {isViewModalOpen && viewData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -389,7 +357,6 @@ export default function ServicesPage() {
               <h2 className="text-lg font-bold text-slate-900">Medical Service Details</h2>
               <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-1.5 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
-
             <div className="p-6 bg-slate-50">
               <div className="grid grid-cols-1 gap-4">
                 {[
@@ -407,7 +374,6 @@ export default function ServicesPage() {
                 ))}
               </div>
             </div>
-
             <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end">
               <button onClick={() => setIsViewModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 font-semibold transition-all">Close</button>
             </div>
@@ -415,9 +381,6 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* ========================================= */}
-      {/* Delete Confirmation                       */}
-      {/* ========================================= */}
       {isDeleteAlertOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center border border-slate-200 animate-in fade-in zoom-in-95 duration-200">

@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { id: 'doctors', label: 'Doctors', icon: UserCheck, href: '/admin/doctors' },
     { id: 'office_locations', label: 'Office Locations', icon: MapPin, href: '/admin/office-locations' },
     { id: 'specialties', label: 'Specialties', icon: Activity, href: '/admin/specialties' },
-    { id: 'titles', label: 'Titles', icon: Award, href: '/admin/titles' },
+    { id: 'positions', label: 'Positions', icon: Award, href: '/admin/positions' },
   ];
 
   // 判定医生组下是否有任意子项正处于激活状态
