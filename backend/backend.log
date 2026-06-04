@@ -151,3 +151,24 @@ Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
 [2026-06-03 19:03:21] [GendersController.Read] Success: Retrieved 2 gender options.
 [2026-06-03 19:03:21] [PatientController.Read] Success: Retrieved 2 patients data.
 [2026-06-03 19:03:21] [PatientController.Read] Success: Retrieved 2 patients data.
+[2026-06-04 14:22:10] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-04 14:23:06] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:23:06] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:23:09] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-06-04 14:31:41] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin7762@gmail.com'
+[2026-06-04 14:31:49] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-04 14:31:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:31:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:31:52] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-06-04 14:43:20] [AdminController.Register] Success: Created new staff account - User ID: 7, Full Name: eee, Email: eee@gmail.com, Role: Admin
+[2026-06-04 14:43:31] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin77@gmail.com'
+[2026-06-04 14:43:56] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-04 14:43:57] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:43:57] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:44:00] [AdminController.Logout] Success: Admin logged out state synchronized.
+[2026-06-04 14:44:25] [AdminController.Register] Success: Created new staff account - User ID: 8, Full Name: rrr, Email: rrr@gmail.com, Role: Doctor
+[2026-06-04 14:50:58] [AdminController.Login] Failed: Failed admin portal login attempt - AttemptedEmail: 'ahpin7762s@gmail.com'
+[2026-06-04 14:51:10] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-04 14:51:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:51:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-04 14:51:13] [AdminController.Logout] Success: Admin logged out state synchronized.

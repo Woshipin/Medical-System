@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Stethoscope, Activity, 
   Building2, ChevronLeft, LogOut, UserCircle,
-  ShieldCheck, LogOut as LogOutIcon, Users, MapPin, Award, ChevronDown, UserCheck
+  ShieldCheck, LogOut as LogOutIcon, Users, MapPin, Award, ChevronDown, UserCheck,
+  CheckCircle, AlertCircle
 } from 'lucide-react';
 import { useAdminAuth, ADMIN_ROLE_NAMES } from '@/app/contexts/AdminAuthContext'; 
 
@@ -20,6 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { user, logout, isInitialized } = useAdminAuth(); 
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [toastSuccess, setToastSuccess] = useState<string | null>(null);
 
   // 1. 普通的一级导航项
   const generalMenuItems = [
@@ -29,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { id: 'patients', label: 'Patients', icon: Stethoscope, href: '/admin/patients' },
     { id: 'services', label: 'Services', icon: Activity, href: '/admin/services' },
     { id: 'departments', label: 'Departments', icon: Building2, href: '/admin/departments' },
-    { id: 'genders', label: 'Genders', icon: Users, href: '/admin/genders' }, // 新增性别管理项
+    { id: 'genders', label: 'Genders', icon: Users, href: '/admin/genders' }, 
   ];
 
   // 2. 医生配置组下的二级子项 (Doctor在最上面)
@@ -55,8 +57,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
-    logout(); 
-    window.location.replace('/admin/login');
+    
+    // Set success notification statement
+    setToastSuccess("Logout successful! Redirecting to login page...");
+
+    // Execute session wiping and routing displacement after waiting for 2 seconds
+    setTimeout(() => {
+      logout(); 
+      window.location.replace('/admin/login');
+    }, 2000);
   };
 
   // 移动端点击任意菜单后，自动收起侧边栏
@@ -68,6 +77,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
+      {/* ── Red Success Toast for Logout ───────────────────────────────────── */}
+      {toastSuccess && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/95 backdrop-blur-xl border-l-4 border-red-500 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-auto font-sans">
+          <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-xs font-bold text-red-700">Logout Successful</p>
+            <p className="text-xs text-slate-600 mt-0.5 break-words">{toastSuccess}</p>
+          </div>
+        </div>
+      )}
+
       {/* 移动端遮罩层 */}
       {isOpen && (
         <div 
@@ -115,7 +135,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
         {/* Navigation Area */}
         <nav className="flex-1 px-4 pt-4 pb-4 space-y-2 overflow-y-auto custom-scrollbar">
-          {/* 渲染普通一级导航 */}
           {generalMenuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -141,13 +160,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           })}
 
           {/* ========================================== */}
-          {/* 【重构新增】：医生管理配置下拉组 (Dropdown) */}
+          {/* 医生配置管理配置下拉组 (Dropdown) */}
           {/* ========================================== */}
           <div className="space-y-1.5">
             <button
               onClick={() => {
                 if (!isOpen) {
-                  setIsOpen(true); // 缩起状态下点击，先展开侧边栏
+                  setIsOpen(true); 
                 }
                 setIsDoctorGroupOpen(!isDoctorGroupOpen);
               }}
@@ -264,26 +283,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         </div>
       )}
 
-      {/* 
-        =========================================================
-        【重构新增】：精细化的滚动条定制样式，彻底消除老旧的不雅外观
-        =========================================================
-      */}
+      {/* 精细化滚动条定制样式 */}
       <style jsx global>{`
-        /* 定制滚动条滑道与滑块 */
         .custom-scrollbar::-webkit-scrollbar {
-          width: 5px; /* 控制滑块的宽度，使其纤细 */
+          width: 5px;
           height: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent; /* 轨道背景全透明，无突兀边界 */
+          background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #334155; /* 使用 slate-700 柔和填充色，完美贴合暗灰色的背景 */
-          border-radius: 99px; /* 圆角处理 */
+          background: #334155;
+          border-radius: 99px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #10b981; /* 鼠标悬停时过渡为亮绿色（emerald-500），指示状态 */
+          background: #10b981;
         }
       `}</style>
     </>

@@ -1,359 +1,362 @@
-"use client"; // 启用 Next.js 客户端组件渲染模式
+"use client";
 
-import React, { useState, useEffect, useRef } from "react"; 
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Mail, Lock, User, Activity, ArrowLeft, CheckCircle2,
   Eye, EyeOff, ShieldCheck, ChevronDown, AlertCircle,
   X, CheckCircle, Loader2, ArrowRight, Phone
-} from "lucide-react"; 
-import Link from "next/link"; 
-import { useRouter } from "next/navigation"; 
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-// --- 辅助函数：解析后端拦截错误，提取文字明细 ---
-const parseBackendError = (result: any, defaultMsg: string = "Registration failed."): string => {
-  if (!result) return defaultMsg; 
-  const errors = result.errors || result.Errors || result.data || result.Data; 
-  if (errors) { 
-    if (Array.isArray(errors)) return errors.join(" | "); 
-    if (typeof errors === 'object') { 
-      return Object.values(errors).flatMap((err: any) => Array.isArray(err) ? err : [err]).join(" | "); 
-    } 
-  } 
-  return result.message || result.Message || defaultMsg; 
-}; 
+// ── Extracts the plain-text message from any backend response shape ───────────
+const getBackendMessage = (result: any): string | null => {
+  if (!result) return null;
+  const msg = result.message ?? result.Message;
+  if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  return null;
+};
 
-export default function AdminRegisterPage() { 
-  const router = useRouter(); 
-  const [showPassword, setShowPassword] = useState(false); 
+// ── Extracts field-level errors: { "fullname": "msg", "email": "msg", ... } ──
+const getFieldErrors = (result: any): Record<string, string> => {
+  const map: Record<string, string> = {};
+  const errors = result?.errors ?? result?.Errors;
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return map;
+  for (const [key, val] of Object.entries(errors)) {
+    map[key.toLowerCase().replace(/\s/g, '')] =
+      Array.isArray(val) ? String((val as any[])[0]) : String(val);
+  }
+  return map;
+};
 
-  const [fullName, setFullName] = useState(""); 
-  const [email, setEmail] = useState(""); 
-  const [password, setPassword] = useState(""); 
-  
-  // Phone Number States
-  const [countryCode, setCountryCode] = useState("+65"); 
-  const [isCountryCodeOpen, setIsCountryCodeOpen] = useState(false); 
-  const countryCodeRef = useRef<HTMLDivElement>(null); 
-  const [phoneNumber, setPhoneNumber] = useState(""); 
+export default function AdminRegisterPage() {
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [role, setRole] = useState(""); 
-  const [isRoleOpen, setIsRoleOpen] = useState(false); 
-  const roleRef = useRef<HTMLDivElement>(null); 
+  const [fullName, setFullName]       = useState('');
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [countryCode, setCountryCode] = useState('+65');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [role, setRole]               = useState('');
 
-  const [isLoading, setIsLoading] = useState(false); 
-  const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null); 
-  const [successMsg, setSuccessMsg] = useState<string | null>(null); 
-  const [hasSubmitted, setHasSubmitted] = useState(false); 
+  const [isCountryCodeOpen, setIsCountryCodeOpen] = useState(false);
+  const [isRoleOpen, setIsRoleOpen]               = useState(false);
+  const countryCodeRef = useRef<HTMLDivElement>(null);
+  const roleRef        = useRef<HTMLDivElement>(null);
 
-  const roleOptions = [ 
-    { value: "superadmin", label: "Super Admin" }, 
-    { value: "admin", label: "Admin" }, 
-    { value: "doctor", label: "Doctor" }, 
-  ]; 
+  const [isLoading, setIsLoading]       = useState(false);
+  const [toastError, setToastError]     = useState<string | null>(null);
+  const [toastSuccess, setToastSuccess] = useState<string | null>(null);
 
-  const countryCodes = [ 
-    { code: "+65", label: "SG (+65)" }, 
-    { code: "+60", label: "MYR (+60)" } 
-  ]; 
+  // Field errors received directly from backend Model validation
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => { 
-    function handleClickOutside(event: MouseEvent) { 
-      if (roleRef.current && !roleRef.current.contains(event.target as Node)) { setIsRoleOpen(false); } 
-      if (countryCodeRef.current && !countryCodeRef.current.contains(event.target as Node)) { setIsCountryCodeOpen(false); } 
-    } 
-    document.addEventListener("mousedown", handleClickOutside); 
-    return () => document.removeEventListener("mousedown", handleClickOutside); 
-  }, []); 
+  const roleOptions = [
+    { value: 'superadmin', label: 'Super Admin' },
+    { value: 'admin',      label: 'Admin'       },
+    { value: 'doctor',     label: 'Doctor'      },
+  ];
+  const countryCodes = [
+    { code: '+65', label: 'SG (+65)' },
+    { code: '+60', label: 'MY (+60)' },
+  ];
 
-  const isValidName = fullName.trim().length > 0; 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); 
-  const isValidRole = role !== ""; 
-  const isValidPassword = /^(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/.test(password); 
-  
-  const isValidPhone = countryCode === "+65" 
-    ? phoneNumber.length === 8 
-    : (phoneNumber.length === 9 || phoneNumber.length === 10); 
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (roleRef.current && !roleRef.current.contains(e.target as Node)) setIsRoleOpen(false);
+      if (countryCodeRef.current && !countryCodeRef.current.contains(e.target as Node)) setIsCountryCodeOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => { 
-    e.preventDefault(); 
-    setHasSubmitted(true); 
+  // ── Client format checks (Only used to toggle the green checkmarks in UI) ───
+  const clientOkName     = fullName.trim().length > 0;
+  const clientOkEmail    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const clientOkRole     = role !== '';
+  const clientOkPassword = /^(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
+  const clientOkPhone    = countryCode === '+65'
+    ? phoneNumber.length === 8
+    : phoneNumber.length === 9 || phoneNumber.length === 10;
 
-    if (!isValidName || !isValidEmail || !isValidRole || !isValidPassword || !isValidPhone) return; 
+  // Red borders trigger strictly on backend validation errors
+  const nameBorderRed     = !!fieldErrors['fullname'];
+  const emailBorderRed    = !!fieldErrors['email'];
+  const phoneBorderRed    = !!fieldErrors['phonenumber'];
+  const roleBorderRed     = !!fieldErrors['role'];
+  const passwordBorderRed = !!fieldErrors['password'] || !!fieldErrors['general'];
 
-    setIsLoading(true); 
-    setApiErrorMsg(null); 
-    setSuccessMsg(null); 
+  const clearFieldErr = (key: string) =>
+    setFieldErrors(p => { const n = { ...p }; delete n[key]; return n; });
 
-    const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5062/api"; 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFieldErrors({});
+    setToastError(null);
+    setToastSuccess(null);
 
-    try { 
-      const response = await fetch(`${BASE_URL}/admin/register`, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ 
-          fullName, 
-          email, 
-          role, 
-          password, 
-          phoneNumber: `${countryCode}${phoneNumber}` 
-        }), 
-      }); 
+    setIsLoading(true);
+    const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5062/api';
 
-      const result = await response.json(); 
-      const isSuccess = result?.success === true || result?.Success === true; 
+    try {
+      const response = await fetch(`${BASE_URL}/admin/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName, email, role, password,
+          phoneNumber: `${countryCode}${phoneNumber}`,
+        }),
+      });
 
-      if (response.ok && isSuccess) { 
-        setSuccessMsg("Registration successful! Redirecting to login..."); 
-        setTimeout(() => router.push("/admin/login"), 2000); 
-      } else { 
-        setApiErrorMsg(parseBackendError(result, "Registration failed.")); 
-        setIsLoading(false); 
-      } 
-    } catch (err: any) { 
-      setApiErrorMsg("Cannot connect to server. Please check your backend connection."); 
-      setIsLoading(false); 
-    } 
-  }; 
+      const result = await response.json();
+      const isSuccess = result?.success === true || result?.Success === true;
 
-  return ( 
-    <div className="h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700 font-sans overflow-hidden">
-      
-      <div className="fixed top-6 left-0 w-full flex justify-center z-50 pointer-events-none px-4">
-        {apiErrorMsg && ( 
-          <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-red-500 text-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-6 fade-in duration-300">
-            <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={18} />
-            <div className="flex-1">
-              <h4 className="font-bold text-xs text-red-700">Registration Failed</h4>
-              <p className="text-xs text-slate-600 mt-0.5 break-words">{apiErrorMsg}</p>
+      if (response.ok && isSuccess) {
+        setToastSuccess(getBackendMessage(result) ?? 'Registration successful.');
+        setTimeout(() => router.push('/admin/login'), 2000);
+      } else {
+        // Hydrate precisely mapped C# Model validation errors into corresponding input states
+        const fields = getFieldErrors(result);
+        if (Object.keys(fields).length > 0) setFieldErrors(fields);
+        setToastError(getBackendMessage(result) ?? 'Registration failed. Please correct the fields below.');
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      setToastError(typeof err?.message === 'string' ? err.message : 'Cannot connect to server. Please check your backend connection.');
+      setIsLoading(false);
+    }
+  };
+
+  const inputCls = (isRed: boolean) =>
+    `w-full py-2.5 text-sm font-medium rounded-xl outline-none transition-all border ${
+      isRed
+        ? 'bg-red-50 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-red-900 placeholder:text-red-300'
+        : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-400'
+    }`;
+
+  return (
+    <div className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-700 font-sans overflow-hidden px-4">
+
+      {/* ── Toasts ──────────────────────────────────────────────────────────── */}
+      <div className="fixed top-5 left-0 w-full flex flex-col items-center gap-2 z-50 pointer-events-none px-4">
+        {toastError && (
+          <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-red-500 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-4 fade-in duration-300">
+            <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-red-700">Registration Failed</p>
+              <p className="text-xs text-slate-600 mt-0.5 break-words">{toastError}</p>
             </div>
-            <button onClick={() => setApiErrorMsg(null)} className="text-slate-400 hover:text-slate-600 p-1 shrink-0"><X size={16} /></button>
+            <button type="button" onClick={() => setToastError(null)} className="text-slate-400 hover:text-slate-600 shrink-0">
+              <X size={15} />
+            </button>
           </div>
         )}
-        {successMsg && (
-          <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 text-slate-800 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-6 fade-in duration-300">
-            <CheckCircle className="text-emerald-600 mt-0.5" size={18} />
-            <div className="flex-1">
-              <h4 className="font-bold text-xs text-emerald-700">Registration Successful</h4>
-              <p className="text-xs text-slate-600 mt-0.5">{successMsg}</p>
+        {toastSuccess && (
+          <div className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-xl border-l-4 border-emerald-500 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-4 fade-in duration-300">
+            <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={17} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-emerald-700">Registration Successful</p>
+              <p className="text-xs text-slate-600 mt-0.5 break-words">{toastSuccess}</p>
             </div>
           </div>
         )}
       </div>
 
-      <div className="w-full max-w-[460px] z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-2xl border border-white/20 max-h-[92vh] overflow-y-auto custom-scrollbar">
-          
-          <div className="flex justify-between items-start mb-6">
+      {/* ── Card ─────────────────────────────────────────────────────────────── */}
+      <div className="w-full max-w-[480px] bg-white rounded-[1.75rem] shadow-2xl px-7 py-5 border border-white/20 animate-in fade-in zoom-in-95 duration-500">
+
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Register</h2>
+            <p className="text-slate-400 text-xs mt-0.5 font-medium">Create your system profile</p>
+          </div>
+          <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-100 shrink-0">
+            <Activity className="w-5 h-5 text-emerald-600" />
+          </div>
+        </div>
+
+        <form className="space-y-3" onSubmit={handleSubmit} noValidate>
+
+          {/* Row 1: Full Name + Email */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Full Name */}
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Register</h2>
-              <p className="text-slate-500 text-xs mt-1 font-medium">Create your system profile</p>
+              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider block mb-1">Full Name</label>
+              <div className="relative flex items-center">
+                <User className={`absolute left-3 z-10 ${nameBorderRed ? 'text-red-400' : 'text-slate-400'}`} size={15} />
+                <input
+                  type="text" name="fullName" autoComplete="name" value={fullName}
+                  onChange={e => { setFullName(e.target.value); clearFieldErr('fullname'); }}
+                  className={`${inputCls(nameBorderRed)} pl-9 pr-8`}
+                  placeholder="Full name"
+                />
+                {clientOkName && !nameBorderRed && (
+                  <CheckCircle2 className="absolute right-2.5 text-emerald-500" size={13} />
+                )}
+              </div>
+              {fieldErrors['fullname'] && (
+                <p className="text-[10px] text-red-500 mt-1 ml-1 font-semibold">{fieldErrors['fullname']}</p>
+              )}
             </div>
-            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100 shrink-0">
-              <Activity className="w-6 h-6 text-emerald-600" />
+
+            {/* Email */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider block mb-1">Email</label>
+              <div className="relative flex items-center">
+                <Mail className={`absolute left-3 z-10 ${emailBorderRed ? 'text-red-400' : 'text-slate-400'}`} size={15} />
+                <input
+                  type="email" name="email" autoComplete="email" value={email}
+                  onChange={e => { setEmail(e.target.value); clearFieldErr('email'); }}
+                  className={`${inputCls(emailBorderRed)} pl-9 pr-8`}
+                  placeholder="admin@example.com"
+                />
+                {clientOkEmail && !emailBorderRed && (
+                  <CheckCircle2 className="absolute right-2.5 text-emerald-500" size={13} />
+                )}
+              </div>
+              {fieldErrors['email'] && (
+                <p className="text-[10px] text-red-500 mt-1 ml-1 font-semibold">{fieldErrors['email']}</p>
+              )}
             </div>
           </div>
 
-          <form className="space-y-4" onSubmit={handleRegisterSubmit} noValidate>
-            
-            <div className="flex flex-col group">
-              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider mb-1.5">Full Name</label>
-              <div className="relative flex items-center">
-                <User className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidName ? "text-red-400" : "text-slate-400"}`} size={18} />
-                <input
-                  type="text"
-                  name="fullName"
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className={`w-full pl-10 pr-10 py-3 text-sm font-semibold rounded-xl outline-none transition-all border ${
-                    hasSubmitted && !isValidName
-                      ? "bg-red-50 border-red-300 focus:border-red-500 text-red-900"
-                      : "bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900"
-                  }`}
-                  placeholder="Enter your full name"
-                />
-                {isValidName && <CheckCircle2 className="absolute right-3 text-emerald-500" size={16} />}
-              </div>
-              {hasSubmitted && !isValidName && <span className="text-[10px] text-red-500 mt-1 ml-1 font-medium">Full name is required.</span>}
-            </div>
-
-            <div className="flex flex-col group">
-              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider mb-1.5">Work Email</label>
-              <div className="relative flex items-center">
-                <Mail className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidEmail ? "text-red-400" : "text-slate-400"}`} size={18} />
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full pl-10 pr-10 py-3 text-sm font-semibold rounded-xl outline-none transition-all border ${
-                    hasSubmitted && !isValidEmail
-                      ? "bg-red-50 border-red-300 focus:border-red-500 text-red-900 placeholder:text-red-300"
-                      : "bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-400"
-                  }`}
-                  placeholder="admin@medicarepro.com"
-                />
-                {isValidEmail && <CheckCircle2 className="absolute right-3 text-emerald-500" size={16} />}
-              </div>
-              {hasSubmitted && !isValidEmail && <span className="text-[10px] text-red-500 mt-1 ml-1 font-medium">Valid email is required.</span>}
-            </div>
-
-            <div className="flex flex-col group">
-              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider mb-1.5">Phone Number</label>
-              <div className="flex gap-2">
-                <div className="relative w-[100px] sm:w-[120px] shrink-0" ref={countryCodeRef}>
+          {/* Row 2: Phone + System Role */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Phone Number */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider block mb-1">Phone Number</label>
+              <div className="flex gap-1.5">
+                <div className="relative w-[68px] shrink-0" ref={countryCodeRef}>
                   <button
                     type="button"
                     onClick={() => setIsCountryCodeOpen(!isCountryCodeOpen)}
-                    className={`w-full h-full flex items-center justify-between px-3 py-3 text-sm font-semibold rounded-xl outline-none transition-all border ${
-                      hasSubmitted && !isValidPhone ? "bg-red-50 border-red-300 text-red-900" : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-900"
-                    }`}
+                    className={`w-full h-full flex items-center justify-between px-2 py-2.5 text-xs font-semibold rounded-xl border outline-none transition-all ${phoneBorderRed ? 'bg-red-50 border-red-300 text-red-900' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-900'}`}
                   >
                     <span>{countryCode}</span>
-                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isCountryCodeOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown size={10} className={`text-slate-400 transition-transform ${isCountryCodeOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {isCountryCodeOpen && (
-                    <div className="absolute top-full left-0 mt-1.5 w-[120px] bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                      {countryCodes.map((c) => (
-                        <div
-                          key={c.code}
-                          onClick={() => { setCountryCode(c.code); setPhoneNumber(""); setIsCountryCodeOpen(false); }}
-                          className={`px-3 py-2.5 text-xs cursor-pointer transition-colors ${
-                            countryCode === c.code ? "bg-emerald-50 text-emerald-700 font-bold" : "text-slate-600 hover:bg-slate-50 hover:text-emerald-600 font-medium"
-                          }`}
-                        >
+                    <div className="absolute top-full left-0 mt-1 w-[110px] bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                      {countryCodes.map(c => (
+                        <div key={c.code}
+                          onClick={() => { setCountryCode(c.code); setPhoneNumber(''); setIsCountryCodeOpen(false); }}
+                          className={`px-3 py-2 text-xs cursor-pointer transition-colors ${countryCode === c.code ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-600 font-medium'}`}>
                           {c.label}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-
                 <div className="relative flex-1">
-                  <Phone className={`absolute left-3.5 top-3 z-10 ${hasSubmitted && !isValidPhone ? "text-red-400" : "text-slate-400"}`} size={18} />
+                  <Phone className={`absolute left-2.5 top-1/2 -translate-y-1/2 z-10 ${phoneBorderRed ? 'text-red-400' : 'text-slate-400'}`} size={14} />
                   <input
                     type="tel"
-                    maxLength={countryCode === "+65" ? 8 : 10}
+                    maxLength={countryCode === '+65' ? 8 : 10}
                     value={phoneNumber}
-                    onChange={(e) => {
-                      const onlyNums = e.target.value.replace(/[^0-9]/g, '');
-                      setPhoneNumber(onlyNums);
-                    }}
-                    className={`w-full pl-10 pr-10 py-3 text-sm font-semibold rounded-xl outline-none transition-all border ${
-                      hasSubmitted && !isValidPhone
-                        ? "bg-red-50 border-red-300 focus:border-red-500 text-red-900 placeholder:text-red-300"
-                        : "bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-400"
-                    }`}
-                    placeholder={countryCode === "+65" ? "8 digits" : "9-10 digits"}
+                    onChange={e => { setPhoneNumber(e.target.value.replace(/[^0-9]/g, '')); clearFieldErr('phonenumber'); }}
+                    className={`w-full pl-8 pr-2 py-2.5 text-sm font-medium rounded-xl outline-none transition-all border ${phoneBorderRed ? 'bg-red-50 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-200 text-red-900 placeholder:text-red-300' : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-400'}`}
+                    placeholder={countryCode === '+65' ? '8 digits' : '9-10 digits'}
                   />
-                  {isValidPhone && <CheckCircle2 className="absolute right-3 top-3 text-emerald-500" size={16} />}
                 </div>
               </div>
-              {hasSubmitted && !isValidPhone && (
-                <span className="text-[10px] text-red-500 mt-1 ml-1 font-medium">
-                  {countryCode === "+65" ? "Singapore numbers must be exactly 8 digits." : "Malaysia numbers must be 9 or 10 digits."}
-                </span>
+              {fieldErrors['phonenumber'] && (
+                <p className="text-[10px] text-red-500 mt-1 ml-1 font-semibold">{fieldErrors['phonenumber']}</p>
               )}
             </div>
 
-            <div className="flex flex-col group">
-              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider mb-1.5">System Role</label>
+            {/* System Role */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider block mb-1">System Role</label>
               <div className="relative" ref={roleRef}>
-                <ShieldCheck className={`absolute left-3.5 top-3 z-10 pointer-events-none ${hasSubmitted && !isValidRole ? "text-red-400" : "text-slate-400"}`} size={18} />
+                <ShieldCheck className={`absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none ${roleBorderRed ? 'text-red-400' : 'text-slate-400'}`} size={15} />
                 <button
                   type="button"
                   onClick={() => setIsRoleOpen(!isRoleOpen)}
-                  className={`w-full flex items-center justify-between pl-10 pr-3 py-3 text-sm font-semibold rounded-xl outline-none transition-all border ${
-                    hasSubmitted && !isValidRole ? "bg-red-50 border-red-300 text-red-900" : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-900"
-                  }`}
+                  className={`w-full flex items-center justify-between pl-9 pr-3 py-2.5 text-sm font-medium rounded-xl border outline-none transition-all ${roleBorderRed ? 'bg-red-50 border-red-300 text-red-900' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-900'}`}
                 >
-                  <span className={role ? "text-slate-900" : "text-slate-400 font-medium"}>
-                    {role ? roleOptions.find((o) => o.value === role)?.label : "Select your role"}
+                  <span className={role ? 'text-slate-900 font-semibold' : 'text-slate-400'}>
+                    {role ? roleOptions.find(o => o.value === role)?.label : 'Select role'}
                   </span>
-                  <ChevronDown size={16} className={`${hasSubmitted && !isValidRole ? "text-red-400" : "text-slate-400"} transition-transform duration-300 ${isRoleOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown size={13} className={`${roleBorderRed ? 'text-red-400' : 'text-slate-400'} transition-transform ${isRoleOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isRoleOpen && (
-                  <div className="absolute top-full left-0 mt-1.5 w-full bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    {roleOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        onClick={() => { setRole(option.value); setIsRoleOpen(false); }}
-                        className={`px-4 py-3 text-sm cursor-pointer flex items-center transition-colors ${
-                          role === option.value ? "bg-emerald-50 text-emerald-700 font-bold" : "text-slate-600 hover:bg-slate-50 hover:text-emerald-600 font-medium"
-                        }`}
-                      >
+                  <div className="absolute top-full left-0 mt-1 w-full bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                    {roleOptions.map(option => (
+                      <div key={option.value}
+                        onClick={() => { setRole(option.value); setIsRoleOpen(false); clearFieldErr('role'); }}
+                        className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${role === option.value ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-600 font-medium'}`}>
                         {option.label}
                       </div>
                     ))}
                   </div>
                 )}
-                {isValidRole && <CheckCircle2 className="absolute right-9 top-3 text-emerald-500 pointer-events-none" size={16} />}
-              </div>
-              {hasSubmitted && !isValidRole && <span className="text-[10px] text-red-500 mt-1 ml-1 font-medium">Please select a system role.</span>}
-            </div>
-
-            <div className="flex flex-col group">
-              <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider mb-1.5">Password</label>
-              <div className="relative flex items-center">
-                <Lock className={`absolute left-3.5 z-10 ${hasSubmitted && !isValidPassword ? "text-red-400" : "text-slate-400"}`} size={18} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full pl-10 pr-10 py-3 text-sm font-semibold rounded-xl outline-none transition-all border ${
-                    hasSubmitted && !isValidPassword
-                      ? "bg-red-50 border-red-300 focus:border-red-500 text-red-900 placeholder:text-red-300"
-                      : "bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-400"
-                  }`}
-                  placeholder="Create strong password"
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 text-slate-400 hover:text-emerald-600 transition-colors">
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              <div className={`mt-2 p-2.5 rounded-lg border flex items-start gap-2 ${hasSubmitted && !isValidPassword ? "bg-red-50 border-red-100" : "bg-emerald-50/50 border-emerald-100"}`}>
-                {hasSubmitted && !isValidPassword ? (
-                  <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
-                ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                {clientOkRole && !roleBorderRed && (
+                  <CheckCircle2 className="absolute right-8 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none" size={13} />
                 )}
-                <p className={`text-[10px] font-semibold leading-snug ${hasSubmitted && !isValidPassword ? "text-red-600" : "text-emerald-700"}`}>
-                  Min 8 chars, must include numbers & special symbols (!@#$).
-                </p>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || successMsg !== null}
-              className="w-full mt-2 py-3.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-80"
-            >
-              {isLoading || successMsg ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 size={18} className="animate-spin" />
-                  {successMsg ? "Success!" : "Processing..."}
-                </span>
-              ) : (
-                <>Create Account <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>
+              {fieldErrors['role'] && (
+                <p className="text-[10px] text-red-500 mt-1 ml-1 font-semibold">{fieldErrors['role']}</p>
               )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center border-t border-slate-100 pt-5">
-            <Link href="/admin/login" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors">
-              <ArrowLeft size={14} /> Already have an account? Sign In
-            </Link>
+            </div>
           </div>
 
+          {/* Password */}
+          <div>
+            <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider block mb-1">Password</label>
+            <div className="relative flex items-center">
+              <Lock className={`absolute left-3 z-10 ${passwordBorderRed ? 'text-red-400' : 'text-slate-400'}`} size={15} />
+              <input
+                type={showPassword ? 'text' : 'password'} name="password" autoComplete="new-password" value={password}
+                onChange={e => { setPassword(e.target.value); clearFieldErr('password'); clearFieldErr('general'); }}
+                className={`${inputCls(passwordBorderRed)} pl-9 pr-10`}
+                placeholder="Create strong password"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 text-slate-400 hover:text-emerald-600 transition-colors">
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {/* Password verification box */}
+            <div className={`mt-1.5 px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 transition-colors ${passwordBorderRed ? 'bg-red-50 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
+              {passwordBorderRed
+                ? <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+              <p className={`text-[10px] font-semibold leading-snug transition-colors ${passwordBorderRed ? 'text-red-600' : 'text-emerald-700'}`}>
+                {/* Dynamically loads backend's precise validation message, falling back to default styling */}
+                {fieldErrors['password'] ?? fieldErrors['general'] ?? 'Min 8 chars, must include numbers & special symbols (!@#$).'}
+              </p>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={isLoading || toastSuccess !== null}
+            className="w-full py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-80"
+          >
+            {isLoading || toastSuccess ? (
+              <span className="flex items-center gap-2">
+                <Loader2 size={15} className="animate-spin" />
+                {toastSuccess ? 'Redirecting...' : 'Processing...'}
+              </span>
+            ) : (
+              <>Create Account <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" /></>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-4 text-center border-t border-slate-100 pt-3.5">
+          <Link href="/admin/login" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors">
+            <ArrowLeft size={12} /> Already have an account? Sign In
+          </Link>
         </div>
       </div>
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        * { scrollbar-width: none; }
+        *::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
