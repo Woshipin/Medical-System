@@ -13,6 +13,7 @@ import {
   User,
   Phone,
   Shield,
+  CheckCircle,
   CheckCircle2,
   ChevronDown,
   MapPin,
@@ -21,6 +22,7 @@ import {
   Stethoscope,
   Briefcase,
   Award,
+  AlertCircle,
 } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 
@@ -51,7 +53,7 @@ interface SystemDoctor {
   dateJoin: string | null;
   dateLeft: string | null;
   remark: string | null;
-  status: number | null; // 医生工作状态 (Work Status)
+  status: number | null; 
   dateOfBirth: string | null;
   user: {
     id: number;
@@ -62,8 +64,15 @@ interface SystemDoctor {
     profileImageUrl: string | null;
     genderId: number | null;
     role: number;
-    status: number; // 用户账号启用状态 (User Account Status)
+    status: number; 
     gender?: { id: number; name: string };
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    dateOfBirth?: string;
   };
 }
 
@@ -73,6 +82,28 @@ interface DropdownOption {
 }
 
 type BadgeVariant = "success" | "danger" | "info" | "warning" | "secondary";
+
+/* ─────────────────────────────────────────────────────────
+   EXTRACTORS & HELPERS
+───────────────────────────────────────────────────────── */
+const getBackendMessage = (result: any): string | null => {
+  if (!result) return null;
+  const msg = result.message ?? result.Message;
+  if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  return null;
+};
+
+// Converts everything to lowercase to guarantee exact matches with JSX variable names
+const getFieldErrors = (result: any): Record<string, string> => {
+  const map: Record<string, string> = {};
+  const errors = result?.errors ?? result?.Errors;
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return map;
+  for (const [key, val] of Object.entries(errors)) {
+    map[key.toLowerCase().replace(/\s/g, '')] =
+      Array.isArray(val) ? String((val as any[])[0]) : String(val);
+  }
+  return map;
+};
 
 /* ─────────────────────────────────────────────────────────
    PURE UI COMPONENTS
@@ -106,29 +137,26 @@ const Toast: React.FC<{
 }> = ({ show, message, type, onClose }) => {
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none px-4">
-      <div
-        className={`pointer-events-auto w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-2xl shadow-xl border animate-in zoom-in-95 fade-in duration-200 ${
-          type === "success"
-            ? "bg-white border-emerald-200 text-emerald-800"
-            : "bg-white border-rose-200 text-rose-800"
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          {type === "success" ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          ) : (
-            <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-          )}
-          <span className="font-semibold text-sm">{message}</span>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/95 backdrop-blur-xl px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-auto font-sans border-l-4 ${
+      type === "success" ? "border-emerald-500" : "border-red-500"
+    }`}>
+      {type === "success" ? (
+        <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={17} />
+      ) : (
+        <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
+      )}
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-xs font-bold ${type === "success" ? "text-emerald-700" : "text-red-700"}`}>
+          {type === "success" ? "Operation Successful" : "Notification"}
+        </p>
+        <p className="text-xs text-slate-600 mt-0.5 break-words">{message}</p>
       </div>
+      <button
+        onClick={onClose}
+        className="text-slate-400 hover:text-slate-600 shrink-0 self-center"
+      >
+        <X size={15} />
+      </button>
     </div>
   );
 };
@@ -154,29 +182,6 @@ const InfoCell: React.FC<{
   </div>
 );
 
-const LabelTextArea: React.FC<{
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  placeholder?: string;
-  rows?: number;
-}> = ({ label, name, value, onChange, placeholder, rows = 2 }) => (
-  <div>
-    <label className="block text-xs font-semibold text-slate-600 mb-1">
-      {label}
-    </label>
-    <textarea
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      rows={rows}
-      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder-slate-300 resize-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-    />
-  </div>
-);
-
 const VisualDatePicker: React.FC<{
   label: string;
   name: string;
@@ -191,10 +196,10 @@ const VisualDatePicker: React.FC<{
       {required && <span className="text-rose-500 ml-0.5">*</span>}
     </label>
     <div
-      className={`relative flex items-center rounded-lg border transition-all focus-within:ring-2 ${
+      className={`relative flex items-center rounded-lg border transition-all ${
         error
-          ? "border-rose-400 bg-rose-50 focus-within:ring-rose-200"
-          : "border-slate-300 bg-white focus-within:border-emerald-500 focus-within:ring-emerald-100"
+          ? "border-rose-400 bg-rose-50 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-200"
+          : "border-slate-300 bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
       }`}
     >
       <input
@@ -214,7 +219,7 @@ const VisualDatePicker: React.FC<{
       <div className="w-full flex items-center justify-between px-3 py-2 text-sm pointer-events-none">
         <span
           className={
-            value ? "text-slate-900 font-semibold" : "text-slate-300 font-medium"
+            value ? `${error ? "text-rose-900" : "text-slate-900"} font-semibold` : "text-slate-300 font-medium"
           }
         >
           {value
@@ -225,7 +230,7 @@ const VisualDatePicker: React.FC<{
               })()
             : "DD-MM-YYYY"}
         </span>
-        <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+        <Calendar className={`w-4 h-4 shrink-0 ${error ? "text-rose-400" : "text-slate-400"}`} />
       </div>
     </div>
     {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
@@ -432,6 +437,9 @@ export default function DoctorsPage() {
 
   const filteredDoctors = useMemo(() => {
     return doctors.filter((doc) => {
+      // 核心防御点：阻截掉因为手工删除导致的 user 被悬空的孤立数据
+      if (!doc.user) return false; 
+
       const matchSearch =
         doc.user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -539,17 +547,17 @@ export default function DoctorsPage() {
       profileImageUrl: doc.user.profileImageUrl || "",
       phoneNumberAlt: doc.user.phoneNumberAlt || "",
       userStatus: doc.user.status ?? 1,
-      address: doc.address || "",
-      addressLine2: doc.addressLine2 || "",
-      city: doc.city || "",
-      state: doc.state || "",
-      postalCode: doc.postalCode || "",
-      country: doc.country || "",
+      address: doc.user.addressLine1 || "",
+      addressLine2: doc.user.addressLine2 || "",
+      city: doc.user.city || "",
+      state: doc.user.state || "",
+      postalCode: doc.user.postalCode || "",
+      country: doc.user.country || "",
       licenseNumber: doc.licenseNumber || "",
       specialtyId: doc.specialtyId || "",
       positionId: doc.positionId || "",
       departmentId: doc.departmentId || "",
-      dateOfBirth: doc.dateOfBirth || "",
+      dateOfBirth: doc.user.dateOfBirth || "",
       officeLocationId: doc.officeLocationId || "",
       yearsOfExperience: doc.yearsOfExperience || 0,
       officePhone: doc.officePhone || "",
@@ -589,17 +597,18 @@ export default function DoctorsPage() {
     if (name === "postalCode") {
       const numericVal = value.replace(/\D/g, "").slice(0, 6);
       setFormData((prev: any) => ({ ...prev, [name]: numericVal }));
-      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+      if (errors.postalcode) setErrors((prev) => ({ ...prev, postalcode: "" }));
       return;
     }
     if (name === "officePhone") {
       const numericVal = value.replace(/\D/g, "");
       setFormData((prev: any) => ({ ...prev, [name]: numericVal }));
-      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+      if (errors.officephone) setErrors((prev) => ({ ...prev, officephone: "" }));
       return;
     }
     setFormData((prev: any) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    const errorKey = name.toLowerCase();
+    if (errors[errorKey]) setErrors((prev) => ({ ...prev, [errorKey]: "" }));
   };
 
   const handlePhoneBodyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -609,7 +618,7 @@ export default function DoctorsPage() {
 
   const handleAltPhoneBodyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAltPhoneBody(e.target.value.replace(/\D/g, ""));
-    if (errors.phoneNumberAlt) setErrors((prev) => ({ ...prev, phoneNumberAlt: "" }));
+    if (errors.phonenumberalt) setErrors((prev) => ({ ...prev, phonenumberalt: "" }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -639,18 +648,14 @@ export default function DoctorsPage() {
   const handleNextStep = () => {
     const newErrors: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$/;
 
     if (!formData.fullName?.trim())
-      newErrors.fullName = "Please enter full name.";
+      newErrors.fullname = "Please enter full name.";
     if (!formData.email?.trim() || !emailRegex.test(formData.email))
       newErrors.email = "Please enter a valid email address.";
 
     if (modalMode === "create" && !formData.password) {
       newErrors.password = "Password is required.";
-    } else if (formData.password && !passwordRegex.test(formData.password)) {
-      newErrors.password =
-        "Password must be at least 6 characters, including letters and numbers.";
     }
 
     if (!phoneBody) {
@@ -666,13 +671,17 @@ export default function DoctorsPage() {
 
     if (altPhoneBody) {
       if (altPhoneCode === "+65" && altPhoneBody.length !== 8) {
-        newErrors.phoneNumberAlt = "Singapore alternate number must be exactly 8 digits.";
+        newErrors.phonenumberalt = "Singapore alternate number must be exactly 8 digits.";
       } else if (
         altPhoneCode === "+60" &&
         (altPhoneBody.length < 9 || altPhoneBody.length > 10)
       ) {
-        newErrors.phoneNumberAlt = "Malaysia alternate number must be 9–10 digits.";
+        newErrors.phonenumberalt = "Malaysia alternate number must be 9–10 digits.";
       }
+    }
+
+    if (formData.postalCode && !/^\d{5,6}$/.test(formData.postalCode)) {
+      newErrors.postalcode = "Postal code must be exactly 5 or 6 digits.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -683,41 +692,8 @@ export default function DoctorsPage() {
   };
 
   const handleSave = async () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.licenseNumber?.trim())
-      newErrors.licenseNumber = "License number is required.";
-    if (!formData.departmentId)
-      newErrors.departmentId = "Department choice is required.";
-    if (!formData.specialtyId)
-      newErrors.specialtyId = "Specialty choice is required.";
-    if (!formData.positionId)
-      newErrors.positionId = "Professional title choice is required.";
-    if (!formData.dateOfBirth)
-      newErrors.dateOfBirth = "Date of birth is required.";
-    if (!formData.dateJoin) newErrors.dateJoin = "Date join is required.";
-
-    if (!formData.officePhone?.trim()) {
-      newErrors.officePhone = "Office phone is required.";
-    } else if (!/^\d+$/.test(formData.officePhone)) {
-      newErrors.officePhone = "Office phone must contain only numbers.";
-    }
-
-    if (formData.dateJoin && formData.dateLeft) {
-      const joinDate = new Date(formData.dateJoin);
-      const leftDate = new Date(formData.dateLeft);
-      if (leftDate < joinDate) {
-        newErrors.dateLeft = "Date Left cannot be earlier than Date Join.";
-      }
-    }
-
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
-      showToast(
-        "error",
-        "Please fix the highlighted required fields on Step 2.",
-      );
-      return;
-    }
+    setErrors({});
+    setToast((t) => ({ ...t, show: false }));
 
     try {
       const payload = {
@@ -770,7 +746,10 @@ export default function DoctorsPage() {
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
+      const result = await res.json();
+      const isSuccess = result?.success === true || result?.Success === true;
+
+      if (res.ok && isSuccess) {
         setIsModalOpen(false);
         showToast(
           "success",
@@ -780,31 +759,15 @@ export default function DoctorsPage() {
         );
         fetchData();
       } else {
-        const errJson = await res.json();
-        const fieldErrors = errJson.errors || errJson.validationErrors;
+        const fields = getFieldErrors(result);
+        if (Object.keys(fields).length > 0) {
+          setErrors(fields);
+          
+          const hasStep1Errors = Object.keys(fields).some(key =>
+            ["fullname", "email", "password", "phone", "genderid", "phonenumberalt", "postalcode"].includes(key)
+          );
 
-        if (fieldErrors && typeof fieldErrors === "object") {
-          const backendMappedErrors: Record<string, string> = {};
-          let returnToStep1 = false;
-
-          Object.keys(fieldErrors).forEach((key) => {
-            const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
-            const messages = fieldErrors[key];
-            backendMappedErrors[camelKey] = Array.isArray(messages)
-              ? messages[0]
-              : messages;
-
-            if (
-              ["fullName", "email", "password", "phone", "genderId"].includes(
-                camelKey,
-              )
-            ) {
-              returnToStep1 = true;
-            }
-          });
-
-          setErrors(backendMappedErrors);
-          if (returnToStep1) {
+          if (hasStep1Errors) {
             setCurrentStep(1);
             showToast(
               "error",
@@ -817,7 +780,7 @@ export default function DoctorsPage() {
             );
           }
         } else {
-          showToast("error", errJson.message || "Failed to save details.");
+          showToast("error", getBackendMessage(result) || "Failed to save details.");
         }
       }
     } catch {
@@ -832,14 +795,17 @@ export default function DoctorsPage() {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      if (res.ok) {
-        showToast("success", "Doctor deleted successfully.");
+      const result = await res.json();
+      const isSuccess = result?.success === true || result?.Success === true;
+
+      if (res.ok && isSuccess) {
+        showToast("error", getBackendMessage(result) || "Doctor deleted successfully.");
         fetchData();
       } else {
-        showToast("error", "Delete failed.");
+        showToast("error", getBackendMessage(result) || "Delete failed.");
       }
     } catch {
-      showToast("error", "Network error.");
+      showToast("error", "Network error occurred.");
     } finally {
       setIsDeleteAlertOpen(false);
       setDoctorToDelete(null);
@@ -1016,13 +982,13 @@ export default function DoctorsPage() {
                       className="hover:bg-slate-50/50 transition-colors"
                     >
                       <td className="px-5 py-4 text-sm font-bold text-slate-900">
-                        {doc.user.fullName}
+                        {doc.user?.fullName || "Orphaned Account"}
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-700 font-semibold">
-                        {doc.user.email}
+                        {doc.user?.email || "—"}
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-700 font-medium">
-                        {doc.user.phoneNumber || "-"}
+                        {doc.user?.phoneNumber || "-"}
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-700 font-medium">
                         {doc.officePhone || "-"}
@@ -1156,8 +1122,7 @@ export default function DoctorsPage() {
 
                   <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
                     <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2.5 mb-4 flex items-center gap-2">
-                      <User className="w-4 h-4 text-emerald-600" /> Account
-                      Identity
+                      <User className="w-4 h-4 text-emerald-600" /> Account Identity
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
@@ -1170,14 +1135,14 @@ export default function DoctorsPage() {
                           onChange={handleInputChange}
                           autoComplete="new-password"
                           className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 bg-white ${
-                            errors.fullName
+                            errors.fullname
                               ? "bg-rose-50 border-rose-300 text-rose-900"
                               : "border-slate-300 focus:border-emerald-500"
                           }`}
                         />
-                        {errors.fullName && (
+                        {errors.fullname && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.fullName}
+                            {errors.fullname}
                           </p>
                         )}
                       </div>
@@ -1243,7 +1208,9 @@ export default function DoctorsPage() {
                           name="genderId"
                           value={formData.genderId}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900"
+                          className={`w-full border bg-white rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900 ${
+                            errors.genderid ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300"
+                          }`}
                         >
                           {genderOptions.map((g) => (
                             <option key={g.value} value={g.value}>
@@ -1252,6 +1219,11 @@ export default function DoctorsPage() {
                           ))}
                         </select>
                         <ChevronDown className="absolute right-3.5 bottom-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                        {errors.genderid && (
+                          <p className="text-rose-600 text-xs mt-1 font-semibold">
+                            {errors.genderid}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -1292,7 +1264,7 @@ export default function DoctorsPage() {
                           Alt Phone
                         </label>
                         <div className={`flex border rounded-xl overflow-hidden transition-all bg-white ${
-                          errors.phoneNumberAlt
+                          errors.phonenumberalt
                             ? "border-rose-400 bg-rose-50 focus-within:ring-2 focus-within:ring-rose-200"
                             : "border-slate-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
                         }`}>
@@ -1313,9 +1285,9 @@ export default function DoctorsPage() {
                             className="w-full bg-transparent p-2.5 text-sm font-semibold outline-none text-slate-900"
                           />
                         </div>
-                        {errors.phoneNumberAlt && (
+                        {errors.phonenumberalt && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.phoneNumberAlt}
+                            {errors.phonenumberalt}
                           </p>
                         )}
                       </div>
@@ -1351,7 +1323,9 @@ export default function DoctorsPage() {
                           name="address"
                           value={formData.address || ""}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.address ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
                       </div>
                       <div>
@@ -1362,7 +1336,9 @@ export default function DoctorsPage() {
                           name="addressLine2"
                           value={formData.addressLine2 || ""}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.addressline2 ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
                       </div>
                       <div>
@@ -1373,7 +1349,9 @@ export default function DoctorsPage() {
                           name="city"
                           value={formData.city || ""}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.city ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
                       </div>
                       <div>
@@ -1384,7 +1362,9 @@ export default function DoctorsPage() {
                           name="state"
                           value={formData.state || ""}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.state ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
                       </div>
                       <div>
@@ -1396,8 +1376,15 @@ export default function DoctorsPage() {
                           value={formData.postalCode || ""}
                           onChange={handleInputChange}
                           placeholder="6-digit code"
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.postalcode ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
+                        {errors.postalcode && (
+                          <p className="text-rose-600 text-xs mt-1 font-semibold">
+                            {errors.postalcode}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs font-bold text-slate-500 block mb-1.5">
@@ -1407,7 +1394,9 @@ export default function DoctorsPage() {
                           name="country"
                           value={formData.country || ""}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.country ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
                       </div>
                     </div>
@@ -1431,14 +1420,14 @@ export default function DoctorsPage() {
                           autoComplete="new-password"
                           placeholder="e.g. M12345B"
                           className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 bg-white ${
-                            errors.licenseNumber
+                            errors.licensenumber
                               ? "bg-rose-50 border-rose-300 text-rose-900 focus:border-rose-400"
                               : "border-slate-300 focus:border-emerald-500"
                           }`}
                         />
-                        {errors.licenseNumber && (
+                        {errors.licensenumber && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.licenseNumber}
+                            {errors.licensenumber}
                           </p>
                         )}
                       </div>
@@ -1448,7 +1437,7 @@ export default function DoctorsPage() {
                         name="dateOfBirth"
                         value={formData.dateOfBirth}
                         onChange={handleInputChange}
-                        error={errors.dateOfBirth}
+                        error={errors.dateofbirth}
                       />
 
                       <div className="relative">
@@ -1460,7 +1449,7 @@ export default function DoctorsPage() {
                           value={formData.departmentId}
                           onChange={handleInputChange}
                           className={`w-full border rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900 bg-white ${
-                            errors.departmentId
+                            errors.departmentid
                               ? "bg-rose-50 border-rose-300 text-rose-900 focus:border-rose-400"
                               : "border-slate-300 focus:border-emerald-500"
                           }`}
@@ -1473,9 +1462,9 @@ export default function DoctorsPage() {
                           ))}
                         </select>
                         <ChevronDown className="absolute right-3.5 bottom-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                        {errors.departmentId && (
+                        {errors.departmentid && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.departmentId}
+                            {errors.departmentid}
                           </p>
                         )}
                       </div>
@@ -1488,7 +1477,7 @@ export default function DoctorsPage() {
                           value={formData.specialtyId}
                           onChange={handleInputChange}
                           className={`w-full border rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900 bg-white ${
-                            errors.specialtyId
+                            errors.specialtyid
                               ? "bg-rose-50 border-rose-300 text-rose-900 focus:border-rose-400"
                               : "border-slate-300 focus:border-emerald-500"
                           }`}
@@ -1501,9 +1490,9 @@ export default function DoctorsPage() {
                           ))}
                         </select>
                         <ChevronDown className="absolute right-3.5 bottom-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                        {errors.specialtyId && (
+                        {errors.specialtyid && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.specialtyId}
+                            {errors.specialtyid}
                           </p>
                         )}
                       </div>
@@ -1516,7 +1505,7 @@ export default function DoctorsPage() {
                           value={formData.positionId}
                           onChange={handleInputChange}
                           className={`w-full border rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900 bg-white ${
-                            errors.positionId
+                            errors.positionid
                               ? "bg-rose-50 border-rose-300 text-rose-900 focus:border-rose-400"
                               : "border-slate-300 focus:border-emerald-500"
                           }`}
@@ -1529,9 +1518,9 @@ export default function DoctorsPage() {
                           ))}
                         </select>
                         <ChevronDown className="absolute right-3.5 bottom-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                        {errors.positionId && (
+                        {errors.positionid && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.positionId}
+                            {errors.positionid}
                           </p>
                         )}
                       </div>
@@ -1543,7 +1532,9 @@ export default function DoctorsPage() {
                           name="officeLocationId"
                           value={formData.officeLocationId || ""}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900"
+                          className={`w-full border bg-white rounded-xl p-2.5 text-sm font-bold outline-none cursor-pointer appearance-none text-slate-900 ${
+                            errors.officelocationid ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300"
+                          }`}
                         >
                           <option value="">Select Room</option>
                           {officeLocationOptions.map((l) => (
@@ -1553,6 +1544,11 @@ export default function DoctorsPage() {
                           ))}
                         </select>
                         <ChevronDown className="absolute right-3.5 bottom-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                        {errors.officelocationid && (
+                          <p className="text-rose-600 text-xs mt-1 font-semibold">
+                            {errors.officelocationid}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs font-bold text-slate-500 block mb-1.5">
@@ -1563,8 +1559,15 @@ export default function DoctorsPage() {
                           name="yearsOfExperience"
                           value={formData.yearsOfExperience || 0}
                           onChange={handleInputChange}
-                          className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900"
+                          className={`w-full border bg-white rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 ${
+                            errors.yearsofexperience ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300 focus:border-emerald-500"
+                          }`}
                         />
+                        {errors.yearsofexperience && (
+                          <p className="text-rose-600 text-xs mt-1 font-semibold">
+                            {errors.yearsofexperience}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -1577,14 +1580,14 @@ export default function DoctorsPage() {
                           onChange={handleInputChange}
                           placeholder="e.g. 62354412"
                           className={`w-full border rounded-xl p-2.5 text-sm font-semibold outline-none transition-all text-slate-900 bg-white ${
-                            errors.officePhone
+                            errors.officephone
                               ? "bg-rose-50 border-rose-300 text-rose-900 focus:border-rose-400"
                               : "border-slate-300 focus:border-emerald-500"
                           }`}
                         />
-                        {errors.officePhone && (
+                        {errors.officephone && (
                           <p className="text-rose-600 text-xs mt-1 font-semibold">
-                            {errors.officePhone}
+                            {errors.officephone}
                           </p>
                         )}
                       </div>
@@ -1594,7 +1597,7 @@ export default function DoctorsPage() {
                         name="dateJoin"
                         value={formData.dateJoin}
                         onChange={handleInputChange}
-                        error={errors.dateJoin}
+                        error={errors.datejoin}
                       />
 
                       <VisualDatePicker
@@ -1602,7 +1605,7 @@ export default function DoctorsPage() {
                         name="dateLeft"
                         value={formData.dateLeft}
                         onChange={handleInputChange}
-                        error={errors.dateLeft}
+                        error={errors.dateleft}
                       />
 
                       <div className="relative">
@@ -1637,9 +1640,16 @@ export default function DoctorsPage() {
                         value={formData.qualifications || ""}
                         onChange={handleInputChange}
                         rows={2}
-                        className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none resize-none text-slate-900 focus:border-emerald-500"
+                        className={`w-full border bg-white rounded-xl p-2.5 text-sm font-semibold outline-none resize-none text-slate-900 focus:border-emerald-500 ${
+                          errors.qualifications ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300"
+                        }`}
                         placeholder="Medical qualifications..."
                       />
+                      {errors.qualifications && (
+                        <p className="text-rose-600 text-xs mt-1 font-semibold">
+                          {errors.qualifications}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-bold text-slate-500 mb-1 block">
@@ -1650,18 +1660,38 @@ export default function DoctorsPage() {
                         value={formData.biography || ""}
                         onChange={handleInputChange}
                         rows={2}
-                        className="w-full border border-slate-300 bg-white rounded-xl p-2.5 text-sm font-semibold outline-none resize-none text-slate-900 focus:border-emerald-500"
+                        className={`w-full border bg-white rounded-xl p-2.5 text-sm font-semibold outline-none resize-none text-slate-900 focus:border-emerald-500 ${
+                          errors.biography ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300"
+                        }`}
                         placeholder="Short doctor biography..."
                       />
+                      {errors.biography && (
+                        <p className="text-rose-600 text-xs mt-1 font-semibold">
+                          {errors.biography}
+                        </p>
+                      )}
                     </div>
                     
-                    <LabelTextArea
-                      label="Remark"
-                      name="remark"
-                      value={formData.remark || ""}
-                      onChange={handleInputChange}
-                      placeholder="Enter any internal remarks or notes..."
-                    />
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1 block">
+                        Remark
+                      </label>
+                      <textarea
+                        name="remark"
+                        value={formData.remark || ""}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className={`w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition-all placeholder-slate-300 resize-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${
+                          errors.remark ? "bg-rose-50 border-rose-300 text-rose-900" : "border-slate-300"
+                        }`}
+                        placeholder="Enter any internal remarks or notes..."
+                      />
+                      {errors.remark && (
+                        <p className="text-rose-600 text-xs mt-1 font-semibold">
+                          {errors.remark}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1718,7 +1748,7 @@ export default function DoctorsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl border border-slate-200/80 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-150 bg-white shrink-0">
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-bold text-slate-950">
                 Doctor Profile Card
               </h2>
               <button
@@ -1732,7 +1762,7 @@ export default function DoctorsPage() {
             <div className="p-6 bg-slate-50/50 overflow-y-auto custom-scrollbar flex-1">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 
-                {/* Left Column (1/3 Narrow) - Portrait & Core details */}
+                {/* Left Column (1/3 Narrow) */}
                 <div className="md:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center">
                   <div className="relative mb-6">
                     <img
@@ -1809,7 +1839,6 @@ export default function DoctorsPage() {
                         {viewData.user.status === 1 ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                    {/* Work Status (Moved directly below Account Status) */}
                     <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Work Status :
@@ -1823,13 +1852,13 @@ export default function DoctorsPage() {
                         D.O.B :
                       </span>
                       <span className="text-sm font-bold text-slate-900 text-right">
-                        {formatEngDate(viewData.dateOfBirth)}
+                        {formatEngDate(viewData.user.dateOfBirth)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Column (2/3 Wide) - Structured Data Grid */}
+                {/* Right Column (2/3 Wide) */}
                 <div className="md:col-span-8 space-y-5">
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                     <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-50 border-b border-slate-100">
@@ -1854,18 +1883,17 @@ export default function DoctorsPage() {
                         <InfoCell label="Date Left" value={formatEngDate(viewData.dateLeft)} />
                       </div>
 
-                      {/* Correspondence Address (Proper grid separation of Name-Data values) */}
                       <div className="border-t border-slate-100 pt-5">
                         <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Correspondence Address
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-                          <InfoCell label="Address Line 1" value={viewData.address} />
-                          <InfoCell label="Address Line 2" value={viewData.addressLine2} />
-                          <InfoCell label="City" value={viewData.city} />
-                          <InfoCell label="State" value={viewData.state} />
-                          <InfoCell label="Postal Code" value={viewData.postalCode} />
-                          <InfoCell label="Country" value={viewData.country} />
+                          <InfoCell label="Address Line 1" value={viewData.user.addressLine1} />
+                          <InfoCell label="Address Line 2" value={viewData.user.addressLine2} />
+                          <InfoCell label="City" value={viewData.user.city} />
+                          <InfoCell label="State" value={viewData.user.state} />
+                          <InfoCell label="Postal Code" value={viewData.user.postalCode} />
+                          <InfoCell label="Country" value={viewData.user.country} />
                         </div>
                       </div>
 

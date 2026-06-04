@@ -13,11 +13,13 @@ import {
   User,
   Phone,
   Shield,
+  CheckCircle,
   CheckCircle2,
   ChevronDown,
   MapPin,
   Camera,
   Calendar,
+  AlertCircle,
 } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 
@@ -51,8 +53,28 @@ interface SystemStaff {
 type BadgeVariant = "success" | "danger" | "info" | "warning" | "secondary";
 
 /* ─────────────────────────────────────────────────────────
-   PURE UI COMPONENTS  (defined outside the page component
-   so they are stable references and accept typed props)
+   EXTRACTORS & HELPERS
+───────────────────────────────────────────────────────── */
+const getBackendMessage = (result: any): string | null => {
+  if (!result) return null;
+  const msg = result.message ?? result.Message;
+  if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  return null;
+};
+
+const getFieldErrors = (result: any): Record<string, string> => {
+  const map: Record<string, string> = {};
+  const errors = result?.errors ?? result?.Errors;
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return map;
+  for (const [key, val] of Object.entries(errors)) {
+    map[key.toLowerCase().replace(/\s/g, '')] =
+      Array.isArray(val) ? String((val as any[])[0]) : String(val);
+  }
+  return map;
+};
+
+/* ─────────────────────────────────────────────────────────
+   PURE UI COMPONENTS
 ───────────────────────────────────────────────────────── */
 
 /** Coloured pill badge */
@@ -76,7 +98,11 @@ const Badge: React.FC<{ children: React.ReactNode; variant: BadgeVariant }> = ({
   );
 };
 
-/** 居中显示的提示框 (保留原版设计，存在2秒自动消失) */
+/** 
+ * Toast 提示框
+ * 经过高度对齐优化：使用 top-6 将其定位于顶端，与 Staff Management 标题栏处于同一高度线上。
+ * 视觉风格与 Sidebar 保持完全一致的白色背板 + 模糊磨砂效果。
+ */
 const Toast: React.FC<{
   show: boolean;
   message: string;
@@ -85,35 +111,31 @@ const Toast: React.FC<{
 }> = ({ show, message, type, onClose }) => {
   if (!show) return null;
   return (
-    // 使用 inset-0, flex, items-center, justify-center 让其在屏幕正中间
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none px-4">
-      <div
-        className={`pointer-events-auto w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-2xl shadow-xl border animate-in zoom-in-95 fade-in duration-200 ${
-          type === "success"
-            ? "bg-white border-emerald-200 text-emerald-800"
-            : "bg-white border-rose-200 text-rose-800"
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          {type === "success" ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          ) : (
-            <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-          )}
-          <span className="font-semibold text-sm">{message}</span>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/95 backdrop-blur-xl px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-auto font-sans border-l-4 ${
+      type === "success" ? "border-emerald-500" : "border-red-500"
+    }`}>
+      {type === "success" ? (
+        <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={17} />
+      ) : (
+        <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
+      )}
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-xs font-bold ${type === "success" ? "text-emerald-700" : "text-red-700"}`}>
+          {type === "success" ? "Operation Successful" : "Notification"}
+        </p>
+        <p className="text-xs text-slate-600 mt-0.5 break-words">{message}</p>
       </div>
+      <button
+        onClick={onClose}
+        className="text-slate-400 hover:text-slate-600 shrink-0 self-center"
+      >
+        <X size={15} />
+      </button>
     </div>
   );
 };
 
-/** 单个信息格 (适配新版卡片UI) */
+/** 单个信息格 */
 const InfoCell: React.FC<{
   label: string;
   value?: React.ReactNode;
@@ -125,13 +147,13 @@ const InfoCell: React.FC<{
     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
       {label}
     </p>
-    <p className="text-sm font-semibold text-slate-800 break-words leading-relaxed">
+    <div className="text-sm font-semibold text-slate-800 break-words leading-relaxed">
       {value || (
         <span className="text-slate-300 font-medium italic">
           未提供 / Not provided
         </span>
       )}
-    </p>
+    </div>
   </div>
 );
 
@@ -236,14 +258,15 @@ const LabelInput: React.FC<{
   </div>
 );
 
-/** Generic select with label */
+/** Generic select with label and dynamic error status styling */
 const LabelSelect: React.FC<{
   label: string;
   name: string;
   value: string | number;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  error?: string;
   children: React.ReactNode;
-}> = ({ label, name, value, onChange, children }) => (
+}> = ({ label, name, value, onChange, error, children }) => (
   <div>
     <label className="block text-xs font-semibold text-slate-600 mb-1">
       {label}
@@ -253,16 +276,21 @@ const LabelSelect: React.FC<{
         name={name}
         value={value}
         onChange={onChange}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm font-medium text-slate-800 outline-none appearance-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 cursor-pointer"
+        className={`w-full rounded-lg border px-3 py-2 pr-8 text-sm font-medium outline-none appearance-none cursor-pointer transition-all ${
+          error
+            ? "border-rose-400 bg-rose-50 text-rose-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+            : "border-slate-200 bg-white text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+        }`}
       >
         {children}
       </select>
       <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
     </div>
+    {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
   </div>
 );
 
-/** Phone number input with country-code selector */
+/** Phone number input with country-code selector and error styles */
 const PhoneField: React.FC<{
   label: string;
   required?: boolean;
@@ -294,11 +322,11 @@ const PhoneField: React.FC<{
           : "border-slate-200 bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
       }`}
     >
-      <div className="relative flex items-center shrink-0 bg-slate-50 border-r border-slate-200">
+      <div className={`relative flex items-center shrink-0 border-r transition-colors ${error ? "bg-rose-50/50 border-rose-200" : "bg-slate-50 border-slate-200"}`}>
         <select
           value={code}
           onChange={(e) => onCodeChange(e.target.value)}
-          className="appearance-none bg-transparent pl-2.5 pr-6 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+          className={`appearance-none bg-transparent pl-2.5 pr-6 py-2 text-xs font-bold outline-none cursor-pointer ${error ? "text-rose-900" : "text-slate-700"}`}
         >
           <option value="+65">🇸🇬 +65</option>
           <option value="+60">🇲🇾 +60</option>
@@ -312,7 +340,7 @@ const PhoneField: React.FC<{
         onChange={onBodyChange}
         maxLength={maxLen}
         placeholder={code === "+65" ? "e.g. 81234567" : "e.g. 0123456789"}
-        className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder-slate-300 min-w-0"
+        className={`flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder-slate-300 min-w-0 ${error ? "text-rose-900 placeholder-rose-300" : "text-slate-800"}`}
       />
     </div>
     {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
@@ -367,7 +395,6 @@ export default function StaffsPage() {
   /* ── Utilities ── */
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ show: true, type, message });
-    // 修改为 2000 毫秒 (2秒) 后自动消失
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 2000);
   };
 
@@ -539,7 +566,6 @@ export default function StaffsPage() {
     if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
   };
 
-  // Typed wrappers so they match React.ChangeEvent<HTMLInputElement> exactly
   const handleTextInput = (e: React.ChangeEvent<HTMLInputElement>) =>
     handleInput(e);
   const handleSelectInput = (e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -549,14 +575,14 @@ export default function StaffsPage() {
     setPhoneBody(
       e.target.value.replace(/\D/g, "").slice(0, phoneMaxLen(phoneCode)),
     );
-    if (errors.phoneNumber) setErrors((p) => ({ ...p, phoneNumber: "" }));
+    if (errors.phonenumber) setErrors((p) => ({ ...p, phonenumber: "" }));
   };
 
   const handleAltPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAltPhoneBody(
       e.target.value.replace(/\D/g, "").slice(0, phoneMaxLen(altPhoneCode)),
     );
-    if (errors.phoneNumberAlt) setErrors((p) => ({ ...p, phoneNumberAlt: "" }));
+    if (errors.phonenumberalt) setErrors((p) => ({ ...p, phonenumberalt: "" }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -590,50 +616,15 @@ export default function StaffsPage() {
     }
   };
 
-  /* ── Validation + save ── */
+  /* ── Validation & Save (Sourced from Backend) ── */
   const handleSave = async () => {
-    const newErrors: Record<string, string> = {};
-    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!formData.fullName?.trim())
-      newErrors.fullName = "Full name is required.";
-    if (!formData.email?.trim()) newErrors.email = "Email address is required.";
-    else if (!emailRx.test(formData.email))
-      newErrors.email = "Please enter a valid email address.";
-    if (modalMode === "create" && !formData.password)
-      newErrors.password = "Password is required.";
-
-    if (!phoneBody.trim()) {
-      newErrors.phoneNumber = "Phone number is required.";
-    } else if (phoneCode === "+65" && phoneBody.length !== 8) {
-      newErrors.phoneNumber = "Singapore number must be exactly 8 digits.";
-    } else if (
-      phoneCode === "+60" &&
-      (phoneBody.length < 9 || phoneBody.length > 10)
-    ) {
-      newErrors.phoneNumber = "Malaysia number must be 9–10 digits.";
-    }
-
-    if (altPhoneBody.trim()) {
-      if (altPhoneCode === "+65" && altPhoneBody.length !== 8) {
-        newErrors.phoneNumberAlt = "Singapore number must be exactly 8 digits.";
-      } else if (
-        altPhoneCode === "+60" &&
-        (altPhoneBody.length < 9 || altPhoneBody.length > 10)
-      ) {
-        newErrors.phoneNumberAlt = "Malaysia number must be 9–10 digits.";
-      }
-    }
-
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
-      return;
-    }
+    setErrors({});
+    setToast((t) => ({ ...t, show: false }));
 
     try {
       const payload: any = {
         ...formData,
-        genderId: Number(formData.genderId),
+        genderId: formData.genderId ? Number(formData.genderId) : null,
         role: Number(formData.role),
         status: Number(formData.status),
         phoneNumber: phoneBody ? `${phoneCode}${phoneBody}` : null,
@@ -646,13 +637,17 @@ export default function StaffsPage() {
           ? `${API_BASE_URL}/staff`
           : `${API_BASE_URL}/staff/${formData.id}`;
       const method = modalMode === "create" ? "POST" : "PUT";
+      
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
+      const result = await res.json();
+      const isSuccess = result?.success === true || result?.Success === true;
+
+      if (res.ok && isSuccess) {
         setIsModalOpen(false);
         showToast(
           "success",
@@ -662,10 +657,14 @@ export default function StaffsPage() {
         );
         fetchData();
       } else {
-        const err = await res.json();
+        // Map backend validation errors dynamically to input states
+        const fields = getFieldErrors(result);
+        if (Object.keys(fields).length > 0) {
+          setErrors(fields);
+        }
         showToast(
           "error",
-          err.message || "Operation failed. Please try again.",
+          getBackendMessage(result) || "Operation failed. Please correct the fields below."
         );
       }
     } catch {
@@ -680,12 +679,18 @@ export default function StaffsPage() {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      if (res.ok) {
-        showToast("success", "Staff member deleted successfully.");
+      const result = await res.json();
+      const isSuccess = result?.success === true || result?.Success === true;
+
+      if (res.ok && isSuccess) {
+        // Successful deletions show a RED toast as requested
+        showToast("error", getBackendMessage(result) || "Staff member deleted successfully.");
         fetchData();
-      } else showToast("error", "Failed to delete. Please try again.");
+      } else {
+        showToast("error", getBackendMessage(result) || "Failed to delete. Please try again.");
+      }
     } catch {
-      showToast("error", "Network error.");
+      showToast("error", "Network error occurred.");
     } finally {
       setIsDeleteAlertOpen(false);
       setUserToDelete(null);
@@ -697,7 +702,7 @@ export default function StaffsPage() {
   ───────────────────────────────────────────────────────── */
   return (
     <div className="min-h-screen font-sans antialiased text-slate-900">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6 relative">
         <Toast
           show={toast.show}
           message={toast.message}
@@ -942,7 +947,6 @@ export default function StaffsPage() {
 
               {/* Body */}
               <div className="flex-1 overflow-y-auto p-5">
-                {/* Autofill traps */}
                 <input
                   type="text"
                   name="_dummy_user"
@@ -1006,7 +1010,7 @@ export default function StaffsPage() {
                           required
                           value={formData.fullName}
                           onChange={handleTextInput}
-                          error={errors.fullName}
+                          error={errors.fullname}
                           placeholder="e.g. John Smith"
                         />
                         <LabelInput
@@ -1082,7 +1086,7 @@ export default function StaffsPage() {
                           setPhoneBody("");
                         }}
                         onBodyChange={handlePhoneChange}
-                        error={errors.phoneNumber}
+                        error={errors.phonenumber}
                         maxLen={phoneMaxLen(phoneCode)}
                       />
                       <PhoneField
@@ -1094,7 +1098,7 @@ export default function StaffsPage() {
                           setAltPhoneBody("");
                         }}
                         onBodyChange={handleAltPhoneChange}
-                        error={errors.phoneNumberAlt}
+                        error={errors.phonenumberalt}
                         maxLen={phoneMaxLen(altPhoneCode)}
                       />
                     </FormSection>
@@ -1113,6 +1117,7 @@ export default function StaffsPage() {
                           name="genderId"
                           value={formData.genderId}
                           onChange={handleSelectInput}
+                          error={errors.genderid}
                         >
                           {genderOptions.map((g) => (
                             <option key={g.value} value={g.value}>
@@ -1125,6 +1130,7 @@ export default function StaffsPage() {
                           name="role"
                           value={formData.role}
                           onChange={handleSelectInput}
+                          error={errors.role}
                         >
                           <option value={0}>Super Admin</option>
                           <option value={1}>Admin</option>
@@ -1134,6 +1140,7 @@ export default function StaffsPage() {
                           name="status"
                           value={formData.status}
                           onChange={handleSelectInput}
+                          error={errors.status}
                         >
                           <option value="1">Active</option>
                           <option value="0">Inactive</option>
@@ -1147,13 +1154,16 @@ export default function StaffsPage() {
                       title="Address & Birth Info"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {/* Date of Birth — 完美强制英文版 + 格式化为 DD-M-YYYY */}
+                        {/* Date of Birth */}
                         <div className="flex flex-col">
                           <label className="block text-xs font-semibold text-slate-600 mb-1">
                             Date of Birth
                           </label>
-                          <div className="relative flex items-center rounded-lg border border-slate-200 bg-white transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
-                            {/* 1. 铺满整格但完全透明的原生输入框 (负责触发日历选择，底层保持标准 DD-MM-YYYY) */}
+                          <div className={`relative flex items-center rounded-lg border transition-all ${
+                            errors.dateofbirth
+                              ? "border-rose-400 bg-rose-50 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-200"
+                              : "border-slate-200 bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
+                          }`}>
                             <input
                               type="date"
                               name="dateOfBirth"
@@ -1168,12 +1178,11 @@ export default function StaffsPage() {
                               }}
                             />
 
-                            {/* 2. 自定义视觉呈现层 (自动格式化为 30-5-2026) */}
                             <div className="w-full flex items-center justify-between px-3 py-2 text-sm pointer-events-none">
                               <span
                                 className={
                                   formData.dateOfBirth
-                                    ? "text-slate-800 font-semibold"
+                                    ? `${errors.dateofbirth ? "text-rose-900" : "text-slate-800"} font-semibold`
                                     : "text-slate-300 font-medium"
                                 }
                               >
@@ -1188,13 +1197,16 @@ export default function StaffsPage() {
                                       const month = parseInt(parts[1], 10);
                                       const year = parts[0];
 
-                                      return `${day}-${month}-${year}`; // 格式化输出为例如 "30-5-2026"
+                                      return `${day}-${month}-${year}`;
                                     })()
                                   : "DD-MM-YYYY"}
                               </span>
-                              <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                              <Calendar className={`w-4 h-4 shrink-0 ${errors.dateofbirth ? "text-rose-400" : "text-slate-400"}`} />
                             </div>
                           </div>
+                          {errors.dateofbirth && (
+                            <p className="mt-1 text-xs text-rose-600 font-medium">{errors.dateofbirth}</p>
+                          )}
                         </div>
 
                         <LabelInput
@@ -1202,6 +1214,7 @@ export default function StaffsPage() {
                           name="addressLine1"
                           value={formData.addressLine1}
                           onChange={handleTextInput}
+                          error={errors.addressline1}
                           placeholder="Street address"
                         />
                         <LabelInput
@@ -1209,6 +1222,7 @@ export default function StaffsPage() {
                           name="addressLine2"
                           value={formData.addressLine2}
                           onChange={handleTextInput}
+                          error={errors.addressline2}
                           placeholder="Unit, floor, etc."
                         />
                         <LabelInput
@@ -1216,6 +1230,7 @@ export default function StaffsPage() {
                           name="city"
                           value={formData.city}
                           onChange={handleTextInput}
+                          error={errors.city}
                           placeholder="e.g. Johor Bahru"
                         />
                         <LabelInput
@@ -1223,6 +1238,7 @@ export default function StaffsPage() {
                           name="state"
                           value={formData.state}
                           onChange={handleTextInput}
+                          error={errors.state}
                           placeholder="e.g. Johor"
                         />
                         <LabelInput
@@ -1232,12 +1248,14 @@ export default function StaffsPage() {
                           onChange={handleTextInput}
                           placeholder="6-digit code"
                           maxLength={6}
+                          error={errors.postalcode}
                         />
                         <LabelInput
                           label="Country"
                           name="country"
                           value={formData.country}
                           onChange={handleTextInput}
+                          error={errors.country}
                           placeholder="e.g. Malaysia"
                         />
                       </div>
@@ -1266,7 +1284,7 @@ export default function StaffsPage() {
         )}
 
         {/* ══════════════════════════════════════════════════════
-            VIEW MODAL (优化排版版)
+            VIEW MODAL
         ══════════════════════════════════════════════════════ */}
         {isViewModalOpen && viewData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
@@ -1300,7 +1318,7 @@ export default function StaffsPage() {
               {/* Body */}
               <div className="flex-1 overflow-y-auto">
                 <div className="flex flex-col md:flex-row gap-6 p-5 sm:p-6">
-                  {/* Left: Avatar & Detailed Info Stack */}
+                  {/* Left Column */}
                   <div className="md:w-80 shrink-0 h-max bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col items-center">
                     <div className="relative mb-6">
                       <img
@@ -1349,15 +1367,14 @@ export default function StaffsPage() {
                         <span className="text-sm font-bold text-slate-900 text-right">
                           {(() => {
                             if (!viewData.dateOfBirth) return "—";
-                            const parts = viewData.dateOfBirth.split("-"); // 分割 [年, 月, 日]
+                            const parts = viewData.dateOfBirth.split("-");
                             if (parts.length !== 3) return viewData.dateOfBirth;
 
-                            // parseInt 会自动去除月份和日期前多余的 "0" (例如 "05" 变成 "5")
                             const day = parseInt(parts[2], 10);
                             const month = parseInt(parts[1], 10);
                             const year = parts[0];
 
-                            return `${day}-${month}-${year}`; // 组合成 30-5-2026
+                            return `${day}-${month}-${year}`;
                           })()}
                         </span>
                       </div>
@@ -1382,9 +1399,8 @@ export default function StaffsPage() {
                     </div>
                   </div>
 
-                  {/* Right: Sectioned Cards Info */}
+                  {/* Right Column */}
                   <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    {/* Additional Info Section (Since core info is on the left) */}
                     <ViewSection
                       icon={<User className="w-4 h-4" />}
                       title="Additional Information"
@@ -1403,7 +1419,6 @@ export default function StaffsPage() {
                       />
                     </ViewSection>
 
-                    {/* Address Section */}
                     <ViewSection
                       icon={<MapPin className="w-4 h-4" />}
                       title="Correspondence Address"

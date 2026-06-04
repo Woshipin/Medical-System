@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic; 
 using System.Linq; 
 using System.Threading.Tasks; 
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization; 
 using Microsoft.AspNetCore.Identity; 
 using Microsoft.AspNetCore.Mvc; 
@@ -117,17 +118,31 @@ namespace MedicalSystem.Controllers
         [HttpPost] 
         public async Task<IActionResult> Create([FromBody] PatientDto model) 
         {
+            // C# DTO Validation Gate
             if (!ModelState.IsValid) 
             {
-                await LogBothAsync("Create", "Failed", "Invalid data provided in payload.");
-                return BadRequest(ApiResponse<string>.FailureResponse("Invalid data provided.")); 
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value!.Errors.First().ErrorMessage
+                    );
+
+                await LogBothAsync("Create", "Failed", "Model validation failed.");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
+            }
+
+            if (string.IsNullOrEmpty(model.Password))
+            {
+                await LogBothAsync("Create", "Failed", "Password is required for new patients.");
+                return BadRequest(new { success = false, message = "Password is required.", errors = new Dictionary<string, string> { { "password", "Password is required for creating a new patient account." } } });
             }
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email); 
             if (existingUser != null) 
             {
                 await LogBothAsync("Create", "Failed", $"Email already exists: {model.Email}");
-                return BadRequest(ApiResponse<string>.FailureResponse("Email already exists.")); 
+                return BadRequest(new { success = false, message = "The email address is already taken.", errors = new Dictionary<string, string> { { "email", "This email address is already registered." } } }); 
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -157,12 +172,20 @@ namespace MedicalSystem.Controllers
                     UpdatedAt = DateTime.UtcNow 
                 };
 
-                var result = await _userManager.CreateAsync(newPatient, model.Password ?? string.Empty); 
+                var result = await _userManager.CreateAsync(newPatient, model.Password); 
 
                 if (!result.Succeeded)
                 {
+                    // Map ASP.NET Identity validation errors to specific password field
+                    var identityErrors = result.Errors
+                        .GroupBy(e => e.Code.Contains("Password") ? "password" : "general")
+                        .ToDictionary(
+                            g => g.Key,
+                            g => string.Join(" ", g.Select(e => e.Description))
+                        );
+
                     await LogBothAsync("Create", "Failed", $"Failed to create patient account for {model.Email}");
-                    return BadRequest(ApiResponse<string>.FailureResponse(string.Join(", ", result.Errors.Select(e => e.Description)))); 
+                    return BadRequest(new { success = false, message = "Account creation failed due to password policy constraints.", errors = identityErrors }); 
                 }
 
                 var profile = new PatientProfile
@@ -211,19 +234,32 @@ namespace MedicalSystem.Controllers
                 };
 
                 await LogBothAsync("Create", "Success", $"Created new Patient account and profile with complete information:\n{string.Join("\n", details)}");
-                return Ok(ApiResponse<User>.SuccessResponse(newPatient, "Patient created successfully.")); 
+                return Ok(new { success = true, message = "Patient created successfully.", data = newPatient }); 
             }
             catch(Exception ex)
             {
                 await transaction.RollbackAsync();
                 await LogBothAsync("Create", "Error", $"Failed to create patient: {ex.Message}");
-                return BadRequest(ApiResponse<string>.FailureResponse("Failed to create patient: " + ex.Message));
+                return BadRequest(new { success = false, message = "System exception error during creation." });
             }
         }
 
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] PatientDto model) 
         {
+            if (!ModelState.IsValid) 
+            {
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value!.Errors.First().ErrorMessage
+                    );
+
+                await LogBothAsync("Update", "Failed", $"Model validation failed for patient ID: {id}");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
+            }
+
             var user = await _context.Users.Include(u => u.PatientProfile).FirstOrDefaultAsync(u => u.Id == id && u.Role == UserRole.Patient);
             
             if (user == null) 
@@ -236,7 +272,7 @@ namespace MedicalSystem.Controllers
                 var existingUser = await _userManager.FindByEmailAsync(model.Email); 
                 if (existingUser != null && existingUser.Id != user.Id) {
                     await LogBothAsync("Update", "Failed", $"Email address already taken: {model.Email}");
-                    return BadRequest(ApiResponse<string>.FailureResponse("This email address is already taken by another user."));
+                    return BadRequest(new { success = false, message = "Email already in use.", errors = new Dictionary<string, string> { { "email", "This email address is already taken by another user." } } });
                 }
                 user.Email = model.Email; 
                 user.UserName = model.Email;
@@ -339,8 +375,15 @@ namespace MedicalSystem.Controllers
                 var pwdResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
                 if (!pwdResult.Succeeded) 
                 {
+                    var passwordErrors = pwdResult.Errors
+                        .GroupBy(e => e.Code.Contains("Password") ? "password" : "general")
+                        .ToDictionary(
+                            g => g.Key,
+                            g => string.Join(" ", g.Select(e => e.Description))
+                        );
+
                     await LogBothAsync("Update", "Failed", $"Failed to update password for patient ID: {id}");
-                    return BadRequest(ApiResponse<string>.FailureResponse("Failed to update password."));
+                    return BadRequest(new { success = false, message = "Password update failed due to complexity requirements.", errors = passwordErrors });
                 }
                 changes.Add("• Password -> [Modified]");
             }
@@ -369,7 +412,7 @@ namespace MedicalSystem.Controllers
 
             await LogBothAsync("Update", "Success", logDetails); 
 
-            return Ok(ApiResponse<string>.SuccessResponse(null, "Patient updated successfully.")); 
+            return Ok(new { success = true, message = "Patient profile updated successfully." }); 
         }
 
         [HttpDelete("{id}")] 
@@ -396,7 +439,7 @@ namespace MedicalSystem.Controllers
                 {
                     await transaction.RollbackAsync();
                     await LogBothAsync("Delete", "Failed", $"Failed to delete patient ID: {id}");
-                    return BadRequest(ApiResponse<string>.FailureResponse(string.Join(", ", result.Errors.Select(e => e.Description))));
+                    return BadRequest(new { success = false, message = "Delete patient operation failed." });
                 }
 
                 await transaction.CommitAsync();
@@ -432,42 +475,79 @@ namespace MedicalSystem.Controllers
                 }
 
                 await LogBothAsync("Delete", "Success", $"Deleted Patient account and associated records:\n{string.Join("\n", deletedDetails)}");
-                return Ok(ApiResponse<string>.SuccessResponse(null, "Patient deleted successfully.")); 
+                return Ok(new { success = true, message = "Patient deleted successfully." }); 
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 await LogBothAsync("Delete", "Error", $"Delete failed for patient ID: {id} - {ex.Message}");
-                return BadRequest(ApiResponse<string>.FailureResponse("Delete failed: " + ex.Message));
+                return BadRequest(new { success = false, message = "System runtime exception occurred on delete." });
             }
         }
     }
 
     public class PatientDto 
     {
+        [Required(ErrorMessage = "Full name is required.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
         public string FullName { get; set; } = null!; 
+
+        [Required(ErrorMessage = "Email address is required.")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        [StringLength(200, ErrorMessage = "Email address must not exceed 200 characters.")]
         public string Email { get; set; } = null!; 
+
+        [RegularExpression(@"^(?:|(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,})$", ErrorMessage = "Password must contain at least one number and one special character (e.g. !@#$) and be at least 8 characters long.")]
         public string? Password { get; set; } 
+
         public string? ProfileImageUrl { get; set; }
+
+        [RegularExpression(@"^(|\d{4}-\d{2}-\d{2})$", ErrorMessage = "Date of birth must be in YYYY-MM-DD format.")]
         public string? DateOfBirth { get; set; } 
+
+        [Required(ErrorMessage = "Phone number is required.")]
+        [RegularExpression(@"^(\+65\d{8}|\+60\d{9,10})$", ErrorMessage = "Phone number must be a valid Singapore (+65, 8 digits) or Malaysia (+60, 9–10 digits) number.")]
         public string? PhoneNumber { get; set; } 
+
+        [RegularExpression(@"^(|(\+65\d{8})|(\+60\d{9,10}))$", ErrorMessage = "Alternate phone number must be a valid Singapore (+65, 8 digits) or Malaysia (+60, 9–10 digits) number.")]
         public string? PhoneNumberAlt { get; set; } 
+
+        [Required(ErrorMessage = "Gender selection is required.")]
         public int? GenderId { get; set; } 
+
         public string? AddressLine1 { get; set; }
         public string? AddressLine2 { get; set; }
         public string? City { get; set; }
         public string? State { get; set; }
+
+        [RegularExpression(@"^(|\d{5,6})$", ErrorMessage = "Postal code must be 5 or 6 digits.")]
         public string? PostalCode { get; set; }
         public string? Country { get; set; }
+
+        [Required(ErrorMessage = "Status is required.")]
         public int Status { get; set; } = 1; 
 
+        [Required(ErrorMessage = "IC/ID number is required.")]
+        [StringLength(30, MinimumLength = 5, ErrorMessage = "IC/ID number must be between 5 and 30 characters.")]
         public string? IcNumber { get; set; }
+
+        [Required(ErrorMessage = "Blood type is required.")]
         public string? BloodType { get; set; }
+
         public string? Allergies { get; set; }
         public string? ChronicDiseases { get; set; }
         public string? MedicalNotes { get; set; }
+
+        [Required(ErrorMessage = "Emergency contact name is required.")]
+        [StringLength(100, ErrorMessage = "Emergency contact name must not exceed 100 characters.")]
         public string? EmergencyContactName { get; set; }
+
+        [Required(ErrorMessage = "Emergency contact phone is required.")]
+        [RegularExpression(@"^(\+65\d{8}|\+60\d{9,10})$", ErrorMessage = "Emergency contact phone must be a valid Singapore (+65, 8 digits) or Malaysia (+60, 9–10 digits) number.")]
         public string? EmergencyContactPhone { get; set; }
+
+        [Required(ErrorMessage = "Emergency contact relationship is required.")]
+        [StringLength(50, ErrorMessage = "Relationship details must not exceed 50 characters.")]
         public string? EmergencyContactRelation { get; set; }
     }
 }

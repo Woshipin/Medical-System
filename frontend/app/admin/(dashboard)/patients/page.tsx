@@ -13,12 +13,14 @@ import {
   User,
   Phone,
   Shield,
+  CheckCircle,
   CheckCircle2,
   ChevronDown,
   MapPin,
   Camera,
   Calendar,
   Activity,
+  AlertCircle,
 } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 
@@ -64,6 +66,27 @@ interface SystemPatient {
 type BadgeVariant = "success" | "danger" | "info" | "warning" | "secondary";
 
 /* ─────────────────────────────────────────────────────────
+   EXTRACTORS & HELPERS
+───────────────────────────────────────────────────────── */
+const getBackendMessage = (result: any): string | null => {
+  if (!result) return null;
+  const msg = result.message ?? result.Message;
+  if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  return null;
+};
+
+const getFieldErrors = (result: any): Record<string, string> => {
+  const map: Record<string, string> = {};
+  const errors = result?.errors ?? result?.Errors;
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return map;
+  for (const [key, val] of Object.entries(errors)) {
+    map[key.toLowerCase().replace(/\s/g, '')] =
+      Array.isArray(val) ? String((val as any[])[0]) : String(val);
+  }
+  return map;
+};
+
+/* ─────────────────────────────────────────────────────────
    PURE UI COMPONENTS
 ───────────────────────────────────────────────────────── */
 
@@ -88,7 +111,10 @@ const Badge: React.FC<{ children: React.ReactNode; variant: BadgeVariant }> = ({
   );
 };
 
-/** 居中显示的提示框 (保留原版设计，存在2秒自动消失) */
+/** 
+ * Toast 提示框
+ * 定位及视觉效果与 Sidebar 保持高度一致（使用 top-6 水平居中对齐至标题栏高度线）
+ */
 const Toast: React.FC<{
   show: boolean;
   message: string;
@@ -97,29 +123,26 @@ const Toast: React.FC<{
 }> = ({ show, message, type, onClose }) => {
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none px-4">
-      <div
-        className={`pointer-events-auto w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-2xl shadow-xl border animate-in zoom-in-95 fade-in duration-200 ${
-          type === "success"
-            ? "bg-white border-emerald-200 text-emerald-800"
-            : "bg-white border-rose-200 text-rose-800"
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          {type === "success" ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          ) : (
-            <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-          )}
-          <span className="font-semibold text-sm">{message}</span>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-sm bg-white/95 backdrop-blur-xl px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-auto font-sans border-l-4 ${
+      type === "success" ? "border-emerald-500" : "border-red-500"
+    }`}>
+      {type === "success" ? (
+        <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={17} />
+      ) : (
+        <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
+      )}
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-xs font-bold ${type === "success" ? "text-emerald-700" : "text-red-700"}`}>
+          {type === "success" ? "Operation Successful" : "Notification"}
+        </p>
+        <p className="text-xs text-slate-600 mt-0.5 break-words">{message}</p>
       </div>
+      <button
+        onClick={onClose}
+        className="text-slate-400 hover:text-slate-600 shrink-0 self-center"
+      >
+        <X size={15} />
+      </button>
     </div>
   );
 };
@@ -136,13 +159,13 @@ const InfoCell: React.FC<{
     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
       {label}
     </p>
-    <p className="text-sm font-semibold text-slate-800 break-words leading-relaxed">
+    <div className="text-sm font-semibold text-slate-800 break-words leading-relaxed">
       {value || (
         <span className="text-slate-300 font-medium italic">
           未提供 / Not provided
         </span>
       )}
-    </p>
+    </div>
   </div>
 );
 
@@ -247,14 +270,15 @@ const LabelInput: React.FC<{
   </div>
 );
 
-/** Generic select with label */
+/** Generic select with label and dynamic validation styling */
 const LabelSelect: React.FC<{
   label: string;
   name: string;
   value: string | number;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  error?: string;
   children: React.ReactNode;
-}> = ({ label, name, value, onChange, children }) => (
+}> = ({ label, name, value, onChange, error, children }) => (
   <div>
     <label className="block text-xs font-semibold text-slate-600 mb-1">
       {label}
@@ -264,12 +288,17 @@ const LabelSelect: React.FC<{
         name={name}
         value={value}
         onChange={onChange}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm font-medium text-slate-800 outline-none appearance-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 cursor-pointer"
+        className={`w-full rounded-lg border px-3 py-2 pr-8 text-sm font-medium outline-none appearance-none cursor-pointer transition-all ${
+          error
+            ? "border-rose-400 bg-rose-50 text-rose-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+            : "border-slate-200 bg-white text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+        }`}
       >
         {children}
       </select>
       <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
     </div>
+    {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
   </div>
 );
 
@@ -297,7 +326,7 @@ const LabelTextArea: React.FC<{
   </div>
 );
 
-/** Phone number input with country-code selector */
+/** Phone number input with country-code selector and error styles */
 const PhoneField: React.FC<{
   label: string;
   required?: boolean;
@@ -329,16 +358,16 @@ const PhoneField: React.FC<{
           : "border-slate-200 bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
       }`}
     >
-      <div className="relative flex items-center shrink-0 bg-slate-50 border-r border-slate-200">
+      <div className={`relative flex items-center shrink-0 border-r transition-colors ${error ? "bg-rose-50/50 border-rose-200" : "bg-slate-50 border-slate-200"}`}>
         <select
           value={code}
           onChange={(e) => onCodeChange(e.target.value)}
-          className="appearance-none bg-transparent pl-2.5 pr-6 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+          className={`appearance-none bg-transparent pl-2.5 pr-6 py-2 text-xs font-bold outline-none cursor-pointer ${error ? "text-rose-900" : "text-slate-700"}`}
         >
           <option value="+65">🇸🇬 +65</option>
           <option value="+60">🇲🇾 +60</option>
         </select>
-        <ChevronDown className="absolute right-1 w-3 h-3 text-slate-400 pointer-events-none" />
+        <ChevronDown className="absolute right-1 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
       </div>
       <input
         type="text"
@@ -347,7 +376,7 @@ const PhoneField: React.FC<{
         onChange={onBodyChange}
         maxLength={maxLen}
         placeholder={code === "+65" ? "e.g. 81234567" : "e.g. 0123456789"}
-        className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder-slate-300 min-w-0"
+        className={`flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder-slate-300 min-w-0 ${error ? "text-rose-900 placeholder-rose-300" : "text-slate-800"}`}
       />
     </div>
     {error && <p className="mt-1 text-xs text-rose-600 font-medium">{error}</p>}
@@ -377,13 +406,13 @@ export default function PatientsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
 
-  // Phone code configurations
+  // Phone configurations
   const [phoneCode, setPhoneCode] = useState("+65");
   const [phoneBody, setPhoneBody] = useState("");
   const [altPhoneCode, setAltPhoneCode] = useState("+65");
   const [altPhoneBody, setAltPhoneBody] = useState("");
 
-  // Emergency Contact phone code configurations
+  // Emergency contact configurations
   const [emergencyPhoneCode, setEmergencyPhoneCode] = useState("+65");
   const [emergencyPhoneBody, setEmergencyPhoneBody] = useState("");
 
@@ -535,6 +564,7 @@ export default function PatientsPage() {
     setModalMode("edit");
     setErrors({});
     setShowPassword(false);
+    resetPhones();
     setFormData({
       id: p.id,
       fullName: p.fullName || "",
@@ -616,14 +646,14 @@ export default function PatientsPage() {
     setPhoneBody(
       e.target.value.replace(/\D/g, "").slice(0, phoneMaxLen(phoneCode)),
     );
-    if (errors.phoneNumber) setErrors((p) => ({ ...p, phoneNumber: "" }));
+    if (errors.phonenumber) setErrors((p) => ({ ...p, phonenumber: "" }));
   };
 
   const handleAltPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAltPhoneBody(
       e.target.value.replace(/\D/g, "").slice(0, phoneMaxLen(altPhoneCode)),
     );
-    if (errors.phoneNumberAlt) setErrors((p) => ({ ...p, phoneNumberAlt: "" }));
+    if (errors.phonenumberalt) setErrors((p) => ({ ...p, phonenumberalt: "" }));
   };
 
   const handleEmergencyPhoneChange = (
@@ -634,8 +664,8 @@ export default function PatientsPage() {
         .replace(/\D/g, "")
         .slice(0, phoneMaxLen(emergencyPhoneCode)),
     );
-    if (errors.emergencyContactPhone)
-      setErrors((p) => ({ ...p, emergencyContactPhone: "" }));
+    if (errors.emergencycontactphone)
+      setErrors((p) => ({ ...p, emergencycontactphone: "" }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -658,76 +688,26 @@ export default function PatientsPage() {
     reader.readAsDataURL(file);
   };
 
-  /* ── Validation + save ── */
+  /* ── Date auto-format on blur ── */
+  const handleDateBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "");
+    if (raw.length === 8) {
+      setFormData((p: any) => ({
+        ...p,
+        dateOfBirth: `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`,
+      }));
+    }
+  };
+
+  /* ── Validation & Save (Delegated to Backend) ── */
   const handleSave = async () => {
-    const newErrors: Record<string, string> = {};
-    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // Standard User Fields
-    if (!formData.fullName?.trim())
-      newErrors.fullName = "Full name is required.";
-    if (!formData.email?.trim()) newErrors.email = "Email address is required.";
-    else if (!emailRx.test(formData.email))
-      newErrors.email = "Please enter a valid email address.";
-    if (modalMode === "create" && !formData.password)
-      newErrors.password = "Password is required.";
-
-    // Core Patient profile required fields
-    if (!formData.icNumber?.trim())
-      newErrors.icNumber = "IC Number is required.";
-    if (!formData.bloodType?.trim())
-      newErrors.bloodType = "Blood Type is required.";
-    if (!formData.emergencyContactName?.trim())
-      newErrors.emergencyContactName = "Emergency contact name is required.";
-    if (!formData.emergencyContactRelation?.trim())
-      newErrors.emergencyContactRelation = "Relationship is required.";
-
-    // Primary Phone Validation
-    if (!phoneBody.trim()) {
-      newErrors.phoneNumber = "Phone number is required.";
-    } else if (phoneCode === "+65" && phoneBody.length !== 8) {
-      newErrors.phoneNumber = "Singapore number must be exactly 8 digits.";
-    } else if (
-      phoneCode === "+60" &&
-      (phoneBody.length < 9 || phoneBody.length > 10)
-    ) {
-      newErrors.phoneNumber = "Malaysia number must be 9–10 digits.";
-    }
-
-    // Alternate Phone Validation
-    if (altPhoneBody.trim()) {
-      if (altPhoneCode === "+65" && altPhoneBody.length !== 8) {
-        newErrors.phoneNumberAlt = "Singapore number must be exactly 8 digits.";
-      } else if (
-        altPhoneCode === "+60" &&
-        (altPhoneBody.length < 9 || altPhoneBody.length > 10)
-      ) {
-        newErrors.phoneNumberAlt = "Malaysia number must be 9–10 digits.";
-      }
-    }
-
-    // Emergency Contact Phone Validation
-    if (!emergencyPhoneBody.trim()) {
-      newErrors.emergencyContactPhone = "Emergency contact phone is required.";
-    } else if (emergencyPhoneCode === "+65" && emergencyPhoneBody.length !== 8) {
-      newErrors.emergencyContactPhone =
-        "Singapore number must be exactly 8 digits.";
-    } else if (
-      emergencyPhoneCode === "+60" &&
-      (emergencyPhoneBody.length < 9 || emergencyPhoneBody.length > 10)
-    ) {
-      newErrors.emergencyContactPhone = "Malaysia number must be 9–10 digits.";
-    }
-
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
-      return;
-    }
+    setErrors({});
+    setToast((t) => ({ ...t, show: false }));
 
     try {
       const payload: any = {
         ...formData,
-        genderId: Number(formData.genderId),
+        genderId: formData.genderId ? Number(formData.genderId) : null,
         status: Number(formData.status),
         phoneNumber: phoneBody ? `${phoneCode}${phoneBody}` : null,
         phoneNumberAlt: altPhoneBody ? `${altPhoneCode}${altPhoneBody}` : null,
@@ -742,13 +722,17 @@ export default function PatientsPage() {
           ? `${API_BASE_URL}/patient`
           : `${API_BASE_URL}/patient/${formData.id}`;
       const method = modalMode === "create" ? "POST" : "PUT";
+      
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
+      const result = await res.json();
+      const isSuccess = result?.success === true || result?.Success === true;
+
+      if (res.ok && isSuccess) {
         setIsModalOpen(false);
         showToast(
           "success",
@@ -758,10 +742,14 @@ export default function PatientsPage() {
         );
         fetchData();
       } else {
-        const err = await res.json();
+        // Map backend validation errors dynamically to input states
+        const fields = getFieldErrors(result);
+        if (Object.keys(fields).length > 0) {
+          setErrors(fields);
+        }
         showToast(
           "error",
-          err.message || "Operation failed. Please try again.",
+          getBackendMessage(result) || "Operation failed. Please correct the fields below."
         );
       }
     } catch {
@@ -776,10 +764,16 @@ export default function PatientsPage() {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      if (res.ok) {
-        showToast("success", "Patient profile deleted successfully.");
+      const result = await res.json();
+      const isSuccess = result?.success === true || result?.Success === true;
+
+      if (res.ok && isSuccess) {
+        // Successful deletions show a RED toast as requested
+        showToast("error", getBackendMessage(result) || "Patient profile deleted successfully.");
         fetchData();
-      } else showToast("error", "Failed to delete. Please try again.");
+      } else {
+        showToast("error", getBackendMessage(result) || "Failed to delete patient dossier.");
+      }
     } catch {
       showToast("error", "Network error.");
     } finally {
@@ -793,7 +787,7 @@ export default function PatientsPage() {
   ───────────────────────────────────────────────────────── */
   return (
     <div className="min-h-screen font-sans antialiased text-slate-900">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6 relative">
         <Toast
           show={toast.show}
           message={toast.message}
@@ -1074,7 +1068,7 @@ export default function PatientsPage() {
                           required
                           value={formData.fullName}
                           onChange={handleTextInput}
-                          error={errors.fullName}
+                          error={errors.fullname}
                           placeholder="e.g. John Smith"
                         />
                         <LabelInput
@@ -1141,7 +1135,7 @@ export default function PatientsPage() {
                           required
                           value={formData.icNumber}
                           onChange={handleTextInput}
-                          error={errors.icNumber}
+                          error={errors.icnumber}
                           placeholder="e.g. T1234567A / 900101-14-1234"
                         />
                       </div>
@@ -1163,7 +1157,7 @@ export default function PatientsPage() {
                             setPhoneBody("");
                           }}
                           onBodyChange={handlePhoneChange}
-                          error={errors.phoneNumber}
+                          error={errors.phonenumber}
                           maxLen={phoneMaxLen(phoneCode)}
                         />
                         <PhoneField
@@ -1175,7 +1169,7 @@ export default function PatientsPage() {
                             setAltPhoneBody("");
                           }}
                           onBodyChange={handleAltPhoneChange}
-                          error={errors.phoneNumberAlt}
+                          error={errors.phonenumberalt}
                           maxLen={phoneMaxLen(altPhoneCode)}
                         />
                       </div>
@@ -1192,6 +1186,7 @@ export default function PatientsPage() {
                           name="bloodType"
                           value={formData.bloodType}
                           onChange={handleSelectInput}
+                          error={errors.bloodtype}
                         >
                           <option value="">-- Select Blood Type --</option>
                           <option value="A+">A+</option>
@@ -1203,11 +1198,6 @@ export default function PatientsPage() {
                           <option value="AB+">AB+</option>
                           <option value="AB-">AB-</option>
                         </LabelSelect>
-                        {errors.bloodType && (
-                          <p className="mt-1 text-xs text-rose-600 font-medium">
-                            {errors.bloodType}
-                          </p>
-                        )}
                       </div>
 
                       <div className="space-y-3">
@@ -1249,6 +1239,7 @@ export default function PatientsPage() {
                           name="genderId"
                           value={formData.genderId}
                           onChange={handleSelectInput}
+                          error={errors.genderid}
                         >
                           {genderOptions.map((g) => (
                             <option key={g.value} value={g.value}>
@@ -1261,6 +1252,7 @@ export default function PatientsPage() {
                           name="status"
                           value={formData.status}
                           onChange={handleSelectInput}
+                          error={errors.status}
                         >
                           <option value="1">Active</option>
                           <option value="0">Inactive</option>
@@ -1280,7 +1272,7 @@ export default function PatientsPage() {
                           required
                           value={formData.emergencyContactName}
                           onChange={handleTextInput}
-                          error={errors.emergencyContactName}
+                          error={errors.emergencycontactname}
                           placeholder="e.g. Jane Smith"
                         />
                         <LabelInput
@@ -1289,7 +1281,7 @@ export default function PatientsPage() {
                           required
                           value={formData.emergencyContactRelation}
                           onChange={handleTextInput}
-                          error={errors.emergencyContactRelation}
+                          error={errors.emergencycontactrelation}
                           placeholder="e.g. Mother / Spouse"
                         />
                       </div>
@@ -1303,7 +1295,7 @@ export default function PatientsPage() {
                           setEmergencyPhoneBody("");
                         }}
                         onBodyChange={handleEmergencyPhoneChange}
-                        error={errors.emergencyContactPhone}
+                        error={errors.emergencycontactphone}
                         maxLen={phoneMaxLen(emergencyPhoneCode)}
                       />
                     </FormSection>
@@ -1314,13 +1306,16 @@ export default function PatientsPage() {
                       title="Address & Personal Info"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {/* Date of Birth — 完美强制英文版 + 格式化为 DD-M-YYYY */}
+                        {/* Date of Birth */}
                         <div className="flex flex-col">
                           <label className="block text-xs font-semibold text-slate-600 mb-1">
                             Date of Birth
                           </label>
-                          <div className="relative flex items-center rounded-lg border border-slate-200 bg-white transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100">
-                            {/* 1. 铺满整格但完全透明的原生输入框 */}
+                          <div className={`relative flex items-center rounded-lg border transition-all ${
+                            errors.dateofbirth
+                              ? "border-rose-400 bg-rose-50 focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-200"
+                              : "border-slate-200 bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100"
+                          }`}>
                             <input
                               type="date"
                               name="dateOfBirth"
@@ -1335,12 +1330,11 @@ export default function PatientsPage() {
                               }}
                             />
 
-                            {/* 2. 自定义显示呈现层 */}
                             <div className="w-full flex items-center justify-between px-3 py-2 text-sm pointer-events-none">
                               <span
                                 className={
                                   formData.dateOfBirth
-                                    ? "text-slate-800 font-semibold"
+                                    ? `${errors.dateofbirth ? "text-rose-900" : "text-slate-800"} font-semibold`
                                     : "text-slate-300 font-medium"
                                 }
                               >
@@ -1359,9 +1353,12 @@ export default function PatientsPage() {
                                     })()
                                   : "DD-MM-YYYY"}
                               </span>
-                              <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                              <Calendar className={`w-4 h-4 shrink-0 ${errors.dateofbirth ? "text-rose-400" : "text-slate-400"}`} />
                             </div>
                           </div>
+                          {errors.dateofbirth && (
+                            <p className="mt-1 text-xs text-rose-600 font-medium">{errors.dateofbirth}</p>
+                          )}
                         </div>
 
                         <LabelInput
@@ -1369,6 +1366,7 @@ export default function PatientsPage() {
                           name="addressLine1"
                           value={formData.addressLine1}
                           onChange={handleTextInput}
+                          error={errors.addressline1}
                           placeholder="Street address"
                         />
                         <LabelInput
@@ -1376,6 +1374,7 @@ export default function PatientsPage() {
                           name="addressLine2"
                           value={formData.addressLine2}
                           onChange={handleTextInput}
+                          error={errors.addressline2}
                           placeholder="Unit, floor, etc."
                         />
                         <LabelInput
@@ -1383,6 +1382,7 @@ export default function PatientsPage() {
                           name="city"
                           value={formData.city}
                           onChange={handleTextInput}
+                          error={errors.city}
                           placeholder="e.g. Johor Bahru"
                         />
                         <LabelInput
@@ -1390,6 +1390,7 @@ export default function PatientsPage() {
                           name="state"
                           value={formData.state}
                           onChange={handleTextInput}
+                          error={errors.state}
                           placeholder="e.g. Johor"
                         />
                         <LabelInput
@@ -1399,12 +1400,14 @@ export default function PatientsPage() {
                           onChange={handleTextInput}
                           placeholder="6-digit code"
                           maxLength={6}
+                          error={errors.postalcode}
                         />
                         <LabelInput
                           label="Country"
                           name="country"
                           value={formData.country}
                           onChange={handleTextInput}
+                          error={errors.country}
                           placeholder="e.g. Malaysia"
                         />
                       </div>
@@ -1467,7 +1470,7 @@ export default function PatientsPage() {
               {/* Body */}
               <div className="flex-1 overflow-y-auto">
                 <div className="flex flex-col md:flex-row gap-6 p-5 sm:p-6">
-                  {/* Left: Avatar & Profile card */}
+                  {/* Left Column */}
                   <div className="md:w-80 shrink-0 h-max bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col items-center">
                     <div className="relative mb-6">
                       <img
@@ -1559,7 +1562,7 @@ export default function PatientsPage() {
                     </div>
                   </div>
 
-                  {/* Right: Info Section Cards */}
+                  {/* Right Column */}
                   <div className="flex-1 min-w-0 flex flex-col gap-6">
                     <ViewSection
                       icon={<User className="w-4 h-4" />}
@@ -1664,7 +1667,7 @@ export default function PatientsPage() {
         {/* ── Delete confirmation ── */}
         {isDeleteAlertOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-xl p-6 text-center border w-full max-w-sm border-slate-200">
+            <div className="bg-white rounded-xl p-6 text-center border w-full max-w-sm border-slate-200">
               <div className="w-14 h-14 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3.5 border border-rose-100">
                 <AlertTriangle className="w-7 h-7 text-rose-500" />
               </div>

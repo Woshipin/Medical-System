@@ -2,6 +2,7 @@
 using System.Collections.Generic; 
 using System.Linq; 
 using System.Threading.Tasks; 
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization; 
 using Microsoft.AspNetCore.Identity; 
 using Microsoft.AspNetCore.Mvc; 
@@ -112,23 +113,37 @@ namespace MedicalSystem.Controllers
         [HttpPost] 
         public async Task<IActionResult> Create([FromBody] StaffDto model) 
         {
+            // C# DTO Model Validation
             if (!ModelState.IsValid) 
             {
-                await LogBothAsync("Create", "Failed", "Invalid data provided in payload.");
-                return BadRequest(ApiResponse<string>.FailureResponse("Invalid data provided.")); 
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value!.Errors.First().ErrorMessage
+                    );
+
+                await LogBothAsync("Create", "Failed", "Model validation failed.");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
+            }
+
+            if (string.IsNullOrEmpty(model.Password))
+            {
+                await LogBothAsync("Create", "Failed", "Password is required for new staff.");
+                return BadRequest(new { success = false, message = "Password is required.", errors = new Dictionary<string, string> { { "password", "Password is required for creating a new account." } } });
             }
 
             var existingUser = await _userManager.FindByEmailAsync(model.Email); 
             if (existingUser != null) 
             {
                 await LogBothAsync("Create", "Failed", $"Email already exists: {model.Email}");
-                return BadRequest(ApiResponse<string>.FailureResponse("Email already exists.")); 
+                return BadRequest(new { success = false, message = "The email address is already taken.", errors = new Dictionary<string, string> { { "email", "This email address is already registered." } } }); 
             }
 
             if (model.Role != UserRole.SuperAdmin && model.Role != UserRole.Admin)
             {
                 await LogBothAsync("Create", "Failed", $"Unauthorized role type assignment: {model.Role}");
-                return BadRequest(ApiResponse<string>.FailureResponse("Unauthorized role type assignment."));
+                return BadRequest(new { success = false, message = "Unauthorized role type assignment.", errors = (object?)null });
             }
 
             var savedImagePath = SaveBase64Image(model.ProfileImageUrl);
@@ -155,7 +170,7 @@ namespace MedicalSystem.Controllers
                 UpdatedAt = DateTime.UtcNow 
             };
 
-            var result = await _userManager.CreateAsync(newStaff, model.Password ?? string.Empty); 
+            var result = await _userManager.CreateAsync(newStaff, model.Password); 
 
             if (result.Succeeded) 
             {
@@ -179,16 +194,37 @@ namespace MedicalSystem.Controllers
                 };
 
                 await LogBothAsync("Create", "Success", $"Created new Staff account with complete information:\n{string.Join("\n", details)}");
-                return Ok(ApiResponse<User>.SuccessResponse(newStaff, "Staff created successfully.")); 
+                return Ok(new { success = true, message = "Staff member created successfully.", data = newStaff }); 
             }
 
-            await LogBothAsync("Create", "Failed", $"Account creation failed for {model.Email}");
-            return BadRequest(ApiResponse<string>.FailureResponse(string.Join(", ", result.Errors.Select(e => e.Description)))); 
+            // Group ASP.NET Identity Errors and route them specifically to "password" or "general"
+            var identityErrors = result.Errors
+                .GroupBy(e => e.Code.Contains("Password") ? "password" : "general")
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.Join(" ", g.Select(e => e.Description))
+                );
+
+            await LogBothAsync("Create", "Failed", $"Account creation failed: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            return BadRequest(new { success = false, message = "Account creation failed due to password policy constraints.", errors = identityErrors }); 
         }
 
         [HttpPut("{id}")] 
         public async Task<IActionResult> Update(int id, [FromBody] StaffDto model) 
         {
+            if (!ModelState.IsValid) 
+            {
+                var fieldErrors = ModelState
+                    .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value!.Errors.First().ErrorMessage
+                    );
+
+                await LogBothAsync("Update", "Failed", $"Model validation failed for staff ID: {id}");
+                return BadRequest(new { success = false, message = "Please fix the validation errors below.", errors = fieldErrors }); 
+            }
+
             var user = await _userManager.FindByIdAsync(id.ToString()); 
             if (user == null || (user.Role != UserRole.SuperAdmin && user.Role != UserRole.Admin)) 
             {
@@ -202,7 +238,15 @@ namespace MedicalSystem.Controllers
                 changes.Add($"• Full Name -> {user.FullName} ➔ {model.FullName}");
 
             if (user.Email != model.Email)
+            {
+                var emailConflict = await _userManager.Users.AnyAsync(u => u.Email == model.Email && u.Id != id);
+                if (emailConflict)
+                {
+                    await LogBothAsync("Update", "Failed", $"Email address already in use: {model.Email}");
+                    return BadRequest(new { success = false, message = "Email already in use.", errors = new Dictionary<string, string> { { "email", "This email address is already in use by another user." } } });
+                }
                 changes.Add($"• Email -> {user.Email} ➔ {model.Email}");
+            }
 
             var inputDob = string.IsNullOrEmpty(model.DateOfBirth) ? (DateOnly?)null : DateOnly.Parse(model.DateOfBirth);
             if (user.DateOfBirth != inputDob)
@@ -269,7 +313,21 @@ namespace MedicalSystem.Controllers
             if (result.Succeeded && !string.IsNullOrEmpty(model.Password))
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                await _userManager.ResetPasswordAsync(user, token, model.Password);
+                var resetResult = await _userManager.ResetPasswordAsync(user, token, model.Password);
+                
+                if (!resetResult.Succeeded)
+                {
+                    // Map ASP.NET Identity errors to the specific password field
+                    var passwordErrors = resetResult.Errors
+                        .GroupBy(e => e.Code.Contains("Password") ? "password" : "general")
+                        .ToDictionary(
+                            g => g.Key,
+                            g => string.Join(" ", g.Select(e => e.Description))
+                        );
+
+                    await LogBothAsync("Update", "Failed", $"Password reset failed for staff ID: {id}");
+                    return BadRequest(new { success = false, message = "Password update failed due to complexity requirements.", errors = passwordErrors });
+                }
                 changes.Add("• Password -> [Modified]");
             }
 
@@ -280,11 +338,11 @@ namespace MedicalSystem.Controllers
                     : $"Updated Staff details (ID: {id}):\n• No fields were modified."; 
 
                 await LogBothAsync("Update", "Success", logDetails); 
-                return Ok(ApiResponse<string>.SuccessResponse(null, "Staff updated successfully.")); 
+                return Ok(new { success = true, message = "Staff member updated successfully." }); 
             }
             
             await LogBothAsync("Update", "Failed", $"Update failed for staff ID: {id}");
-            return BadRequest(ApiResponse<string>.FailureResponse("Update failed.")); 
+            return BadRequest(new { success = false, message = "Update failed due to system errors." }); 
         }
 
         [HttpDelete("{id}")] 
@@ -320,31 +378,55 @@ namespace MedicalSystem.Controllers
                 };
 
                 await LogBothAsync("Delete", "Success", $"Deleted Staff account and associated records:\n{string.Join("\n", deletedDetails)}");
-                return Ok(ApiResponse<string>.SuccessResponse(null, "Staff deleted successfully.")); 
+                return Ok(new { success = true, message = "Staff member deleted successfully." }); 
             }
             
             await LogBothAsync("Delete", "Failed", $"Failed to delete staff ID: {id}");
-            return BadRequest(ApiResponse<string>.FailureResponse("Delete failed.")); 
+            return BadRequest(new { success = false, message = "Delete failed." }); 
         }
     }
 
     public class StaffDto 
     {
+        [Required(ErrorMessage = "Full name is required.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
         public string FullName { get; set; } = null!; 
+
+        [Required(ErrorMessage = "Email address is required.")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        [StringLength(200, ErrorMessage = "Email address must not exceed 200 characters.")]
         public string Email { get; set; } = null!; 
+
         public string? Password { get; set; } 
+
         public string? ProfileImageUrl { get; set; }
+
+        [RegularExpression(@"^(|\d{4}-\d{2}-\d{2})$", ErrorMessage = "Date of birth must be in YYYY-MM-DD format.")]
         public string? DateOfBirth { get; set; } 
+
+        [Required(ErrorMessage = "Phone number is required.")]
+        [RegularExpression(@"^(\+65\d{8}|\+60\d{9,10})$", ErrorMessage = "Phone number must be a valid Singapore (+65, 8 digits) or Malaysia (+60, 9–10 digits) number.")]
         public string? PhoneNumber { get; set; } 
+
+        [RegularExpression(@"^(|(\+65\d{8})|(\+60\d{9,10}))$", ErrorMessage = "Alternate phone number must be a valid Singapore (+65, 8 digits) or Malaysia (+60, 9–10 digits) number.")]
         public string? PhoneNumberAlt { get; set; } 
+
+        [Required(ErrorMessage = "Gender selection is required.")]
         public int? GenderId { get; set; } 
+
         public string? AddressLine1 { get; set; }
         public string? AddressLine2 { get; set; }
         public string? City { get; set; }
         public string? State { get; set; }
+
+        [RegularExpression(@"^(|\d{5,6})$", ErrorMessage = "Postal code must be 5 or 6 digits.")]
         public string? PostalCode { get; set; }
         public string? Country { get; set; }
+
+        [Required(ErrorMessage = "System role is required.")]
         public UserRole Role { get; set; } 
+
+        [Required(ErrorMessage = "Status is required.")]
         public int Status { get; set; } = 1; 
     }
 }
