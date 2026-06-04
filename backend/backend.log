@@ -118,3 +118,36 @@ Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
    at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
    at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
    at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
+[2026-06-03 18:53:20] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-03 18:54:40] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 18:54:40] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 18:54:40] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-03 18:54:40] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-03 19:02:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 19:02:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 19:02:49] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-03 19:02:49] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-03 19:02:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 19:02:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 19:02:51] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-03 19:02:51] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-03 19:03:01] [ServiceController.Create] Success: Created new Service:
+• Service ID -> 7
+• Service Name -> aaa
+• Status -> Active
+[2026-06-03 19:03:01] [ServiceController.Read] Success: Retrieved 7 services.
+[2026-06-03 19:03:08] [ServiceController.Update] Success: Updated service (ID: 7):
+• Service Name -> aaa ➔ bbb
+• Status -> Active ➔ Inactive
+[2026-06-03 19:03:08] [ServiceController.Read] Success: Retrieved 7 services.
+[2026-06-03 19:03:14] [ServiceController.Delete] Success: Deleted Service:
+• Service ID -> 7
+• Service Name -> bbb
+• Status -> Inactive
+[2026-06-03 19:03:14] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-03 19:03:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 19:03:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-03 19:03:21] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-03 19:03:21] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-03 19:03:21] [PatientController.Read] Success: Retrieved 2 patients data.
+[2026-06-03 19:03:21] [PatientController.Read] Success: Retrieved 2 patients data.
