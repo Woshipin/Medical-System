@@ -985,3 +985,55 @@ System.Text.Json.JsonException: A possible object cycle was detected. This can e
    at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
    at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
    at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+[2026-06-06 15:30:12] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-06 15:32:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:07] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:07] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:32:07] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:07] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:32:09] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:09] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:09] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:09] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:32:09] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:09] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:32:15] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:15] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:15] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:15] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:15] [DoctorSchedule.Read] Success: Fetched 4
+[2026-06-06 15:32:15] [DoctorSchedule.Read] Success: Fetched 4
+[2026-06-06 15:32:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:32:20] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:20] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:32:20] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:20] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:32:41] [DoctorLeave.Create] Success: Leave created 2
+[2026-06-06 15:32:41] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:32:41] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:38:08] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:38:08] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:39:55] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:39:55] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:39:56] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:39:56] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:40:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:40:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:40:00] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:40:00] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:40:00] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:40:00] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:40:03] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:40:03] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:40:03] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:40:03] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:40:03] [DoctorLeave.Read] Success: Fetched 2
+[2026-06-06 15:40:03] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:40:16] [DoctorLeave.Create] Success: Leave created 3
+[2026-06-06 15:40:16] [DoctorLeave.Read] Success: Fetched 3
+[2026-06-06 15:40:16] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:41:07] [DoctorLeave.Update] Success: Updated leave 1
+[2026-06-06 15:41:07] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:41:07] [DoctorLeave.Read] Success: Fetched 3
