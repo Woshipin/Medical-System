@@ -157,3 +157,831 @@
 [2026-06-04 17:23:18] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
 [2026-06-04 17:23:18] [ServiceController.Read] Success: Retrieved 6 services.
 [2026-06-04 17:23:18] [ServiceController.Read] Success: Retrieved 6 services.
+[2026-06-06 13:15:51] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-06 13:16:08] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-06 13:16:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 13:16:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 13:53:09] Host terminated unexpectedly
+Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
+   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
+   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
+   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
+   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
+   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
+   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
+[2026-06-06 13:53:17] Host terminated unexpectedly
+Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
+   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
+   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
+   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
+   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
+   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
+   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
+[2026-06-06 14:06:44] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-06 14:06:52] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-06 14:06:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:06:55] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:07:00] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:07:37] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:07:43] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:07:43] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:07:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:07:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:08:01] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:08:01] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:08:01] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:08:01] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:17:31] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:17:31] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:17:31] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:17:31] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:17:35] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:17:35] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:17:35] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:17:35] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:21:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:21:19] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:21:19] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:21:20] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:41] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:41] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:41] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:41] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:43] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:43] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:44] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:44] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:53] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:54] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:24:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:56] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:56] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:24:56] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:24:56] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:24:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:58] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:24:58] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:24:58] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:24:58] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:24:58] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:25:05] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:25:05] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:25:05] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:25:05] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:25:05] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:25:05] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:25:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:25:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:25:07] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:25:07] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:25:07] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:25:07] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:28:38] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:28:38] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:28:39] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:28:39] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:28:39] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:28:39] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:31:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:31:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:31:50] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:31:50] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:31:50] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:31:50] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:31:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:31:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:31:53] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:31:53] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:31:53] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:31:53] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:32:45] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:32:45] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:32:45] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:32:45] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:32:45] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:32:45] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:32:45] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:32:45] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:32:45] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:32:45] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:32:45] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:32:45] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:32:45] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:32:45] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:33:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:33:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:33:12] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:33:12] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:33:21] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:33:21] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:33:21] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:33:21] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:33:21] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:33:21] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:33:21] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:33:21] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:33:21] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:33:21] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:33:21] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:33:21] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:33:21] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:33:21] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:33:48] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:33:48] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:33:48] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:33:48] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:33:48] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:33:48] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:34:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:34:07] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:34:07] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:34:08] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:34:08] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:34:08] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:34:08] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:34:08] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:34:08] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:34:08] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:34:08] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:34:08] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:34:08] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:34:08] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:39:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:39:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:39:56] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:39:56] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:39:59] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:39:59] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:39:59] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:39:59] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:39:59] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:39:59] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:39:59] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:39:59] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:39:59] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:39:59] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:39:59] [DoctorsController.Read] Success: Retrieved 0 doctors database records.
+[2026-06-06 14:39:59] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:39:59] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:39:59] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:40:53] [DoctorsController.Create] Success: Created new Doctor account and profile:
+• USER ID -> 18
+• FULL NAME -> aaa
+• EMAIL -> aaa@gmail.com
+• LICENSE -> aaa12345
+[2026-06-06 14:40:53] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:40:53] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:40:53] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:40:53] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:40:53] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:40:53] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:43:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:11] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:11] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:43:11] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:43:11] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:43:11] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:43:11] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:43:11] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:11] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:43:11] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:43:11] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:43:11] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:43:11] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:43:22] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:22] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:22] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:43:22] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:22] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:43:22] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:43:22] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:43:22] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:43:22] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:43:22] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:43:22] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:22] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:43:22] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:43:22] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:43:25] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:25] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:25] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:25] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:43:25] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:25] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:43:27] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:27] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:27] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:43:27] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:27] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:43:27] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:35] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:35] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:43:35] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:43:35] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:35] [DoctorSchedule.Read] Success: Fetched 0
+[2026-06-06 14:43:35] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:44] [DoctorSchedule.Create] Success: Doctor 8 schedule created
+[2026-06-06 14:43:44] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:43:44] [DoctorSchedule.Read] Success: Fetched 1
+[2026-06-06 14:44:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:44:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:44:12] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:44:12] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:44:12] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:44:12] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:44:17] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:44:17] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:44:17] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:44:17] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:44:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:44:20] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:44:20] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:44:20] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:44:20] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:44:20] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:44:20] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:44:20] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:44:20] [DoctorsController.Read] Success: Retrieved 1 doctors database records.
+[2026-06-06 14:44:20] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:44:20] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:44:20] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:44:20] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:44:20] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:45:00] [DoctorsController.Create] Success: Created new Doctor account and profile:
+• USER ID -> 19
+• FULL NAME -> bbb
+• EMAIL -> bbb@gmail.com
+• LICENSE -> bbb
+[2026-06-06 14:45:00] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:45:00] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:45:00] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:45:00] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:45:00] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:45:00] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:47:35] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:47:35] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:47:35] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:47:35] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:47:35] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:47:35] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:47:35] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:47:35] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:47:35] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:47:35] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:47:35] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:47:35] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:47:35] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:47:35] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:47:44] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:47:44] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:47:44] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:47:44] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:47:44] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:47:44] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:47:44] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:47:44] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:47:44] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:47:44] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:47:44] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:47:44] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:47:44] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:47:44] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:47:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:47:51] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:47:51] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:47:51] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:47:51] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:47:51] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:53:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:53:53] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:53:53] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:53:53] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:53:53] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:53:53] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:53:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:53:56] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:53:56] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:53:56] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:53:56] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:53:56] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:53:56] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:53:56] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:53:56] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:53:56] [DoctorsController.Read] Success: Retrieved 2 doctors database records.
+[2026-06-06 14:53:56] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:53:56] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:53:56] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:53:56] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:55:34] [DoctorsController.Create] Success: Created new Doctor account and profile:
+• USER ID -> 20
+• FULL NAME -> ccc
+• EMAIL -> ccc@gmail.com
+• LICENSE -> ccc
+[2026-06-06 14:55:34] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:55:34] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:55:34] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:55:34] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:55:34] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:55:34] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:55:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:55:49] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:55:49] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:55:49] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:55:49] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:55:49] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:56:28] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:56:28] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:56:28] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:56:28] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:56:28] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:56:28] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:56:28] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:56:28] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:56:28] [SpecialtyController.Read] Success: Retrieved 3 specialties.
+[2026-06-06 14:56:28] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:56:28] [PositionController.Read] Success: Retrieved 3 positions.
+[2026-06-06 14:56:28] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 14:56:28] [GendersController.Read] Success: Retrieved 2 gender options.
+[2026-06-06 14:56:28] [OfficeLocationController.Read] Success: Retrieved 1 office locations.
+[2026-06-06 14:57:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:57:11] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:57:11] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:57:11] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:57:11] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:57:11] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:57:15] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:57:15] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:57:15] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:57:15] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:57:15] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:57:15] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:57:17] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:57:17] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 14:57:17] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:57:17] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:57:17] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 14:57:17] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 14:59:00] Host terminated unexpectedly
+Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
+   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
+   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
+   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
+   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
+   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
+   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
+[2026-06-06 14:59:19] Host terminated unexpectedly
+Microsoft.Extensions.Hosting.HostAbortedException: The host was aborted.
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.ThrowHostAborted()
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.OnNext(KeyValuePair`2 value)
+   at System.Diagnostics.DiagnosticListener.Write(String name, Object value)
+   at System.Diagnostics.DiagnosticSource.Write[T](String name, T value)
+   at Microsoft.Extensions.Hosting.HostBuilder.ResolveHost(IServiceProvider serviceProvider, DiagnosticListener diagnosticListener)
+   at Microsoft.Extensions.Hosting.HostApplicationBuilder.Build()
+   at Microsoft.AspNetCore.Builder.WebApplicationBuilder.Build()
+   at Program.<Main>$(String[] args) in C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\Program.cs:line 134
+[2026-06-06 14:59:51] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-06 14:59:58] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-06 15:00:01] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:01] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:04] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:04] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:04] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:00:04] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:00:05] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:00:05] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:00:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:10] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:00:10] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:00:10] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:00:10] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:00:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:12] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:00:12] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:00:12] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:00:12] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:00:12] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:01:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:01:10] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:01:10] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:01:10] [DoctorSchedule.Read] Success: Fetched 1
+[2026-06-06 15:01:10] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:01:11] [DoctorSchedule.Read] Success: Fetched 1
+[2026-06-06 15:01:20] [DoctorSchedule.Create] Success: Doctor 9 schedule created
+[2026-06-06 15:01:20] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:01:20] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:10:18] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:10:18] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:12:08] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:12:08] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:12:08] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:12:08] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:12:08] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:12:08] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:12:10] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:12:10] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:12:13] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:12:13] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:12:13] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:12:13] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:12:14] [DoctorSchedule.Read] Success: Fetched 2
+[2026-06-06 15:12:14] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:12:21] [DoctorSchedule.Create] Success: Doctor 9 schedule created
+[2026-06-06 15:12:21] [DoctorSchedule.Read] Success: Fetched 3
+[2026-06-06 15:12:21] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:17:56] [DoctorSchedule.Read] Success: Fetched 3
+[2026-06-06 15:17:56] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:20:40] The WebRootPath was not found: C:\Users\user\Documents\1_My_Portfolio\Medical-System\backend\wwwroot. Static files may be unavailable.
+[2026-06-06 15:20:44] [AdminController.Login] Success: Logged into the admin portal - Email: ahpin7762@gmail.com, Role: SuperAdmin
+[2026-06-06 15:20:47] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:20:47] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:20:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:20:50] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:20:50] [DoctorSchedule.Read] Success: Fetched 3
+[2026-06-06 15:20:50] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:20:50] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:20:50] [DoctorSchedule.Read] Success: Fetched 3
+[2026-06-06 15:21:16] [DoctorSchedule.Create] Success: Doctor 8 schedule created
+[2026-06-06 15:21:16] [DoctorSchedule.Read] Success: Fetched 4
+[2026-06-06 15:21:16] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:21:23] [DoctorSchedule.Update] Success: Updated schedule 4
+[2026-06-06 15:21:23] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:21:23] [DoctorSchedule.Read] Success: Fetched 4
+[2026-06-06 15:21:42] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:21:42] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:21:42] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 15:21:42] [DepartmentController.Read] Success: Retrieved 12 departments.
+[2026-06-06 15:21:46] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:21:46] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:21:46] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:21:46] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:21:47] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:21:47] [DoctorLeave.Read] Success: Fetched 0
+[2026-06-06 15:25:28] [DoctorLeave.Create] Success: Leave created 1
+[2026-06-06 15:25:28] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:25:28] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:25:28] An unhandled exception has occurred while executing the request.
+System.Text.Json.JsonException: A possible object cycle was detected. This can either be due to a cycle or if the object depth is larger than the maximum allowed depth of 32. Consider using ReferenceHandler.Preserve on JsonSerializerOptions to support cycles. Path: $.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Id.
+   at System.Text.Json.ThrowHelper.ThrowJsonException_SerializerCycleDetected(Int32 maxDepth)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.ListOfTConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonOutputFormatter.WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResultFilterAsync>g__Awaited|30_0[TFilter,TFilterAsync](ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResultExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultNext[TFilter,TFilterAsync](State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeResultFilters()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+[2026-06-06 15:25:45] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:25:45] [AdminController.CheckAuth] Success: Token validated for Admin ahpin7762@gmail.com
+[2026-06-06 15:25:45] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:25:45] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:25:45] An unhandled exception has occurred while executing the request.
+System.Text.Json.JsonException: A possible object cycle was detected. This can either be due to a cycle or if the object depth is larger than the maximum allowed depth of 32. Consider using ReferenceHandler.Preserve on JsonSerializerOptions to support cycles. Path: $.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Id.
+   at System.Text.Json.ThrowHelper.ThrowJsonException_SerializerCycleDetected(Int32 maxDepth)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.ListOfTConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonOutputFormatter.WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResultFilterAsync>g__Awaited|30_0[TFilter,TFilterAsync](ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResultExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultNext[TFilter,TFilterAsync](State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeResultFilters()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+[2026-06-06 15:25:45] [DoctorsController.Read] Success: Retrieved 3 doctors database records.
+[2026-06-06 15:25:45] [DoctorLeave.Read] Success: Fetched 1
+[2026-06-06 15:25:45] An unhandled exception has occurred while executing the request.
+System.Text.Json.JsonException: A possible object cycle was detected. This can either be due to a cycle or if the object depth is larger than the maximum allowed depth of 32. Consider using ReferenceHandler.Preserve on JsonSerializerOptions to support cycles. Path: $.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Doctor.DoctorLeaves.Id.
+   at System.Text.Json.ThrowHelper.ThrowJsonException_SerializerCycleDetected(Int32 maxDepth)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.IEnumerableDefaultConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
+   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Converters.ListOfTConverter`2.OnWriteResume(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryWrite(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.JsonConverter`1.WriteCore(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.SerializeAsync(PipeWriter pipeWriter, T rootValue, Int32 flushThreshold, CancellationToken cancellationToken, Object rootValueBoxed)
+   at Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonOutputFormatter.WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResultFilterAsync>g__Awaited|30_0[TFilter,TFilterAsync](ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResultExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultNext[TFilter,TFilterAsync](State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeResultFilters()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)

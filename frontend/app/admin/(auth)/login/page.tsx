@@ -152,7 +152,7 @@ export default function AdminLoginPage() {
       {/* ── Toasts ──────────────────────────────────────────────────────────── */}
       <div className="fixed top-5 left-0 w-full flex flex-col items-center gap-2 z-50 pointer-events-none px-4">
         {toastError && (
-          <div className="pointer-events-auto w-full max-sm bg-white/95 backdrop-blur-xl border-l-4 border-red-500 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-xl border-l-4 border-red-500 px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3 animate-in slide-in-from-top-4 fade-in duration-300">
             <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={17} />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-red-700">Login Failed</p>

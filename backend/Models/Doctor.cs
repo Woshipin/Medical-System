@@ -65,5 +65,9 @@ namespace MedicalSystem.Models
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // ✅ 正确：Navigation Property 放在 class 里面
+        public virtual ICollection<DoctorLeave> DoctorLeaves { get; set; }
+            = new List<DoctorLeave>();
     }
 }

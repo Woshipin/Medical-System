@@ -40,6 +40,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { id: 'office_locations', label: 'Office Locations', icon: MapPin, href: '/admin/office-locations' },
     { id: 'specialties', label: 'Specialties', icon: Activity, href: '/admin/specialties' },
     { id: 'positions', label: 'Positions', icon: Award, href: '/admin/positions' },
+    { id: 'leave', label: 'Leave', icon: AlertCircle, href: '/admin/doctor-leave' },
+    { id: 'schedule', label: 'Schedule', icon: CheckCircle, href: '/admin/doctor-schedule' },
   ];
 
   // 判定医生组下是否有任意子项正处于激活状态
